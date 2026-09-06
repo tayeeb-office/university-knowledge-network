@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Create Account | University Knowledge Network</title>
+<meta name="description" content="Create your University Knowledge Network account to connect with peer mentors and start learning from fellow students.">
+
+<!-- Google Fonts -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<!-- Bootstrap 5 -->
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
+<!-- Custom styles -->
+<link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+
+<div class="auth-shell">
+
+  <!-- ============================== BRAND PANEL ============================== -->
+  <div class="auth-brand">
+    <div class="auth-brand-inner">
+      <a href="index.html" class="d-flex align-items-center gap-2 text-decoration-none">
+        <span class="auth-brand-logo-icon">
+          <svg width="21" height="21" viewBox="0 0 20 20" fill="none" stroke-width="1.4">
+            <line x1="10" y1="5" x2="4.5" y2="14" stroke="#7A93AC"></line>
+            <line x1="10" y1="5" x2="15.5" y2="14" stroke="#7A93AC"></line>
+            <line x1="4.5" y1="14" x2="15.5" y2="14" stroke="#7A93AC"></line>
+            <circle cx="10" cy="5" r="2.4" fill="#F2B84B"></circle>
+            <circle cx="4.5" cy="14" r="2.1" fill="#2A7F78"></circle>
+            <circle cx="15.5" cy="14" r="2.1" fill="#FFFFFF"></circle>
+          </svg>
+        </span>
+        <span class="d-flex flex-column lh-1">
+          <span class="auth-brand-title">University Knowledge Network</span>
+          <span class="auth-brand-subtitle">Peer learning</span>
+        </span>
+      </a>
+
+      <div>
+        <h1 class="auth-brand-headline" style="max-width:440px;">Learn. Teach. Connect. Grow.</h1>
+        <p class="auth-brand-lead" style="max-width:440px;">Join your university's peer learning community and exchange knowledge with fellow students.</p>
+
+        <div class="auth-illustration" style="max-width:440px;">
+          <div class="auth-illustration-placeholder" style="height:180px;">
+            <span class="auth-illustration-tag">students learning together &mdash; illustration</span>
+          </div>
+          <div class="auth-illustration-footer">
+            <span class="auth-avatar-stack">
+              <span class="avatar-circle" style="background:#2A7F78;">AN</span>
+              <span class="avatar-circle" style="background:#F2B84B;color:#17324D;">DO</span>
+              <span class="avatar-circle" style="background:#FFFFFF;color:#17324D;">SB</span>
+            </span>
+            <span style="font-size:14px;line-height:1.45;color:var(--light-text);">1,480 student mentors across 68 departments</span>
+          </div>
+        </div>
+      </div>
+
+      <p class="auth-brand-quote">&ldquo;Everyone has something to learn. Everyone has something to teach.&rdquo;</p>
+    </div>
+  </div>
+
+  <!-- ============================== REGISTER FORM ============================== -->
+  <div class="auth-form-side">
+    <div class="auth-form-wrap" style="max-width:560px;">
+      <a href="index.html" class="auth-mini-brand text-decoration-none">
+        <span class="brand-icon" style="width:32px;height:32px;">
+          <svg width="17" height="17" viewBox="0 0 20 20" fill="none" stroke-width="1.4">
+            <line x1="10" y1="5" x2="4.5" y2="14" stroke="#7A93AC"></line>
+            <line x1="10" y1="5" x2="15.5" y2="14" stroke="#7A93AC"></line>
+            <line x1="4.5" y1="14" x2="15.5" y2="14" stroke="#7A93AC"></line>
+            <circle cx="10" cy="5" r="2.4" fill="#F2B84B"></circle>
+            <circle cx="4.5" cy="14" r="2.1" fill="#2A7F78"></circle>
+            <circle cx="15.5" cy="14" r="2.1" fill="#FFFFFF"></circle>
+          </svg>
+        </span>
+        <span class="heading-font fw-semibold" style="font-size:14px;color:#17324D;">University Knowledge Network</span>
+      </a>
+
+      <div class="auth-card">
+        <h2 class="auth-card-title">Create Your Account</h2>
+        <p class="auth-card-sub">Join the University Knowledge Network and start learning from your peers.</p>
+
+        <form id="registerForm" class="auth-form mt-4" novalidate>
+
+          <!-- Basic Information -->
+          <fieldset class="auth-fieldset">
+            <legend class="auth-legend">Basic Information</legend>
+
+            <div class="mb-3">
+              <label for="regName" class="form-label">Full Name</label>
+              <input type="text" class="form-control" id="regName" name="name" placeholder="Enter your full name" autocomplete="name" required>
+              <div class="invalid-feedback">Please enter your full name.</div>
+            </div>
+
+            <div class="row g-3 mb-3">
+              <div class="col-md-6">
+                <label for="regSid" class="form-label">Student ID</label>
+                <input type="text" class="form-control" id="regSid" name="sid" placeholder="Enter your student ID" inputmode="numeric" pattern="[0-9]{6,10}" required>
+                <div class="invalid-feedback">Please enter a valid student ID.</div>
+              </div>
+              <div class="col-md-6">
+                <label for="regEmail" class="form-label">University Email</label>
+                <input type="email" class="form-control" id="regEmail" name="email" placeholder="student@university.edu" autocomplete="email" required>
+                <div class="invalid-feedback">Please enter a valid university email address.</div>
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label for="regPassword" class="form-label">Password</label>
+              <div class="password-field">
+                <input type="password" class="form-control" id="regPassword" name="password" placeholder="Create a password" autocomplete="new-password" pattern="(?=.*[0-9]).{8,}" required>
+                <button type="button" class="pw-toggle-btn" data-toggle-for="regPassword" aria-label="Show password" title="Show password">
+                  <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M1.8 10S4.7 4.8 10 4.8 18.2 10 18.2 10 15.3 15.2 10 15.2 1.8 10 1.8 10z"></path>
+                    <circle cx="10" cy="10" r="2.6"></circle>
+                    <line class="pw-slash" x1="3.5" y1="16.5" x2="16.5" y2="3.5" stroke="currentColor"></line>
+                  </svg>
+                </button>
+                <div class="invalid-feedback">Password must be at least 8 characters and include a number.</div>
+              </div>
+              <div class="auth-live-hint" id="pwHint">Use at least 8 characters with a number.</div>
+              <div class="auth-live-good d-none" id="pwGood">Password looks good.</div>
+            </div>
+
+            <div class="mb-1">
+              <label for="regConfirm" class="form-label">Confirm Password</label>
+              <div class="password-field">
+                <input type="password" class="form-control" id="regConfirm" name="confirm" placeholder="Re-enter your password" autocomplete="new-password" required>
+                <button type="button" class="pw-toggle-btn" data-toggle-for="regConfirm" aria-label="Show password" title="Show password">
+                  <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M1.8 10S4.7 4.8 10 4.8 18.2 10 18.2 10 15.3 15.2 10 15.2 1.8 10 1.8 10z"></path>
+                    <circle cx="10" cy="10" r="2.6"></circle>
+                    <line class="pw-slash" x1="3.5" y1="16.5" x2="16.5" y2="3.5" stroke="currentColor"></line>
+                  </svg>
+                </button>
+                <div class="invalid-feedback">Passwords do not match.</div>
+              </div>
+            </div>
+          </fieldset>
+
+          <!-- Academic Information -->
+          <fieldset class="auth-fieldset auth-fieldset-divider">
+            <legend class="auth-legend">Academic Information</legend>
+
+            <div class="row g-3">
+              <div class="col-md-7">
+                <label for="regDept" class="form-label">Department</label>
+                <select class="form-select" id="regDept" name="dept" required>
+                  <option value="" selected disabled>Select your department</option>
+                  <option value="cse">Computer Science &amp; Engineering</option>
+                  <option value="eee">Electrical &amp; Electronic Engineering</option>
+                  <option value="bba">Business Administration</option>
+                  <option value="econ">Economics</option>
+                  <option value="eng">English</option>
+                  <option value="math">Mathematics</option>
+                  <option value="other">Other</option>
+                </select>
+                <div class="invalid-feedback">Please select your department.</div>
+              </div>
+              <div class="col-md-5">
+                <label for="regYear" class="form-label">Academic Year / Semester</label>
+                <select class="form-select" id="regYear" name="year" required>
+                  <option value="" selected disabled>Select your academic level</option>
+                  <option value="1">1st Year</option>
+                  <option value="2">2nd Year</option>
+                  <option value="3">3rd Year</option>
+                  <option value="4">4th Year</option>
+                  <option value="grad">Graduate</option>
+                </select>
+                <div class="invalid-feedback">Please select your academic year.</div>
+              </div>
+            </div>
+          </fieldset>
+
+          <!-- About You -->
+          <fieldset class="auth-fieldset auth-fieldset-divider">
+            <legend class="auth-legend">Tell Us About Yourself</legend>
+
+            <label for="regBio" class="form-label">Short Description</label>
+            <textarea class="form-control" id="regBio" name="bio" rows="3" maxlength="300" placeholder="Tell other students a little about yourself..."></textarea>
+            <div class="auth-bio-footer">
+              <span>Optional &mdash; it helps peers decide who to learn from.</span>
+              <span class="mono-font" id="bioCount">0 / 300</span>
+            </div>
+          </fieldset>
+
+          <!-- Agreement + submit -->
+          <div class="auth-fieldset-divider pt-4">
+            <div class="form-check mb-3">
+              <input class="form-check-input" type="checkbox" id="regAgree" name="agree" required>
+              <label class="form-check-label" for="regAgree">
+                I agree to the University Knowledge Network <a href="#">Terms of Use</a> and <a href="#">Community Guidelines</a>.
+              </label>
+              <div class="invalid-feedback">You must agree to the Terms of Use and Community Guidelines.</div>
+            </div>
+
+            <div class="alert alert-danger d-none" role="alert" id="registerFormError"></div>
+
+            <button type="submit" class="btn btn-navy w-100 py-3">Create Account</button>
+
+            <div class="auth-card-footer" style="margin-top:20px;padding-top:0;border-top:0;">
+              Already have an account? <a href="login.html" class="fw-semibold">Sign In</a>
+            </div>
+          </div>
+        </form>
+      </div>
+
+      <div class="auth-notice">
+        <svg width="17" height="17" viewBox="0 0 18 18" fill="none" stroke="#2A7F78" stroke-width="1.6" stroke-linecap="round">
+          <circle cx="9" cy="9" r="7.2"></circle>
+          <path d="M9 8.2v4"></path>
+          <path d="M9 5.6v.1"></path>
+        </svg>
+        <div>
+          <div class="auth-notice-title">University students only</div>
+          <div class="auth-notice-text">Please use your valid university student information to create an account.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Bootstrap 5 JS bundle -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="assets/js/script.js"></script>
+</body>
+</html>
