@@ -1,0 +1,1057 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>My Profile | University Knowledge Network</title>
+    <meta
+      name="description"
+      content="Md. Rahim Ahmed's University Knowledge Network profile — skills taught and learned, learning goals, availability, mentor experience, reputation and community contributions."
+    />
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&family=IBM+Plex+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+
+    <!-- Bootstrap 5 -->
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+
+    <!-- Custom styles -->
+    <link rel="stylesheet" href="assets/css/style.css" />
+  </head>
+  <body>
+    <!-- ============================== NAVBAR ============================== -->
+    <nav
+      class="navbar navbar-expand-lg navbar-light bg-white sticky-top border-bottom site-navbar justify-content-between"
+      id="mainNav"
+    >
+      <div class="container-custom d-flex align-items-center flex-wrap">
+        <a class="navbar-brand" href="dashboard.html">
+          <span class="brand-icon">
+            <svg
+              width="24"
+              height="24"
+              viewBox="0 0 20 20"
+              fill="none"
+              stroke-width="1.4"
+            >
+              <line x1="10" y1="5" x2="4.5" y2="14" stroke="#7A93AC"></line>
+              <line x1="10" y1="5" x2="15.5" y2="14" stroke="#7A93AC"></line>
+              <line x1="4.5" y1="14" x2="15.5" y2="14" stroke="#7A93AC"></line>
+              <circle cx="10" cy="5" r="2.4" fill="#F2B84B"></circle>
+              <circle cx="4.5" cy="14" r="2.1" fill="#2A7F78"></circle>
+              <circle cx="15.5" cy="14" r="2.1" fill="#FFFFFF"></circle>
+            </svg>
+          </span>
+          <span class="brand-text">
+            <span class="brand-title">University Knowledge Network</span>
+            <span class="brand-subtitle">Peer learning</span>
+          </span>
+        </a>
+
+        <button
+          class="navbar-toggler ms-auto"
+          type="button"
+          data-bs-toggle="collapse"
+          data-bs-target="#navMenu"
+          aria-controls="navMenu"
+          aria-expanded="false"
+          aria-label="Toggle navigation"
+        >
+          <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div class="collapse navbar-collapse" id="navMenu">
+          <ul class="navbar-nav mx-lg-auto mt-3 mt-lg-0">
+            <li class="nav-item">
+              <a class="nav-link" href="dashboard.html">Dashboard</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="dashboard.html#mentors">Find Mentors</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="dashboard.html#skills">Skills</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="dashboard.html#feed">Community</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="dashboard.html#leaderboard"
+                >Leaderboard</a
+              >
+            </li>
+            <li class="nav-item">
+              <a class="nav-link active" href="profile.html" aria-current="page"
+                >My Profile</a
+              >
+            </li>
+          </ul>
+
+          <div class="d-flex align-items-center gap-2 mt-3 mt-lg-0 auth-actions">
+            <div class="dropdown">
+              <button
+                class="icon-btn"
+                type="button"
+                id="notifBtn"
+                data-bs-toggle="dropdown"
+                aria-expanded="false"
+                aria-label="Notifications"
+              >
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 20 20"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.5"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <path
+                    d="M5.5 8a4.5 4.5 0 0 1 9 0v3.2l1.3 2.3H4.2L5.5 11.2z"
+                  ></path>
+                  <path d="M8.2 15.5a1.9 1.9 0 0 0 3.6 0"></path>
+                </svg>
+                <span class="notif-dot"></span>
+              </button>
+              <div
+                class="dropdown-menu dropdown-menu-end dash-dropdown-menu"
+                aria-labelledby="notifBtn"
+              >
+                <div class="dash-dropdown-header">
+                  <span class="fw-bold" style="font-size: 14px; color: #17212b"
+                    >Notifications</span
+                  >
+                </div>
+                <a class="dropdown-item" href="#"
+                  >Sakib Hasan accepted your session request</a
+                >
+                <a class="dropdown-item" href="#"
+                  >You earned 20 Mentor Points</a
+                >
+                <a class="dropdown-item" href="#"
+                  >New reply on &ldquo;Understanding SQL JOINs&rdquo;</a
+                >
+              </div>
+            </div>
+
+            <div class="dropdown">
+              <button
+                class="profile-trigger"
+                type="button"
+                id="profileBtn"
+                data-bs-toggle="dropdown"
+                aria-expanded="false"
+              >
+                <span
+                  class="avatar-circle"
+                  style="width: 32px; height: 32px; font-size: 12px"
+                  >RA</span
+                >
+                <span
+                  style="font-size: 14px; font-weight: 500; color: #17324d"
+                  >Rahim</span
+                >
+                <svg
+                  width="12"
+                  height="12"
+                  viewBox="0 0 12 12"
+                  fill="none"
+                  stroke="#64748B"
+                  stroke-width="1.6"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <path d="M3 4.75L6 7.75l3-3"></path>
+                </svg>
+              </button>
+              <div
+                class="dropdown-menu dropdown-menu-end dash-dropdown-menu"
+                aria-labelledby="profileBtn"
+              >
+                <div class="dash-dropdown-header">
+                  <div class="fw-bold" style="font-size: 14px; color: #17212b">
+                    Md. Rahim Ahmed
+                  </div>
+                  <div style="font-size: 13px; color: #64748b">
+                    CSE &middot; UIU
+                  </div>
+                </div>
+                <a class="dropdown-item" href="profile.html">My profile</a>
+                <a class="dropdown-item" href="#">Account settings</a>
+                <a class="dropdown-item text-danger" href="login.html"
+                  >Sign out</a
+                >
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </nav>
+
+    <!-- ============================== PROFILE ============================== -->
+    <div class="container-custom profile-shell">
+      <!-- Profile header card -->
+      <div class="profile-header-card">
+        <div class="profile-cover"></div>
+        <div style="padding: 16px 32px 28px">
+          <div class="d-flex flex-wrap align-items-end gap-4">
+            <span class="profile-avatar-xl">
+              RA
+              <span class="profile-status-dot" title="Active now"></span>
+            </span>
+            <div class="flex-grow-1 min-w-0" style="padding-bottom: 4px">
+              <div class="d-flex flex-wrap align-items-center gap-2">
+                <h1
+                  class="heading-font fw-semibold"
+                  style="
+                    margin: 0;
+                    font-size: 26px;
+                    line-height: 1.25;
+                    letter-spacing: -0.02em;
+                    color: #17324d;
+                  "
+                >
+                  Md. Rahim Ahmed
+                </h1>
+                <span class="profile-role-badge">Mentor &amp; Learner</span>
+              </div>
+              <div class="mt-2" style="font-size: 15px; color: #64748b">
+                CSE &middot; 3rd Year &middot; United International University
+              </div>
+              <div
+                class="mono-font mt-1"
+                style="font-size: 12px; color: #64748b"
+              >
+                Student ID 011231234
+              </div>
+            </div>
+            <div class="d-flex flex-wrap gap-2" style="padding-bottom: 4px">
+              <button
+                type="button"
+                id="editProfileBtn"
+                class="btn btn-navy px-4"
+                aria-pressed="false"
+              >
+                Edit Profile
+              </button>
+              <button
+                type="button"
+                id="shareProfileBtn"
+                class="btn btn-outline-navy-card d-flex align-items-center gap-2"
+              >
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 18 18"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.6"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <circle cx="13.4" cy="4.3" r="2.1"></circle>
+                  <circle cx="4.6" cy="9" r="2.1"></circle>
+                  <circle cx="13.4" cy="13.7" r="2.1"></circle>
+                  <path d="M6.5 7.9l5-2.5"></path>
+                  <path d="M6.5 10.1l5 2.5"></path>
+                </svg>
+                <span class="js-share-label">Share Profile</span>
+              </button>
+            </div>
+          </div>
+
+          <p
+            class="mt-4 mb-0"
+            style="max-width: 720px; font-size: 15px; line-height: 1.65; color: #17212b"
+          >
+            &ldquo;Passionate about web development, databases, and helping
+            fellow students understand complex technical concepts.&rdquo;
+          </p>
+
+          <div
+            class="mt-4 pt-4 border-top"
+            style="border-color: #e2e8f0 !important"
+          >
+            <div class="row g-3 row-cols-2 row-cols-sm-3 row-cols-lg-5">
+              <div class="col">
+                <div class="profile-stat-num" style="color: #2a7f78">320</div>
+                <div class="profile-stat-label">Learning Points</div>
+              </div>
+              <div class="col">
+                <div class="profile-stat-num">185</div>
+                <div class="profile-stat-label">Mentor Points</div>
+              </div>
+              <div class="col">
+                <div class="profile-stat-num">24</div>
+                <div class="profile-stat-label">Sessions Completed</div>
+              </div>
+              <div class="col">
+                <div class="profile-stat-num">4.9</div>
+                <div class="profile-stat-label">Average Rating</div>
+              </div>
+              <div class="col">
+                <div class="profile-stat-num">48</div>
+                <div class="profile-stat-label">Community Contributions</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="profile-tabs">
+          <button type="button" class="profile-tab active" aria-pressed="true">
+            Overview
+          </button>
+          <button type="button" class="profile-tab" aria-pressed="false">
+            Skills
+          </button>
+          <button type="button" class="profile-tab" aria-pressed="false">
+            Sessions
+          </button>
+          <button type="button" class="profile-tab" aria-pressed="false">
+            Posts
+          </button>
+          <button type="button" class="profile-tab" aria-pressed="false">
+            Achievements
+          </button>
+          <div
+            class="d-flex align-items-center gap-2 ms-auto py-3"
+            style="font-size: 14px; color: #64748b"
+          >
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 18 18"
+              fill="none"
+              stroke="#64748B"
+              stroke-width="1.5"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="M1.6 9S4.2 4.4 9 4.4 16.4 9 16.4 9 13.8 13.6 9 13.6 1.6 9 1.6 9z"></path>
+              <circle cx="9" cy="9" r="2.3"></circle>
+            </svg>
+            <span
+              ><span class="fw-semibold" style="color: #17212b"
+                >Public profile</span
+              >
+              &middot; other students can request mentorship</span
+            >
+          </div>
+        </div>
+      </div>
+
+      <!-- Main + sidebar -->
+      <div class="row g-4 mt-1">
+        <!-- ============================== MAIN COLUMN ============================== -->
+        <main class="col-lg-8 d-flex flex-column gap-4">
+          <!-- About -->
+          <section class="dash-card">
+            <div class="dash-card-title">About</div>
+            <div class="row g-3 mt-1">
+              <div class="col-sm-6 col-lg-4">
+                <div class="about-item-label">Full name</div>
+                <div class="about-item-value">Md. Rahim Ahmed</div>
+              </div>
+              <div class="col-sm-6 col-lg-4">
+                <div class="about-item-label">Student ID</div>
+                <div class="about-item-value">011231234</div>
+              </div>
+              <div class="col-sm-6 col-lg-4">
+                <div class="about-item-label">Department</div>
+                <div class="about-item-value">
+                  Computer Science &amp; Engineering
+                </div>
+              </div>
+              <div class="col-sm-6 col-lg-4">
+                <div class="about-item-label">Academic year</div>
+                <div class="about-item-value">3rd Year &middot; 6th Semester</div>
+              </div>
+              <div class="col-sm-6 col-lg-4">
+                <div class="about-item-label">University</div>
+                <div class="about-item-value">
+                  United International University
+                </div>
+              </div>
+              <div class="col-sm-6 col-lg-4">
+                <div class="about-item-label">Joined</div>
+                <div class="about-item-value">February 2025</div>
+              </div>
+            </div>
+            <div
+              class="mt-4 pt-3 border-top"
+              style="border-color: #e2e8f0 !important"
+            >
+              <div class="about-item-label">Short bio</div>
+              <p class="mt-2 mb-0" style="font-size: 15px; line-height: 1.65; color: #17212b">
+                Third-year CSE student focused on full-stack web development. I
+                run weekly SQL and JavaScript sessions for first and second
+                years, and I am working towards building production-grade
+                projects with PHP and MySQL.
+              </p>
+            </div>
+          </section>
+
+          <!-- Skills I Can Teach -->
+          <section class="dash-card">
+            <div class="d-flex flex-wrap align-items-baseline justify-content-between gap-2">
+              <div>
+                <div class="dash-card-title">Skills I Can Teach</div>
+                <p class="mt-1 mb-0" style="font-size: 14px; color: #64748b">
+                  Skills and topics this student can help other students
+                  learn.
+                </p>
+              </div>
+              <a href="dashboard.html#skills" class="fw-semibold">View All Skills &rarr;</a>
+            </div>
+            <div class="row g-2 mt-1">
+              <div class="col-sm-6 col-lg-4">
+                <div class="teach-skill-item">
+                  <span style="font-size: 15px; font-weight: 500; color: #17212b">HTML &amp; CSS</span>
+                  <span class="skill-level-badge is-advanced">Advanced</span>
+                </div>
+              </div>
+              <div class="col-sm-6 col-lg-4">
+                <div class="teach-skill-item">
+                  <span style="font-size: 15px; font-weight: 500; color: #17212b">JavaScript</span>
+                  <span class="skill-level-badge">Intermediate</span>
+                </div>
+              </div>
+              <div class="col-sm-6 col-lg-4">
+                <div class="teach-skill-item">
+                  <span style="font-size: 15px; font-weight: 500; color: #17212b">SQL</span>
+                  <span class="skill-level-badge is-advanced">Advanced</span>
+                </div>
+              </div>
+              <div class="col-sm-6 col-lg-4">
+                <div class="teach-skill-item">
+                  <span style="font-size: 15px; font-weight: 500; color: #17212b">Database Management</span>
+                  <span class="skill-level-badge is-advanced">Advanced</span>
+                </div>
+              </div>
+              <div class="col-sm-6 col-lg-4">
+                <div class="teach-skill-item">
+                  <span style="font-size: 15px; font-weight: 500; color: #17212b">PHP</span>
+                  <span class="skill-level-badge">Intermediate</span>
+                </div>
+              </div>
+              <div class="col-sm-6 col-lg-4">
+                <div class="teach-skill-item">
+                  <span style="font-size: 15px; font-weight: 500; color: #17212b">WordPress</span>
+                  <span class="skill-level-badge">Intermediate</span>
+                </div>
+              </div>
+              <div class="col-sm-6 col-lg-4">
+                <div class="teach-skill-item">
+                  <span style="font-size: 15px; font-weight: 500; color: #17212b">Git &amp; GitHub</span>
+                  <span class="skill-level-badge">Intermediate</span>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- Skills I Want to Learn -->
+          <section class="dash-card">
+            <div class="dash-card-title">Skills I Want to Learn</div>
+            <p class="mt-1 mb-0" style="font-size: 14px; color: #64748b">
+              Topics Rahim is looking for a mentor in.
+            </p>
+            <div class="d-flex flex-wrap gap-2 mt-3">
+              <span class="learn-skill-chip">
+                <span style="font-size: 15px; font-weight: 500; color: #17212b">Python</span>
+                <span class="learn-skill-status is-active">Currently Learning</span>
+              </span>
+              <span class="learn-skill-chip">
+                <span style="font-size: 15px; font-weight: 500; color: #17212b">Data Structures</span>
+                <span class="learn-skill-status is-active">Currently Learning</span>
+              </span>
+              <span class="learn-skill-chip">
+                <span style="font-size: 15px; font-weight: 500; color: #17212b">Machine Learning</span>
+                <span class="learn-skill-status">Beginner</span>
+              </span>
+              <span class="learn-skill-chip">
+                <span style="font-size: 15px; font-weight: 500; color: #17212b">UI/UX Design</span>
+                <span class="learn-skill-status">Beginner</span>
+              </span>
+            </div>
+          </section>
+
+          <!-- Learning Goals -->
+          <section class="dash-card">
+            <div class="dash-card-title">Learning Goals</div>
+            <div class="d-flex flex-column gap-2 mt-3">
+              <div class="goal-item">
+                <span class="goal-num">1</span>
+                <div class="min-w-0">
+                  <div style="font-size: 15px; font-weight: 700; color: #17212b">
+                    Improve Backend Development
+                  </div>
+                  <p class="mt-1 mb-0" style="font-size: 14px; line-height: 1.55; color: #64748b">
+                    Want to become more confident with PHP and MySQL.
+                  </p>
+                </div>
+              </div>
+              <div class="goal-item">
+                <span class="goal-num">2</span>
+                <div class="min-w-0">
+                  <div style="font-size: 15px; font-weight: 700; color: #17212b">
+                    Build Real-World Projects
+                  </div>
+                  <p class="mt-1 mb-0" style="font-size: 14px; line-height: 1.55; color: #64748b">
+                    Looking for opportunities to work on practical web
+                    applications.
+                  </p>
+                </div>
+              </div>
+              <div class="goal-item">
+                <span class="goal-num">3</span>
+                <div class="min-w-0">
+                  <div style="font-size: 15px; font-weight: 700; color: #17212b">
+                    Improve Problem Solving
+                  </div>
+                  <p class="mt-1 mb-0" style="font-size: 14px; line-height: 1.55; color: #64748b">
+                    Want to strengthen data structures and algorithm skills.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- Availability -->
+          <section class="dash-card">
+            <div class="d-flex flex-wrap align-items-baseline justify-content-between gap-2">
+              <div>
+                <div class="dash-card-title">Availability</div>
+                <p class="mt-1 mb-0" style="font-size: 14px; color: #64748b">
+                  When Rahim can take learning sessions this term.
+                </p>
+              </div>
+              <span style="font-size: 14px; color: #64748b"
+                >Times shown in campus time</span
+              >
+            </div>
+            <div class="row g-2 mt-1">
+              <div class="col-6 col-md-4 col-lg-3">
+                <button type="button" class="availability-btn" aria-pressed="false">
+                  <div class="d-flex align-items-center gap-2">
+                    <span class="availability-dot is-open"></span>
+                    <span style="font-size: 14px; font-weight: 600; color: #17212b">Monday</span>
+                  </div>
+                  <div class="availability-slot is-open">6:00 PM &ndash; 9:00 PM</div>
+                </button>
+              </div>
+              <div class="col-6 col-md-4 col-lg-3">
+                <button type="button" class="availability-btn" aria-pressed="false">
+                  <div class="d-flex align-items-center gap-2">
+                    <span class="availability-dot"></span>
+                    <span style="font-size: 14px; font-weight: 600; color: #17212b">Tuesday</span>
+                  </div>
+                  <div class="availability-slot">Unavailable</div>
+                </button>
+              </div>
+              <div class="col-6 col-md-4 col-lg-3">
+                <button type="button" class="availability-btn is-selected" aria-pressed="true">
+                  <div class="d-flex align-items-center gap-2">
+                    <span class="availability-dot is-open"></span>
+                    <span style="font-size: 14px; font-weight: 600; color: #17212b">Wednesday</span>
+                  </div>
+                  <div class="availability-slot is-open">7:00 PM &ndash; 10:00 PM</div>
+                </button>
+              </div>
+              <div class="col-6 col-md-4 col-lg-3">
+                <button type="button" class="availability-btn" aria-pressed="false">
+                  <div class="d-flex align-items-center gap-2">
+                    <span class="availability-dot is-open"></span>
+                    <span style="font-size: 14px; font-weight: 600; color: #17212b">Thursday</span>
+                  </div>
+                  <div class="availability-slot is-open">6:00 PM &ndash; 9:00 PM</div>
+                </button>
+              </div>
+              <div class="col-6 col-md-4 col-lg-3">
+                <button type="button" class="availability-btn" aria-pressed="false">
+                  <div class="d-flex align-items-center gap-2">
+                    <span class="availability-dot is-open"></span>
+                    <span style="font-size: 14px; font-weight: 600; color: #17212b">Friday</span>
+                  </div>
+                  <div class="availability-slot is-open">Available on request</div>
+                </button>
+              </div>
+              <div class="col-6 col-md-4 col-lg-3">
+                <button type="button" class="availability-btn" aria-pressed="false">
+                  <div class="d-flex align-items-center gap-2">
+                    <span class="availability-dot is-open"></span>
+                    <span style="font-size: 14px; font-weight: 600; color: #17212b">Saturday</span>
+                  </div>
+                  <div class="availability-slot is-open">Available on request</div>
+                </button>
+              </div>
+              <div class="col-6 col-md-4 col-lg-3">
+                <button type="button" class="availability-btn" aria-pressed="false">
+                  <div class="d-flex align-items-center gap-2">
+                    <span class="availability-dot is-open"></span>
+                    <span style="font-size: 14px; font-weight: 600; color: #17212b">Sunday</span>
+                  </div>
+                  <div class="availability-slot is-open">Available on request</div>
+                </button>
+              </div>
+            </div>
+          </section>
+
+          <!-- Mentor Experience -->
+          <section class="dash-card">
+            <div class="dash-card-title">Mentor Experience</div>
+            <div class="row g-2 mt-1">
+              <div class="col-6 col-md-3">
+                <div class="exp-tile">
+                  <div class="exp-tile-num">24</div>
+                  <div class="exp-tile-label">Sessions Completed</div>
+                </div>
+              </div>
+              <div class="col-6 col-md-3">
+                <div class="exp-tile">
+                  <div class="exp-tile-num">18</div>
+                  <div class="exp-tile-label">Students Helped</div>
+                </div>
+              </div>
+              <div class="col-6 col-md-3">
+                <div class="exp-tile">
+                  <div class="exp-tile-num">185</div>
+                  <div class="exp-tile-label">Mentor Points</div>
+                </div>
+              </div>
+              <div class="col-6 col-md-3">
+                <div class="exp-tile">
+                  <div class="exp-tile-num">
+                    4.9 <span style="font-size: 15px; font-weight: 500; color: #64748b">/ 5</span>
+                  </div>
+                  <div class="exp-tile-label">Average Rating</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="d-flex flex-column gap-2 mt-4">
+              <blockquote class="review-card">
+                <p class="mb-0" style="font-size: 15px; line-height: 1.6; color: #17212b">
+                  &ldquo;Rahim explained SQL JOINs very clearly and used
+                  practical examples.&rdquo;
+                </p>
+                <footer class="mt-3 d-flex flex-wrap align-items-center gap-2">
+                  <span
+                    class="avatar-circle"
+                    style="width: 28px; height: 28px; font-size: 11px"
+                    >SH</span
+                  >
+                  <span style="font-size: 14px; font-weight: 600; color: #17212b">Sakib Hasan</span>
+                  <span style="font-size: 14px; color: #64748b">SQL session</span>
+                  <span class="ms-auto" style="font-size: 14px; font-weight: 600; color: #17212b">
+                    <span style="color: #f2b84b">&#9733;</span> 4.9
+                  </span>
+                </footer>
+              </blockquote>
+              <blockquote class="review-card">
+                <p class="mb-0" style="font-size: 15px; line-height: 1.6; color: #17212b">
+                  &ldquo;Very patient and helpful throughout the
+                  session.&rdquo;
+                </p>
+                <footer class="mt-3 d-flex flex-wrap align-items-center gap-2">
+                  <span
+                    class="avatar-circle"
+                    style="width: 28px; height: 28px; font-size: 11px"
+                    >NR</span
+                  >
+                  <span style="font-size: 14px; font-weight: 600; color: #17212b">Nafis Rahman</span>
+                  <span style="font-size: 14px; color: #64748b">PHP &amp; MySQL session</span>
+                  <span class="ms-auto" style="font-size: 14px; font-weight: 600; color: #17212b">
+                    <span style="color: #f2b84b">&#9733;</span> 5.0
+                  </span>
+                </footer>
+              </blockquote>
+              <a href="#" class="fw-semibold">Read all 18 reviews &rarr;</a>
+            </div>
+          </section>
+
+          <!-- Recent Activity -->
+          <section class="dash-card">
+            <div class="dash-card-title">Recent Activity</div>
+            <div class="mt-2">
+              <div class="activity-row">
+                <span class="activity-icon-box">
+                  <svg width="17" height="17" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M4 5.5A1.5 1.5 0 0 1 5.5 4H9l1.6 2H16v8.5H4z"></path>
+                  </svg>
+                </span>
+                <div class="flex-grow-1 min-w-0">
+                  <div style="font-size: 15px; font-weight: 600; color: #17212b">Shared a resource</div>
+                  <div class="mt-1" style="font-size: 14px; line-height: 1.5; color: #64748b">
+                    &ldquo;JavaScript Array Methods &ndash; Beginner Guide&rdquo;
+                  </div>
+                </div>
+                <span class="flex-shrink-0" style="font-size: 13px; color: #64748b">2 hours ago</span>
+              </div>
+              <div class="activity-row">
+                <span class="activity-icon-box">
+                  <svg width="17" height="17" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M3.5 5.5h13v11h-13z"></path>
+                    <path d="M3.5 9h13"></path>
+                    <path d="M7 3.4v3"></path>
+                    <path d="M13 3.4v3"></path>
+                  </svg>
+                </span>
+                <div class="flex-grow-1 min-w-0">
+                  <div style="font-size: 15px; font-weight: 600; color: #17212b">Completed a learning session</div>
+                  <div class="mt-1" style="font-size: 14px; line-height: 1.5; color: #64748b">
+                    SQL JOINs with Sakib Hasan &middot; 60 minutes
+                  </div>
+                </div>
+                <span class="flex-shrink-0" style="font-size: 13px; color: #64748b">yesterday</span>
+              </div>
+              <div class="activity-row">
+                <span class="activity-icon-box">
+                  <svg width="17" height="17" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M10 3.2a6.8 6.8 0 1 1 0 13.6 6.8 6.8 0 0 1 0-13.6z"></path>
+                    <path d="M10 6.6v6.8"></path>
+                    <path d="M6.6 10h6.8"></path>
+                  </svg>
+                </span>
+                <div class="flex-grow-1 min-w-0">
+                  <div style="font-size: 15px; font-weight: 600; color: #17212b">Earned 20 Mentor Points</div>
+                  <div class="mt-1" style="font-size: 14px; line-height: 1.5; color: #64748b">
+                    Session feedback rated 5.0 by the learner
+                  </div>
+                </div>
+                <span class="flex-shrink-0" style="font-size: 13px; color: #64748b">yesterday</span>
+              </div>
+              <div class="activity-row">
+                <span class="activity-icon-box">
+                  <svg width="17" height="17" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M14 9.6a5 5 0 0 1-5 5H5.6L3 16.4l.9-3.2A5 5 0 1 1 14 9.6z"></path>
+                  </svg>
+                </span>
+                <div class="flex-grow-1 min-w-0">
+                  <div style="font-size: 15px; font-weight: 600; color: #17212b">Helped a student</div>
+                  <div class="mt-1" style="font-size: 14px; line-height: 1.5; color: #64748b">
+                    Answered a Database Management question in the community
+                  </div>
+                </div>
+                <span class="flex-shrink-0" style="font-size: 13px; color: #64748b">3 days ago</span>
+              </div>
+              <div class="activity-row">
+                <span class="activity-icon-box">
+                  <svg width="17" height="17" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M10 16V5"></path>
+                    <path d="M5.4 9.6L10 5l4.6 4.6"></path>
+                  </svg>
+                </span>
+                <div class="flex-grow-1 min-w-0">
+                  <div style="font-size: 15px; font-weight: 600; color: #17212b">Received an upvote</div>
+                  <div class="mt-1" style="font-size: 14px; line-height: 1.5; color: #64748b">
+                    &ldquo;Understanding SQL JOINs with Simple Examples&rdquo;
+                    reached 24 upvotes
+                  </div>
+                </div>
+                <span class="flex-shrink-0" style="font-size: 13px; color: #64748b">4 days ago</span>
+              </div>
+            </div>
+          </section>
+
+          <!-- Community Contributions -->
+          <section class="dash-card">
+            <div class="d-flex flex-wrap align-items-baseline justify-content-between gap-2">
+              <div class="dash-card-title">Community Contributions</div>
+              <span style="font-size: 14px; color: #64748b">48 posts and answers</span>
+            </div>
+            <div class="d-flex flex-column gap-3 mt-3">
+              <article class="feed-post-card">
+                <h3 class="heading-font fw-semibold mb-0" style="font-size: 16px; line-height: 1.4; color: #17324d">
+                  Understanding SQL JOINs with Simple Examples
+                </h3>
+                <p class="mt-2 mb-0" style="font-size: 15px; line-height: 1.6; color: #17212b">
+                  A simple explanation of INNER JOIN and LEFT JOIN using
+                  practical tables.
+                </p>
+                <div class="d-flex flex-wrap gap-2 mt-3">
+                  <span class="post-tag">SQL</span>
+                  <span class="post-tag">Database</span>
+                </div>
+                <div class="d-flex flex-wrap align-items-center gap-3 mt-3 pt-3 border-top" style="border-color: #e2e8f0 !important; font-size: 14px; color: #64748b">
+                  <span><strong style="color: #17212b">24</strong> Upvotes</span>
+                  <span><strong style="color: #17212b">4</strong> Comments</span>
+                  <span>12 Aug 2026</span>
+                  <a href="dashboard.html#feed" class="ms-auto fw-semibold">Read Post &rarr;</a>
+                </div>
+              </article>
+
+              <article class="feed-post-card">
+                <h3 class="heading-font fw-semibold mb-0" style="font-size: 16px; line-height: 1.4; color: #17324d">
+                  JavaScript Array Methods &ndash; Beginner Guide
+                </h3>
+                <p class="mt-2 mb-0" style="font-size: 15px; line-height: 1.6; color: #17212b">
+                  map, filter and reduce explained with the examples I use in
+                  my sessions.
+                </p>
+                <div class="d-flex flex-wrap gap-2 mt-3">
+                  <span class="post-tag">JavaScript</span>
+                  <span class="post-tag">Resource</span>
+                </div>
+                <div class="d-flex flex-wrap align-items-center gap-3 mt-3 pt-3 border-top" style="border-color: #e2e8f0 !important; font-size: 14px; color: #64748b">
+                  <span><strong style="color: #17212b">37</strong> Upvotes</span>
+                  <span><strong style="color: #17212b">9</strong> Comments</span>
+                  <span>28 Jul 2026</span>
+                  <a href="dashboard.html#feed" class="ms-auto fw-semibold">Read Post &rarr;</a>
+                </div>
+              </article>
+
+              <article class="feed-post-card">
+                <h3 class="heading-font fw-semibold mb-0" style="font-size: 16px; line-height: 1.4; color: #17324d">
+                  Setting up XAMPP for your first PHP project
+                </h3>
+                <p class="mt-2 mb-0" style="font-size: 15px; line-height: 1.6; color: #17212b">
+                  Every mistake I made in my first week, and the fix for each
+                  one.
+                </p>
+                <div class="d-flex flex-wrap gap-2 mt-3">
+                  <span class="post-tag">PHP</span>
+                  <span class="post-tag">Tutorial</span>
+                </div>
+                <div class="d-flex flex-wrap align-items-center gap-3 mt-3 pt-3 border-top" style="border-color: #e2e8f0 !important; font-size: 14px; color: #64748b">
+                  <span><strong style="color: #17212b">18</strong> Upvotes</span>
+                  <span><strong style="color: #17212b">6</strong> Comments</span>
+                  <span>9 Jul 2026</span>
+                  <a href="dashboard.html#feed" class="ms-auto fw-semibold">Read Post &rarr;</a>
+                </div>
+              </article>
+            </div>
+          </section>
+
+          <!-- Achievements & Certificates -->
+          <section class="dash-card">
+            <div class="d-flex flex-wrap align-items-baseline justify-content-between gap-2">
+              <div class="dash-card-title">Achievements &amp; Certificates</div>
+              <button type="button" class="btn btn-outline-navy-card btn-sm">
+                Add Certificate
+              </button>
+            </div>
+            <div class="row g-2 mt-1">
+              <div class="col-sm-6 col-lg-4">
+                <div class="cert-card">
+                  <span class="cert-icon-box">
+                    <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                      <circle cx="10" cy="8" r="4.4"></circle>
+                      <path d="M7.4 12.2L6.4 17l3.6-1.9L13.6 17l-1-4.8"></path>
+                    </svg>
+                  </span>
+                  <div class="mt-3" style="font-size: 15px; font-weight: 700; line-height: 1.4; color: #17212b">
+                    Web Development Fundamentals
+                  </div>
+                  <div class="mt-1" style="font-size: 14px; color: #64748b">Coursera</div>
+                  <div class="mono-font mt-1" style="font-size: 12px; color: #64748b">Mar 2026</div>
+                  <button type="button" class="btn btn-outline-navy-card btn-sm w-100 mt-3">View</button>
+                </div>
+              </div>
+              <div class="col-sm-6 col-lg-4">
+                <div class="cert-card">
+                  <span class="cert-icon-box">
+                    <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                      <circle cx="10" cy="8" r="4.4"></circle>
+                      <path d="M7.4 12.2L6.4 17l3.6-1.9L13.6 17l-1-4.8"></path>
+                    </svg>
+                  </span>
+                  <div class="mt-3" style="font-size: 15px; font-weight: 700; line-height: 1.4; color: #17212b">
+                    Database Management Workshop
+                  </div>
+                  <div class="mt-1" style="font-size: 14px; color: #64748b">UIU CSE Department</div>
+                  <div class="mono-font mt-1" style="font-size: 12px; color: #64748b">Jan 2026</div>
+                  <button type="button" class="btn btn-outline-navy-card btn-sm w-100 mt-3">View</button>
+                </div>
+              </div>
+              <div class="col-sm-6 col-lg-4">
+                <div class="cert-card">
+                  <span class="cert-icon-box">
+                    <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                      <circle cx="10" cy="8" r="4.4"></circle>
+                      <path d="M7.4 12.2L6.4 17l3.6-1.9L13.6 17l-1-4.8"></path>
+                    </svg>
+                  </span>
+                  <div class="mt-3" style="font-size: 15px; font-weight: 700; line-height: 1.4; color: #17212b">
+                    Hackathon 2026 &ndash; Participant
+                  </div>
+                  <div class="mt-1" style="font-size: 14px; color: #64748b">UIU Computer Club</div>
+                  <div class="mono-font mt-1" style="font-size: 12px; color: #64748b">Feb 2026</div>
+                  <button type="button" class="btn btn-outline-navy-card btn-sm w-100 mt-3">View</button>
+                </div>
+              </div>
+              <div class="col-sm-6 col-lg-4">
+                <div class="cert-empty h-100 d-flex flex-column justify-content-center">
+                  <span class="cert-empty-icon">
+                    <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round">
+                      <path d="M10 5v10"></path>
+                      <path d="M5 10h10"></path>
+                    </svg>
+                  </span>
+                  <div class="mt-3" style="font-size: 14px; font-weight: 700; color: #17212b">
+                    No competition results yet
+                  </div>
+                  <p class="mt-1 mb-0" style="font-size: 13px; line-height: 1.5; color: #64748b">
+                    Certificates and achievements will appear here.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </section>
+        </main>
+
+        <!-- ============================== SIDEBAR ============================== -->
+        <aside class="col-lg-4 d-flex flex-column gap-4">
+          <!-- Profile completion -->
+          <div class="dash-card">
+            <div class="d-flex align-items-baseline justify-content-between gap-2">
+              <div class="dash-card-title" style="font-size: 15px">Profile Completion</div>
+              <span class="fw-bold" style="color: #2a7f78">85%</span>
+            </div>
+            <div class="completion-track mt-3" role="progressbar" aria-label="Profile completion" aria-valuenow="85" aria-valuemin="0" aria-valuemax="100">
+              <div class="completion-fill" style="width: 85%"></div>
+            </div>
+            <div class="d-flex flex-column gap-2 mt-3">
+              <div class="checklist-row is-done">
+                <span class="check-mark is-done">&#10003;</span>
+                Basic Information
+              </div>
+              <div class="checklist-row is-done">
+                <span class="check-mark is-done">&#10003;</span>
+                Teaching Skills
+              </div>
+              <div class="checklist-row is-done">
+                <span class="check-mark is-done">&#10003;</span>
+                Learning Skills
+              </div>
+              <div class="checklist-row is-done">
+                <span class="check-mark is-done">&#10003;</span>
+                Learning Goals
+              </div>
+              <div class="checklist-row">
+                <span class="check-mark"></span>
+                Add Availability
+              </div>
+              <div class="checklist-row">
+                <span class="check-mark"></span>
+                Add Achievement
+              </div>
+            </div>
+            <button type="button" class="btn btn-navy w-100 mt-3">Complete Profile</button>
+          </div>
+
+          <!-- Reputation -->
+          <div class="reputation-panel">
+            <div class="heading-font fw-semibold" style="font-size: 15px; color: #fff">Reputation</div>
+            <div class="mt-3">
+              <div class="reputation-row">
+                <span class="reputation-label">Learning Points</span>
+                <span class="reputation-value">320</span>
+              </div>
+              <div class="reputation-row">
+                <span class="reputation-label">Mentor Points</span>
+                <span class="reputation-value is-gold">185</span>
+              </div>
+              <div class="reputation-row">
+                <span class="reputation-label">Community Contributions</span>
+                <span class="reputation-value">48</span>
+              </div>
+              <div class="reputation-row">
+                <span class="reputation-label">Sessions Completed</span>
+                <span class="reputation-value">24</span>
+              </div>
+              <div class="reputation-row">
+                <span class="reputation-label">Average Rating</span>
+                <span class="reputation-value">4.9</span>
+              </div>
+            </div>
+            <p class="mt-3 mb-0" style="font-size: 13px; line-height: 1.55; color: #a9b9c8">
+              Your reputation grows through completed sessions, helpful
+              community contributions, and positive peer feedback.
+            </p>
+          </div>
+
+          <!-- Top skills -->
+          <div class="dash-card">
+            <div class="dash-card-title" style="font-size: 15px">Top Skills</div>
+            <div class="d-flex flex-column gap-3 mt-3">
+              <div>
+                <div class="d-flex align-items-baseline justify-content-between gap-2">
+                  <span style="font-size: 14px; font-weight: 500; color: #17212b">SQL</span>
+                  <span style="font-size: 13px; color: #64748b">11 sessions</span>
+                </div>
+                <div class="skill-progress-track">
+                  <div class="skill-progress-fill" style="width: 92%"></div>
+                </div>
+              </div>
+              <div>
+                <div class="d-flex align-items-baseline justify-content-between gap-2">
+                  <span style="font-size: 14px; font-weight: 500; color: #17212b">JavaScript</span>
+                  <span style="font-size: 13px; color: #64748b">6 sessions</span>
+                </div>
+                <div class="skill-progress-track">
+                  <div class="skill-progress-fill" style="width: 62%"></div>
+                </div>
+              </div>
+              <div>
+                <div class="d-flex align-items-baseline justify-content-between gap-2">
+                  <span style="font-size: 14px; font-weight: 500; color: #17212b">HTML &amp; CSS</span>
+                  <span style="font-size: 13px; color: #64748b">5 sessions</span>
+                </div>
+                <div class="skill-progress-track">
+                  <div class="skill-progress-fill" style="width: 50%"></div>
+                </div>
+              </div>
+              <div>
+                <div class="d-flex align-items-baseline justify-content-between gap-2">
+                  <span style="font-size: 14px; font-weight: 500; color: #17212b">Database Management</span>
+                  <span style="font-size: 13px; color: #64748b">2 sessions</span>
+                </div>
+                <div class="skill-progress-track">
+                  <div class="skill-progress-fill" style="width: 26%"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Shared interests -->
+          <div class="dash-card">
+            <div class="dash-card-title" style="font-size: 15px">Shared Interests</div>
+            <p class="mt-1 mb-0" style="font-size: 14px; line-height: 1.5; color: #64748b">
+              Topics Rahim shares with students in your department.
+            </p>
+            <div class="d-flex flex-wrap gap-2 mt-3">
+              <a href="#" class="interest-chip">Web Development</a>
+              <a href="#" class="interest-chip">Programming</a>
+              <a href="#" class="interest-chip">Database</a>
+              <a href="#" class="interest-chip">Software Engineering</a>
+            </div>
+          </div>
+
+          <!-- Visitor actions (shown to other students viewing this profile) -->
+          <div class="dash-card">
+            <div class="dash-card-title" style="font-size: 15px">Viewing another student?</div>
+            <p class="mt-1 mb-0" style="font-size: 14px; line-height: 1.55; color: #64748b">
+              These are the actions a visitor sees instead of Edit Profile.
+            </p>
+            <div class="d-flex flex-column gap-2 mt-3">
+              <button type="button" class="btn btn-teal w-100">Request Mentorship</button>
+              <button type="button" class="btn btn-outline-navy-card w-100">Connect</button>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </div>
+
+    <!-- Bootstrap 5 JS bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="assets/js/script.js"></script>
+  </body>
+</html>

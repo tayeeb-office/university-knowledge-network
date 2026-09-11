@@ -1,0 +1,814 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Skills | University Knowledge Network</title>
+    <meta
+      name="description"
+      content="Discover skills across your university community, teach what you know, and find the peers who can mentor you in what you want to learn."
+    />
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&family=IBM+Plex+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+
+    <!-- Bootstrap 5 -->
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+
+    <!-- Custom styles -->
+    <link rel="stylesheet" href="assets/css/style.css" />
+  </head>
+  <body>
+    <!-- ============================== NAVBAR ============================== -->
+    <nav
+      class="navbar navbar-expand-lg navbar-light bg-white sticky-top border-bottom site-navbar justify-content-between"
+      id="mainNav"
+    >
+      <div class="container-custom d-flex align-items-center flex-wrap">
+        <a class="navbar-brand" href="dashboard.html">
+          <span class="brand-icon">
+            <svg
+              width="24"
+              height="24"
+              viewBox="0 0 20 20"
+              fill="none"
+              stroke-width="1.4"
+            >
+              <line x1="10" y1="5" x2="4.5" y2="14" stroke="#7A93AC"></line>
+              <line x1="10" y1="5" x2="15.5" y2="14" stroke="#7A93AC"></line>
+              <line x1="4.5" y1="14" x2="15.5" y2="14" stroke="#7A93AC"></line>
+              <circle cx="10" cy="5" r="2.4" fill="#F2B84B"></circle>
+              <circle cx="4.5" cy="14" r="2.1" fill="#2A7F78"></circle>
+              <circle cx="15.5" cy="14" r="2.1" fill="#FFFFFF"></circle>
+            </svg>
+          </span>
+          <span class="brand-text">
+            <span class="brand-title">University Knowledge Network</span>
+            <span class="brand-subtitle">Peer learning</span>
+          </span>
+        </a>
+
+        <button
+          class="navbar-toggler ms-auto"
+          type="button"
+          data-bs-toggle="collapse"
+          data-bs-target="#navMenu"
+          aria-controls="navMenu"
+          aria-expanded="false"
+          aria-label="Toggle navigation"
+        >
+          <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div class="collapse navbar-collapse" id="navMenu">
+          <ul class="navbar-nav mx-lg-auto mt-3 mt-lg-0">
+            <li class="nav-item">
+              <a class="nav-link" href="dashboard.html">Dashboard</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="#mentors">Find Mentors</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link active" href="skills.html" aria-current="page"
+                >Skills</a
+              >
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="dashboard.html#feed">Community</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="dashboard.html#leaderboard"
+                >Leaderboard</a
+              >
+            </li>
+          </ul>
+
+          <div class="d-flex align-items-center gap-2 mt-3 mt-lg-0 auth-actions">
+            <div class="dropdown">
+              <button
+                class="icon-btn"
+                type="button"
+                id="notifBtn"
+                data-bs-toggle="dropdown"
+                aria-expanded="false"
+                aria-label="Notifications"
+              >
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 20 20"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.5"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <path
+                    d="M5.5 8a4.5 4.5 0 0 1 9 0v3.2l1.3 2.3H4.2L5.5 11.2z"
+                  ></path>
+                  <path d="M8.2 15.5a1.9 1.9 0 0 0 3.6 0"></path>
+                </svg>
+                <span class="notif-dot"></span>
+              </button>
+              <div
+                class="dropdown-menu dropdown-menu-end dash-dropdown-menu"
+                aria-labelledby="notifBtn"
+              >
+                <div class="dash-dropdown-header">
+                  <span class="fw-bold" style="font-size: 14px; color: #17212b"
+                    >Notifications</span
+                  >
+                </div>
+                <a class="dropdown-item" href="#"
+                  >Sakib Hasan accepted your session request</a
+                >
+                <a class="dropdown-item" href="#"
+                  >You earned 20 Mentor Points</a
+                >
+                <a class="dropdown-item" href="#"
+                  >New reply on &ldquo;Understanding SQL JOINs&rdquo;</a
+                >
+              </div>
+            </div>
+
+            <div class="dropdown">
+              <button
+                class="profile-trigger"
+                type="button"
+                id="profileBtn"
+                data-bs-toggle="dropdown"
+                aria-expanded="false"
+              >
+                <span
+                  class="avatar-circle"
+                  style="width: 32px; height: 32px; font-size: 12px"
+                  >RA</span
+                >
+                <span
+                  style="font-size: 14px; font-weight: 500; color: #17324d"
+                  >Rahim</span
+                >
+                <svg
+                  width="12"
+                  height="12"
+                  viewBox="0 0 12 12"
+                  fill="none"
+                  stroke="#64748B"
+                  stroke-width="1.6"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <path d="M3 4.75L6 7.75l3-3"></path>
+                </svg>
+              </button>
+              <div
+                class="dropdown-menu dropdown-menu-end dash-dropdown-menu"
+                aria-labelledby="profileBtn"
+              >
+                <div class="dash-dropdown-header">
+                  <div class="fw-bold" style="font-size: 14px; color: #17212b">
+                    Md. Rahim Ahmed
+                  </div>
+                  <div style="font-size: 13px; color: #64748b">
+                    CSE &middot; UIU
+                  </div>
+                </div>
+                <a class="dropdown-item" href="profile.html">My profile</a>
+                <a class="dropdown-item" href="#">My skills</a>
+                <a class="dropdown-item" href="#">Account settings</a>
+                <a class="dropdown-item text-danger" href="login.html"
+                  >Sign out</a
+                >
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </nav>
+
+    <!-- ============================== SKILLS PAGE ============================== -->
+    <div class="container-custom skills-shell" id="top">
+      <div class="d-flex flex-column gap-4">
+        <!-- ============================== HERO ============================== -->
+        <section class="skills-hero-card d-flex flex-wrap gap-4 align-items-center">
+          <div style="flex: 1.3 1 380px; min-width: 0">
+            <div class="section-eyebrow">Skills</div>
+            <h1
+              class="heading-font fw-semibold"
+              style="
+                margin: 12px 0 0;
+                font-size: 36px;
+                line-height: 1.18;
+                letter-spacing: -0.025em;
+                color: #17324d;
+              "
+            >
+              Discover Skills. Share Knowledge. Grow Together.
+            </h1>
+            <p
+              class="mt-3 mb-0"
+              style="max-width: 560px; font-size: 17px; line-height: 1.65; color: #64748b"
+            >
+              Explore skills from your university community, teach what you
+              know, and find students who can help you learn.
+            </p>
+            <div class="d-flex flex-wrap gap-3 mt-4">
+              <button type="button" class="btn btn-navy py-3 px-4">
+                Add Your Skills
+              </button>
+              <a href="#mentors" class="btn btn-outline-teal py-3 px-4"
+                >Find Learning Partners</a
+              >
+            </div>
+          </div>
+          <div style="flex: 1 1 300px; min-width: 0">
+            <div class="hero-visual-card">
+              <div class="hero-visual-placeholder" style="height: 200px">
+                <span class="placeholder-tag">skill network graphic</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ============================== SEARCH & FILTER ============================== -->
+        <section class="dash-card">
+          <div
+            class="d-flex flex-wrap align-items-baseline justify-content-between gap-2"
+          >
+            <div class="dash-card-title" style="font-size: 20px">
+              Find Skills
+            </div>
+            <span id="resultCount" style="font-size: 14px; color: #64748b"
+              >8 skills in the All Skills view</span
+            >
+          </div>
+
+          <div class="skill-search-wrap mt-3">
+            <span class="skill-search-icon">
+              <svg
+                width="19"
+                height="19"
+                viewBox="0 0 20 20"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.6"
+                stroke-linecap="round"
+              >
+                <circle cx="8.8" cy="8.8" r="5.6"></circle>
+                <path d="M13 13l4 4"></path>
+              </svg>
+            </span>
+            <input
+              type="search"
+              id="skillSearchInput"
+              class="skill-search-input"
+              placeholder="Search skills, topics or technologies..."
+              aria-label="Search skills"
+            />
+          </div>
+
+          <div class="d-flex flex-wrap align-items-center gap-3 mt-3">
+            <div class="d-flex flex-wrap gap-2" id="skillFilters">
+              <button type="button" class="filter-pill active" data-filter="All Skills">
+                All Skills
+              </button>
+              <button type="button" class="filter-pill" data-filter="Programming">
+                Programming
+              </button>
+              <button type="button" class="filter-pill" data-filter="Database">
+                Database
+              </button>
+              <button type="button" class="filter-pill" data-filter="Design">
+                Design
+              </button>
+              <button type="button" class="filter-pill" data-filter="Business">
+                Business
+              </button>
+              <button type="button" class="filter-pill" data-filter="Communication">
+                Communication
+              </button>
+              <button type="button" class="filter-pill" data-filter="Research">
+                Research
+              </button>
+            </div>
+            <button type="button" id="skillSortBtn" class="sort-btn ms-auto">
+              <span class="sort-label">Most Popular</span>
+              <svg
+                width="12"
+                height="12"
+                viewBox="0 0 12 12"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.6"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path d="M3 4.75L6 7.75l3-3"></path>
+              </svg>
+            </button>
+          </div>
+        </section>
+
+        <!-- ============================== SKILL CATEGORIES ============================== -->
+        <section>
+          <h2
+            class="heading-font fw-semibold"
+            style="margin: 0; font-size: 22px; letter-spacing: -0.015em; color: #17324d"
+          >
+            Skill Categories
+          </h2>
+          <div class="row g-3 mt-1">
+            <div class="col-sm-6 col-lg-3">
+              <a
+                href="#trending"
+                class="category-card js-category-card"
+                data-category="Programming"
+              >
+                <span class="category-icon-box">
+                  <svg width="21" height="21" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M7.2 6.5L3.8 10l3.4 3.5"></path>
+                    <path d="M12.8 6.5L16.2 10l-3.4 3.5"></path>
+                    <path d="M11.2 5l-2.4 10"></path>
+                  </svg>
+                </span>
+                <div class="mt-3 heading-font fw-semibold" style="font-size: 17px; color: #17324d">
+                  Programming
+                </div>
+                <div class="mt-1" style="font-size: 14px; color: #64748b">125 skills</div>
+                <p class="mt-2 mb-0" style="font-size: 13px; line-height: 1.5; color: #64748b">
+                  Languages and frameworks used across coursework projects.
+                </p>
+                <div class="d-flex flex-wrap gap-2 mt-3">
+                  <span class="skill-tag-badge">JavaScript</span>
+                  <span class="skill-tag-badge">Python</span>
+                  <span class="skill-tag-badge">Java</span>
+                  <span class="skill-tag-badge">C++</span>
+                </div>
+              </a>
+            </div>
+            <div class="col-sm-6 col-lg-3">
+              <a
+                href="#trending"
+                class="category-card js-category-card"
+                data-category="Database"
+              >
+                <span class="category-icon-box">
+                  <svg width="21" height="21" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M10 3.2c3.4 0 6 .9 6 2s-2.6 2-6 2-6-.9-6-2 2.6-2 6-2z"></path>
+                    <path d="M4 5.2v9.6c0 1.1 2.6 2 6 2s6-.9 6-2V5.2"></path>
+                    <path d="M4 10c0 1.1 2.6 2 6 2s6-.9 6-2"></path>
+                  </svg>
+                </span>
+                <div class="mt-3 heading-font fw-semibold" style="font-size: 17px; color: #17324d">
+                  Database
+                </div>
+                <div class="mt-1" style="font-size: 14px; color: #64748b">48 skills</div>
+                <p class="mt-2 mb-0" style="font-size: 13px; line-height: 1.5; color: #64748b">
+                  Querying, schema design and managing relational data.
+                </p>
+                <div class="d-flex flex-wrap gap-2 mt-3">
+                  <span class="skill-tag-badge">SQL</span>
+                  <span class="skill-tag-badge">MySQL</span>
+                  <span class="skill-tag-badge">Database Design</span>
+                </div>
+              </a>
+            </div>
+            <div class="col-sm-6 col-lg-3">
+              <a
+                href="#trending"
+                class="category-card js-category-card"
+                data-category="Design"
+              >
+                <span class="category-icon-box">
+                  <svg width="21" height="21" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M13.4 3.6l3 3-8.2 8.2-3.6.8.8-3.6z"></path>
+                    <path d="M11.6 5.4l3 3"></path>
+                  </svg>
+                </span>
+                <div class="mt-3 heading-font fw-semibold" style="font-size: 17px; color: #17324d">
+                  Design
+                </div>
+                <div class="mt-1" style="font-size: 14px; color: #64748b">65 skills</div>
+                <p class="mt-2 mb-0" style="font-size: 13px; line-height: 1.5; color: #64748b">
+                  Interface, visual and product design fundamentals.
+                </p>
+                <div class="d-flex flex-wrap gap-2 mt-3">
+                  <span class="skill-tag-badge">UI/UX</span>
+                  <span class="skill-tag-badge">Figma</span>
+                  <span class="skill-tag-badge">Graphic Design</span>
+                </div>
+              </a>
+            </div>
+            <div class="col-sm-6 col-lg-3">
+              <a
+                href="#trending"
+                class="category-card js-category-card"
+                data-category="Communication"
+              >
+                <span class="category-icon-box">
+                  <svg width="21" height="21" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M4 6.5A2 2 0 0 1 6 4.5h8a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2H8.5L5 16.2V13.5H6a2 2 0 0 1-2-2z"></path>
+                  </svg>
+                </span>
+                <div class="mt-3 heading-font fw-semibold" style="font-size: 17px; color: #17324d">
+                  Communication
+                </div>
+                <div class="mt-1" style="font-size: 14px; color: #64748b">32 skills</div>
+                <p class="mt-2 mb-0" style="font-size: 13px; line-height: 1.5; color: #64748b">
+                  Presenting, writing and speaking with confidence.
+                </p>
+                <div class="d-flex flex-wrap gap-2 mt-3">
+                  <span class="skill-tag-badge">Presentation</span>
+                  <span class="skill-tag-badge">Public Speaking</span>
+                </div>
+              </a>
+            </div>
+          </div>
+        </section>
+
+        <!-- ============================== TRENDING SKILLS ============================== -->
+        <section id="trending" style="scroll-margin-top: 96px">
+          <div
+            class="d-flex flex-wrap align-items-baseline justify-content-between gap-2"
+          >
+            <h2
+              class="heading-font fw-semibold"
+              style="margin: 0; font-size: 22px; letter-spacing: -0.015em; color: #17324d"
+            >
+              Trending Skills in Your University
+            </h2>
+            <span id="sortSummary" style="font-size: 14px; color: #64748b"
+              >Sorted by Most Popular</span
+            >
+          </div>
+          <div class="row g-3 mt-1" id="trendingGrid"></div>
+        </section>
+
+        <!-- ============================== MY SKILLS ============================== -->
+        <section id="my-skills" style="scroll-margin-top: 96px">
+          <h2
+            class="heading-font fw-semibold"
+            style="margin: 0; font-size: 22px; letter-spacing: -0.015em; color: #17324d"
+          >
+            My Skills
+          </h2>
+          <div class="row g-3 mt-1 align-items-stretch">
+            <div class="col-lg-7">
+              <div class="dash-card h-100 d-flex flex-column">
+                <div class="d-flex align-items-start gap-3">
+                  <span
+                    style="width: 40px; height: 40px; flex: none; border-radius: 8px; background: #17324d; display: flex; align-items: center; justify-content: center; color: #f2b84b"
+                  >
+                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M2.5 7.5L10 4l7.5 3.5L10 11z"></path>
+                      <path d="M5.5 9.2v3.6c0 1.2 2 2.2 4.5 2.2s4.5-1 4.5-2.2V9.2"></path>
+                    </svg>
+                  </span>
+                  <div class="min-w-0">
+                    <div class="dash-card-title" style="font-size: 17px">
+                      Skills I Can Teach
+                    </div>
+                    <p class="mt-1 mb-0" style="font-size: 14px; line-height: 1.5; color: #64748b">
+                      Skills you can share with other students.
+                    </p>
+                  </div>
+                </div>
+
+                <div class="d-flex flex-column gap-2 mt-3">
+                  <div class="skill-teach-item">
+                    <div class="flex-grow-1 min-w-0">
+                      <div class="d-flex flex-wrap align-items-center gap-2">
+                        <span style="font-size: 15px; font-weight: 700; color: #17212b">HTML &amp; CSS</span>
+                        <span class="level-badge is-advanced">Advanced</span>
+                      </div>
+                      <div class="mt-1" style="font-size: 14px; color: #64748b">18 students helped &middot; 24 sessions</div>
+                    </div>
+                    <button type="button" class="btn btn-outline-navy-card btn-sm flex-shrink-0">Edit</button>
+                  </div>
+                  <div class="skill-teach-item">
+                    <div class="flex-grow-1 min-w-0">
+                      <div class="d-flex flex-wrap align-items-center gap-2">
+                        <span style="font-size: 15px; font-weight: 700; color: #17212b">JavaScript</span>
+                        <span class="level-badge is-intermediate">Intermediate</span>
+                      </div>
+                      <div class="mt-1" style="font-size: 14px; color: #64748b">11 students helped &middot; 15 sessions</div>
+                    </div>
+                    <button type="button" class="btn btn-outline-navy-card btn-sm flex-shrink-0">Edit</button>
+                  </div>
+                  <div class="skill-teach-item">
+                    <div class="flex-grow-1 min-w-0">
+                      <div class="d-flex flex-wrap align-items-center gap-2">
+                        <span style="font-size: 15px; font-weight: 700; color: #17212b">SQL</span>
+                        <span class="level-badge is-advanced">Advanced</span>
+                      </div>
+                      <div class="mt-1" style="font-size: 14px; color: #64748b">14 students helped &middot; 19 sessions</div>
+                    </div>
+                    <button type="button" class="btn btn-outline-navy-card btn-sm flex-shrink-0">Edit</button>
+                  </div>
+                  <div class="skill-teach-item">
+                    <div class="flex-grow-1 min-w-0">
+                      <div class="d-flex flex-wrap align-items-center gap-2">
+                        <span style="font-size: 15px; font-weight: 700; color: #17212b">PHP</span>
+                        <span class="level-badge is-intermediate">Intermediate</span>
+                      </div>
+                      <div class="mt-1" style="font-size: 14px; color: #64748b">6 students helped &middot; 8 sessions</div>
+                    </div>
+                    <button type="button" class="btn btn-outline-navy-card btn-sm flex-shrink-0">Edit</button>
+                  </div>
+                </div>
+
+                <button type="button" class="btn btn-navy align-self-start mt-3">
+                  Manage Skills
+                </button>
+              </div>
+            </div>
+
+            <div class="col-lg-5">
+              <div class="dash-card h-100 d-flex flex-column">
+                <div class="d-flex align-items-start gap-3">
+                  <span
+                    style="width: 40px; height: 40px; flex: none; border-radius: 8px; background: #f5f7fa; border: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: center; color: #2a7f78"
+                  >
+                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M3.5 5.5A2 2 0 0 1 5.5 3.5H16v11H5.5a2 2 0 0 0-2 2z"></path>
+                      <path d="M8 7.5h5"></path>
+                    </svg>
+                  </span>
+                  <div class="min-w-0">
+                    <div class="dash-card-title" style="font-size: 17px">
+                      Skills I Want To Learn
+                    </div>
+                    <p class="mt-1 mb-0" style="font-size: 14px; line-height: 1.5; color: #64748b">
+                      Skills you want to improve.
+                    </p>
+                  </div>
+                </div>
+
+                <div class="d-flex flex-column gap-2 mt-3">
+                  <div class="skill-learn-item">
+                    <div class="flex-grow-1 min-w-0">
+                      <div style="font-size: 15px; font-weight: 700; color: #17212b">Python</div>
+                      <div class="mt-1 d-flex flex-wrap align-items-center gap-2">
+                        <span class="level-badge is-beginner">Beginner</span>
+                        <span style="font-size: 14px; color: #64748b">30 mentors available</span>
+                      </div>
+                    </div>
+                    <a href="#mentors" class="btn btn-outline-navy-card btn-sm flex-shrink-0">Find mentor</a>
+                  </div>
+                  <div class="skill-learn-item">
+                    <div class="flex-grow-1 min-w-0">
+                      <div style="font-size: 15px; font-weight: 700; color: #17212b">Data Structures</div>
+                      <div class="mt-1 d-flex flex-wrap align-items-center gap-2">
+                        <span class="level-badge is-intermediate">Intermediate</span>
+                        <span style="font-size: 14px; color: #64748b">22 mentors available</span>
+                      </div>
+                    </div>
+                    <a href="#mentors" class="btn btn-outline-navy-card btn-sm flex-shrink-0">Find mentor</a>
+                  </div>
+                  <div class="skill-learn-item">
+                    <div class="flex-grow-1 min-w-0">
+                      <div style="font-size: 15px; font-weight: 700; color: #17212b">Machine Learning</div>
+                      <div class="mt-1 d-flex flex-wrap align-items-center gap-2">
+                        <span class="level-badge is-beginner">Beginner</span>
+                        <span style="font-size: 14px; color: #64748b">9 mentors available</span>
+                      </div>
+                    </div>
+                    <a href="#mentors" class="btn btn-outline-navy-card btn-sm flex-shrink-0">Find mentor</a>
+                  </div>
+                </div>
+
+                <button type="button" class="btn btn-outline-teal align-self-start mt-3">
+                  Add Learning Goal
+                </button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ============================== SKILL DETAIL ============================== -->
+        <section class="skill-detail-card d-flex flex-wrap gap-4">
+          <div style="flex: 1.2 1 340px; min-width: 0">
+            <div class="section-eyebrow">Skill detail</div>
+            <h2
+              id="detailName"
+              class="heading-font fw-semibold"
+              style="margin: 10px 0 0; font-size: 28px; letter-spacing: -0.02em; color: #17324d"
+            >
+              JavaScript
+            </h2>
+            <div class="mt-2 d-flex flex-wrap align-items-center gap-2">
+              <span
+                id="detailCategory"
+                style="padding: 4px 11px; border-radius: 999px; background: #f5f7fa; border: 1px solid #e2e8f0; font-size: 13px; font-weight: 500; color: #17324d"
+                >Programming</span
+              >
+              <span id="detailUpdated" style="font-size: 14px; color: #64748b"
+                >Updated 2 days ago</span
+              >
+            </div>
+            <p
+              id="detailDescription"
+              class="mt-3 mb-0"
+              style="max-width: 520px; font-size: 16px; line-height: 1.65; color: #17212b"
+            >
+              Frontend programming language used for building interactive web
+              applications.
+            </p>
+            <div class="d-flex flex-wrap gap-3 mt-4">
+              <a href="#mentors" class="btn btn-navy px-4">Find Mentors</a>
+              <button type="button" class="btn btn-outline-teal px-4">
+                Offer Help
+              </button>
+            </div>
+          </div>
+          <div
+            style="flex: 1 1 300px; min-width: 0"
+            class="row g-2 row-cols-2"
+          >
+            <div class="col">
+              <div class="exp-tile">
+                <div id="detailStudents" class="exp-tile-num">124</div>
+                <div class="exp-tile-label">Students</div>
+              </div>
+            </div>
+            <div class="col">
+              <div class="exp-tile">
+                <div id="detailMentors" class="exp-tile-num" style="color: #2a7f78">35</div>
+                <div class="exp-tile-label">Mentors</div>
+              </div>
+            </div>
+            <div class="col">
+              <div class="exp-tile">
+                <div id="detailSessions" class="exp-tile-num">210</div>
+                <div class="exp-tile-label">Completed Sessions</div>
+              </div>
+            </div>
+            <div class="col">
+              <div class="exp-tile">
+                <div id="detailRating" class="exp-tile-num">4.8</div>
+                <div class="exp-tile-label">Average Rating</div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ============================== MENTORS FOR THIS SKILL ============================== -->
+        <section id="mentors" style="scroll-margin-top: 96px">
+          <div
+            class="d-flex flex-wrap align-items-baseline justify-content-between gap-2"
+          >
+            <h2
+              class="heading-font fw-semibold"
+              style="margin: 0; font-size: 22px; letter-spacing: -0.015em; color: #17324d"
+            >
+              Students Teaching <span id="mentorsSkillName">JavaScript</span>
+            </h2>
+            <a href="#mentors" class="fw-semibold"
+              >See all <span id="mentorsCountLink">35</span> mentors &rarr;</a
+            >
+          </div>
+          <div class="row g-3 mt-1" id="mentorsGrid"></div>
+        </section>
+
+        <!-- ============================== RECENTLY ADDED + PLATFORM STATS ============================== -->
+        <section class="d-flex flex-wrap gap-3 align-items-stretch">
+          <div class="dash-card" style="flex: 1.1 1 380px; min-width: 0">
+            <div class="dash-card-title" style="font-size: 18px">
+              Recently Added Skills
+            </div>
+            <div class="mt-3 d-flex flex-column">
+              <div class="skill-timeline-row">
+                <div class="skill-timeline-marker">
+                  <span class="avatar-circle" style="width: 34px; height: 34px; font-size: 12px; background: #17324d">RA</span>
+                  <span class="skill-timeline-line"></span>
+                </div>
+                <div class="flex-grow-1 min-w-0" style="padding-bottom: 22px">
+                  <div style="font-size: 15px; line-height: 1.5; color: #17212b">
+                    <strong style="font-weight: 700">Rahim</strong> added a skill they can teach
+                  </div>
+                  <div class="mt-1 d-flex flex-wrap align-items-center gap-2">
+                    <span class="skill-tag-badge" style="font-family: 'IBM Plex Mono', monospace">React Basics</span>
+                    <span style="font-size: 13px; color: #64748b">2 hours ago</span>
+                  </div>
+                </div>
+              </div>
+              <div class="skill-timeline-row">
+                <div class="skill-timeline-marker">
+                  <span class="avatar-circle" style="width: 34px; height: 34px; font-size: 12px; background: #2a7f78">SH</span>
+                  <span class="skill-timeline-line"></span>
+                </div>
+                <div class="flex-grow-1 min-w-0" style="padding-bottom: 22px">
+                  <div style="font-size: 15px; line-height: 1.5; color: #17212b">
+                    <strong style="font-weight: 700">Sakib</strong> started teaching
+                  </div>
+                  <div class="mt-1 d-flex flex-wrap align-items-center gap-2">
+                    <span class="skill-tag-badge" style="font-family: 'IBM Plex Mono', monospace">Database Management</span>
+                    <span style="font-size: 13px; color: #64748b">yesterday</span>
+                  </div>
+                </div>
+              </div>
+              <div class="skill-timeline-row">
+                <div class="skill-timeline-marker">
+                  <span class="avatar-circle" style="width: 34px; height: 34px; font-size: 12px; background: #17324d">NR</span>
+                  <span class="skill-timeline-line"></span>
+                </div>
+                <div class="flex-grow-1 min-w-0" style="padding-bottom: 22px">
+                  <div style="font-size: 15px; line-height: 1.5; color: #17212b">
+                    <strong style="font-weight: 700">Nafis</strong> added a learning goal
+                  </div>
+                  <div class="mt-1 d-flex flex-wrap align-items-center gap-2">
+                    <span class="skill-tag-badge" style="font-family: 'IBM Plex Mono', monospace">Python Programming</span>
+                    <span style="font-size: 13px; color: #64748b">3 days ago</span>
+                  </div>
+                </div>
+              </div>
+              <div class="skill-timeline-row">
+                <div class="skill-timeline-marker">
+                  <span class="avatar-circle" style="width: 34px; height: 34px; font-size: 12px; background: #2a7f78">NJ</span>
+                </div>
+                <div class="flex-grow-1 min-w-0">
+                  <div style="font-size: 15px; line-height: 1.5; color: #17212b">
+                    <strong style="font-weight: 700">Nusrat</strong> added a skill they can teach
+                  </div>
+                  <div class="mt-1 d-flex flex-wrap align-items-center gap-2">
+                    <span class="skill-tag-badge" style="font-family: 'IBM Plex Mono', monospace">Presentation Skills</span>
+                    <span style="font-size: 13px; color: #64748b">4 days ago</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="stats-band" style="flex: 1 1 320px; min-width: 0; padding: 32px">
+            <div class="section-eyebrow-light">Contribution</div>
+            <h2
+              class="heading-font fw-semibold"
+              style="margin: 10px 0 0; font-size: 22px; letter-spacing: -0.015em; color: #ffffff"
+            >
+              What the network has built so far
+            </h2>
+            <div class="row g-2 row-cols-2 mt-3">
+              <div class="col">
+                <div class="stats-tile">
+                  <div class="stats-tile-num" style="font-size: 24px">2,500+</div>
+                  <div class="stats-tile-label">Skills Shared</div>
+                </div>
+              </div>
+              <div class="col">
+                <div class="stats-tile">
+                  <div class="stats-tile-num" style="font-size: 24px; color: #2a7f78">850+</div>
+                  <div class="stats-tile-label">Active Mentors</div>
+                </div>
+              </div>
+              <div class="col">
+                <div class="stats-tile">
+                  <div class="stats-tile-num" style="font-size: 24px">1,200+</div>
+                  <div class="stats-tile-label">Learning Sessions</div>
+                </div>
+              </div>
+              <div class="col">
+                <div class="stats-tile">
+                  <div class="stats-tile-num" style="font-size: 24px">4.8</div>
+                  <div class="stats-tile-label">Average Skill Rating</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ============================== FINAL CTA ============================== -->
+        <section class="skills-cta-card text-center">
+          <h2
+            class="heading-font fw-semibold"
+            style="margin: 0; font-size: 32px; line-height: 1.2; letter-spacing: -0.025em; color: #17324d"
+          >
+            Have a Skill to Share?
+          </h2>
+          <p
+            class="mx-auto mt-3 mb-0"
+            style="max-width: 480px; font-size: 17px; line-height: 1.6; color: #64748b"
+          >
+            Your knowledge can help another student grow.
+          </p>
+          <div class="mt-4 d-flex justify-content-center">
+            <button type="button" class="btn btn-navy py-3 px-4" style="font-size: 16px">
+              Add Your Skills
+            </button>
+          </div>
+        </section>
+      </div>
+    </div>
+
+    <!-- Bootstrap 5 JS bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="assets/js/script.js"></script>
+  </body>
+</html>
