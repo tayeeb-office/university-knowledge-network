@@ -1,0 +1,125 @@
+/* ==========================================================================
+   University Knowledge Network — Design Tokens
+   Load order: variables.css -> theme.css -> base.css -> typography.css ->
+               layout.css -> components.css -> forms.css -> grunge.css ->
+               utilities.css -> responsive.css -> assets/css/pages/*.css
+   All other foundation files consume these custom properties. Do not hard
+   code brand colors anywhere else — reference the tokens below instead.
+   ========================================================================== */
+
+:root{
+  /* ---- Locked brand colors (do not change) ------------------------- */
+  --ukn-black: #000000;
+  --ukn-white: #FFFFFF;
+  --ukn-orange: #FF6215;
+  --ukn-charcoal: #1A1B1F;
+
+  /* ---- Supporting neutrals (light theme surfaces) -------------------
+     Off-white/parchment tones keep the "aged print" feel without ever
+     touching body text contrast. */
+  --ukn-cream: #F4F2EE;
+  --ukn-cream-2: #EDEAE4;
+  --ukn-line: #DAD5CC;
+  --ukn-ink-2: #5A5852;
+
+  /* ---- Semantic surface/text tokens (theme-aware) -------------------
+     Redefined under [data-bs-theme="dark"] in theme.css. Components must
+     only ever reference these semantic names, never raw colors. */
+  --ukn-bg: var(--ukn-cream);
+  --ukn-surface: var(--ukn-white);
+  --ukn-surface-2: var(--ukn-cream-2);
+  --ukn-ink: var(--ukn-black);
+  --ukn-ink-muted: var(--ukn-ink-2);
+  --ukn-border: var(--ukn-line);
+  --ukn-border-strong: var(--ukn-black);
+
+  /* ---- Accent ---- */
+  --ukn-accent: var(--ukn-orange);
+  --ukn-accent-ink: var(--ukn-white);
+  --ukn-accent-soft: #FFE9DF;
+
+  /* ---- Semantic status colors (used alongside icons/labels, never
+     color alone — see brand guide section 5) ---- */
+  --ukn-success: #2E7D48;
+  --ukn-success-soft: #E4F2E8;
+  --ukn-danger: #C0362C;
+  --ukn-danger-soft: #FBE7E5;
+  --ukn-warning: #B8720B;
+  --ukn-warning-soft: #FBEEDA;
+  --ukn-info: #1F6FEB;
+  --ukn-info-soft: #E4EEFD;
+
+  /* ---- Typography ---- */
+  --ukn-font-serif: 'Times New Roman', Times, 'Liberation Serif', Georgia, serif;
+  --ukn-font-mono: ui-monospace, 'Courier New', Courier, monospace;
+
+  /* ---- Spacing scale (4px base) ---- */
+  --ukn-space-1: 4px;
+  --ukn-space-2: 8px;
+  --ukn-space-3: 12px;
+  --ukn-space-4: 16px;
+  --ukn-space-5: 20px;
+  --ukn-space-6: 24px;
+  --ukn-space-7: 32px;
+  --ukn-space-8: 48px;
+
+  /* ---- Radius — restrained, never "giant rounded SaaS" ---- */
+  --ukn-radius-sm: 2px;
+  --ukn-radius-md: 3px;
+  --ukn-radius-lg: 4px;
+  --ukn-radius-pill: 999px;
+
+  /* ---- Shadow — minimal depth by design ---- */
+  --ukn-shadow-flat: 0 1px 0 rgba(0, 0, 0, .04);
+  --ukn-shadow-panel: 0 10px 30px rgba(0, 0, 0, .18);
+  --ukn-shadow-modal: 0 20px 60px rgba(0, 0, 0, .35);
+
+  /* ---- Motion ---- */
+  --ukn-transition-fast: 120ms ease;
+  --ukn-transition-base: 180ms ease;
+
+  /* ---- Layout ---- */
+  --ukn-shell-max-width: 1440px;
+  --ukn-sidebar-left-width: 222px;
+  --ukn-sidebar-right-width: 304px;
+  --ukn-sidebar-right-width-md: 260px;
+  --ukn-header-height: 58px;
+
+  /* ---- Z-index scale ---- */
+  --ukn-z-grain: 9;
+  --ukn-z-header: 15;
+  --ukn-z-dropdown: 20;
+  --ukn-z-offcanvas: 30;
+  --ukn-z-modal: 40;
+  --ukn-z-toast: 50;
+
+  /* ---- Grunge / grain overlay ---- */
+  --ukn-grain-blend: multiply;
+  --ukn-grain-opacity: .07;
+
+  /* =====================================================================
+     Bootstrap 5 variable bridge — retheme Bootstrap's own components
+     (buttons, cards, forms, badges, tables, dropdowns...) instead of
+     fighting them with parallel class systems.
+     ===================================================================== */
+  --bs-font-sans-serif: var(--ukn-font-serif);
+  --bs-font-monospace: var(--ukn-font-mono);
+  --bs-body-font-family: var(--ukn-font-serif);
+  --bs-body-bg: var(--ukn-bg);
+  --bs-body-color: var(--ukn-ink);
+  --bs-border-color: var(--ukn-border);
+  --bs-border-radius: var(--ukn-radius-lg);
+  --bs-border-radius-sm: var(--ukn-radius-md);
+  --bs-border-radius-lg: var(--ukn-radius-lg);
+  --bs-link-color: var(--ukn-accent);
+  --bs-link-hover-color: var(--ukn-ink);
+  --bs-primary: var(--ukn-accent);
+  --bs-primary-rgb: 255, 98, 21;
+  --bs-secondary: var(--ukn-ink);
+  --bs-success: var(--ukn-success);
+  --bs-danger: var(--ukn-danger);
+  --bs-warning: var(--ukn-warning);
+  --bs-info: var(--ukn-info);
+  --bs-light: var(--ukn-surface-2);
+  --bs-dark: var(--ukn-charcoal);
+}

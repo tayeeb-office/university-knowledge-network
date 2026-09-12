@@ -1,0 +1,103 @@
+/* ==========================================================================
+   Utilities — small generic helpers not tied to one component
+   Bootstrap already ships spacing/flex/display utilities (m-*, p-*, d-*,
+   gap-*, text-*); these fill the gaps specific to this brand's surfaces,
+   borders and states instead of duplicating what Bootstrap provides.
+   ========================================================================== */
+
+/* ---- Backgrounds & surfaces ---- */
+.ukn-bg-surface{ background-color: var(--ukn-surface) !important; }
+.ukn-bg-surface-2{ background-color: var(--ukn-surface-2) !important; }
+.ukn-bg-accent-soft{ background-color: var(--ukn-accent-soft) !important; }
+
+/* ---- Borders ---- */
+.ukn-border{ border: 1px solid var(--ukn-border) !important; }
+.ukn-border-strong{ border-color: var(--ukn-border-strong) !important; }
+.ukn-border-accent{ border-color: var(--ukn-accent) !important; }
+.ukn-border-dashed{ border-style: dashed !important; }
+.ukn-border-top{ border-top: 1px solid var(--ukn-border) !important; }
+.ukn-border-bottom{ border-bottom: 1px solid var(--ukn-border) !important; }
+.ukn-border-none{ border: none !important; }
+.ukn-rounded-sm{ border-radius: var(--ukn-radius-sm) !important; }
+.ukn-rounded-md{ border-radius: var(--ukn-radius-md) !important; }
+.ukn-rounded-lg{ border-radius: var(--ukn-radius-lg) !important; }
+
+/* ---- Text truncation ---- */
+.ukn-truncate{
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ukn-clamp-2,
+.ukn-clamp-3{
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.ukn-clamp-2{ -webkit-line-clamp: 2; }
+.ukn-clamp-3{ -webkit-line-clamp: 3; }
+
+/* ---- Visibility (accessible hide, distinct from Bootstrap's d-none) ---- */
+.ukn-visually-hidden{
+  position: absolute !important;
+  width: 1px; height: 1px;
+  padding: 0; margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ---- Interaction helpers ---- */
+.ukn-clickable{ cursor: pointer; }
+.ukn-clickable:hover{ color: var(--ukn-accent); }
+.ukn-no-scrollbar{ scrollbar-width: none; -ms-overflow-style: none; }
+.ukn-no-scrollbar::-webkit-scrollbar{ display: none; }
+
+/* ---- Flex/grid shorthands used repeatedly across composed pages ---- */
+.ukn-cluster{
+  display: flex;
+  align-items: center;
+  gap: var(--ukn-space-2);
+  flex-wrap: wrap;
+}
+.ukn-cluster-tight{
+  display: flex;
+  align-items: center;
+  gap: var(--ukn-space-1);
+}
+.ukn-stack{
+  display: flex;
+  flex-direction: column;
+  gap: var(--ukn-space-2);
+}
+.ukn-row-between{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ukn-space-3);
+}
+
+/* ---- Divider dot used between metadata fragments ("Author · role · time") ---- */
+.ukn-dot::before{
+  content: "\00b7";
+  margin: 0 var(--ukn-space-1);
+  color: var(--ukn-ink-muted);
+}
+
+/* ---- Aspect ratio box (media thumbnails) ---- */
+.ukn-ratio-16x9{ aspect-ratio: 16 / 9; }
+.ukn-ratio-1x1{ aspect-ratio: 1 / 1; }
+
+/* ---- Star rating display ---- */
+.ukn-stars{
+  color: var(--ukn-accent);
+  letter-spacing: .1em;
+  font-size: .9375rem;
+}
+
+/* ---- Screen-width guard for feature texts (belt-and-suspenders with
+   .ukn-prose in typography.css) ---- */
+.ukn-measure-sm{ max-width: 42ch; }
+.ukn-measure-md{ max-width: 62ch; }
+.ukn-measure-lg{ max-width: 74ch; }

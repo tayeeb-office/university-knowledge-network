@@ -1,0 +1,93 @@
+/* ==========================================================================
+   Theme — Light (default) & Dark
+   Uses Bootstrap 5.3's color-mode attribute (data-bs-theme) so both our
+   tokens and Bootstrap's own component styles switch together. Toggled by
+   assets/js/core/theme.js, typically on <html data-bs-theme="dark">.
+   ========================================================================== */
+
+/* Explicit light theme (also the implicit default from variables.css) */
+:root,
+[data-bs-theme="light"]{
+  --ukn-bg: var(--ukn-cream);
+  --ukn-surface: var(--ukn-white);
+  --ukn-surface-2: var(--ukn-cream-2);
+  --ukn-ink: var(--ukn-black);
+  --ukn-ink-muted: var(--ukn-ink-2);
+  --ukn-border: var(--ukn-line);
+  --ukn-border-strong: var(--ukn-black);
+  --ukn-accent-soft: #FFE9DF;
+  --ukn-success-soft: #E4F2E8;
+  --ukn-danger-soft: #FBE7E5;
+  --ukn-warning-soft: #FBEEDA;
+  --ukn-info-soft: #E4EEFD;
+
+  --ukn-grain-blend: multiply;
+  --ukn-grain-opacity: .07;
+  --ukn-shadow-card: var(--ukn-shadow-flat);
+
+  color-scheme: light;
+}
+
+/* Dark theme — charcoal surfaces on true black, per brand guide section 14 */
+[data-bs-theme="dark"]{
+  --ukn-bg: var(--ukn-black);
+  --ukn-surface: var(--ukn-charcoal);
+  --ukn-surface-2: #121316;
+  --ukn-ink: var(--ukn-white);
+  --ukn-ink-muted: #A6A49E;
+  --ukn-border: #2C2D33;
+  --ukn-border-strong: var(--ukn-white);
+  --ukn-accent-soft: #33190D;
+  --ukn-success-soft: #16301F;
+  --ukn-danger-soft: #34120F;
+  --ukn-warning-soft: #33230A;
+  --ukn-info-soft: #0F2440;
+
+  --ukn-grain-blend: screen;
+  --ukn-grain-opacity: .05;
+  --ukn-shadow-card: none;
+
+  color-scheme: dark;
+}
+
+/* Respect the OS preference only when the app hasn't set an explicit
+   color mode yet (no data-bs-theme attribute on the root). */
+@media (prefers-color-scheme: dark){
+  :root:not([data-bs-theme]){
+    --ukn-bg: var(--ukn-black);
+    --ukn-surface: var(--ukn-charcoal);
+    --ukn-surface-2: #121316;
+    --ukn-ink: var(--ukn-white);
+    --ukn-ink-muted: #A6A49E;
+    --ukn-border: #2C2D33;
+    --ukn-border-strong: var(--ukn-white);
+    --ukn-accent-soft: #33190D;
+    --ukn-success-soft: #16301F;
+    --ukn-danger-soft: #34120F;
+    --ukn-warning-soft: #33230A;
+    --ukn-info-soft: #0F2440;
+
+    --ukn-grain-blend: screen;
+    --ukn-grain-opacity: .05;
+    --ukn-shadow-card: none;
+
+    color-scheme: dark;
+  }
+}
+
+/* ---- Theme toggle control (header button driven by theme.js) ---- */
+.ukn-theme-toggle{
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ukn-space-2);
+  height: 34px;
+  padding: 0 var(--ukn-space-3);
+  background: transparent;
+  color: var(--ukn-ink);
+  border: 1px solid var(--ukn-border);
+  border-radius: var(--ukn-radius-md);
+  font-size: .875rem;
+}
+.ukn-theme-toggle:hover{
+  border-color: var(--ukn-border-strong);
+}

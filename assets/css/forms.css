@@ -1,0 +1,270 @@
+/* ==========================================================================
+   Forms — inputs, selects, textareas, checkboxes, radios, toggles, search
+   Retheme Bootstrap's form controls; no strong grunge texture ever touches
+   this file (brand guide section 16 / 8).
+   ========================================================================== */
+
+.form-control,
+.form-select{
+  --bs-body-color: var(--ukn-ink);
+  background-color: var(--ukn-surface-2);
+  border: 1px solid var(--ukn-border);
+  border-radius: var(--ukn-radius-md);
+  color: var(--ukn-ink);
+  font-size: .9375rem;
+  min-height: 38px;
+  padding: 0 var(--ukn-space-3);
+}
+.form-control::placeholder{
+  color: var(--ukn-ink-muted);
+  opacity: .8;
+}
+textarea.form-control{
+  min-height: 96px;
+  padding: 10px 11px;
+  resize: vertical;
+}
+.form-select{
+  background-color: var(--ukn-surface-2);
+}
+
+.form-control:focus,
+.form-select:focus{
+  background-color: var(--ukn-surface-2);
+  border-color: var(--ukn-accent);
+  color: var(--ukn-ink);
+  box-shadow: 0 0 0 3px var(--ukn-accent-soft);
+}
+
+.form-control:disabled,
+.form-select:disabled,
+.form-control[readonly]{
+  background-color: var(--ukn-surface);
+  color: var(--ukn-ink-muted);
+  opacity: .7;
+}
+
+/* Compact variant used in filter bars / table toolbars */
+.form-control-sm,
+.form-select-sm{
+  min-height: 31px;
+  font-size: .875rem;
+}
+
+/* ---- Validation states ----
+   Color is always paired with an icon + message row (never color alone,
+   brand guide section 27). Use .ukn-field-message alongside these. */
+.form-control.is-invalid,
+.form-select.is-invalid{
+  border-color: var(--ukn-danger);
+  background-image: none;
+}
+.form-control.is-valid,
+.form-select.is-valid{
+  border-color: var(--ukn-success);
+  background-image: none;
+}
+.ukn-field-message{
+  display: flex;
+  align-items: center;
+  gap: var(--ukn-space-1);
+  margin-top: var(--ukn-space-1);
+  font-size: .78125rem;
+}
+.ukn-field-message .ms{ font-size: .9375rem; }
+.ukn-field-message.is-invalid{ color: var(--ukn-danger); }
+.ukn-field-message.is-valid{ color: var(--ukn-success); }
+
+.invalid-feedback,
+.valid-feedback{
+  font-size: .78125rem;
+}
+.invalid-feedback{ color: var(--ukn-danger); }
+.valid-feedback{ color: var(--ukn-success); }
+
+/* ---- Password field with visibility toggle ---- */
+.ukn-password-field{
+  position: relative;
+}
+.ukn-password-field .form-control{
+  padding-right: 40px;
+}
+.ukn-password-field .btn-icon{
+  position: absolute;
+  right: 4px;
+  top: 4px;
+  width: 30px;
+  height: 30px;
+  border: none;
+  color: var(--ukn-ink-muted);
+}
+
+/* ---- Search field ---- */
+.ukn-search{
+  position: relative;
+  flex: 1;
+  min-width: 200px;
+}
+.ukn-search .ms{
+  position: absolute;
+  left: 11px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--ukn-ink-muted);
+  pointer-events: none;
+}
+.ukn-search .form-control{
+  padding-left: 36px;
+}
+.ukn-search--header .form-control{
+  height: 36px;
+  border-radius: var(--ukn-radius-lg);
+}
+
+/* ---- Checkbox & radio ---- */
+.form-check-input{
+  border: 1px solid var(--ukn-border-strong);
+  width: 15px;
+  height: 15px;
+}
+.form-check-input:checked{
+  background-color: var(--ukn-accent);
+  border-color: var(--ukn-accent);
+}
+.form-check-input:focus{
+  border-color: var(--ukn-accent);
+  box-shadow: 0 0 0 3px var(--ukn-accent-soft);
+}
+.form-check-label{
+  font-size: .875rem;
+  color: var(--ukn-ink-muted);
+}
+
+/* ---- Toggle switch ---- */
+.form-switch .form-check-input{
+  width: 38px;
+  height: 21px;
+  border-radius: var(--ukn-radius-pill);
+  background-color: var(--ukn-surface-2);
+  border-color: var(--ukn-border-strong);
+  background-image: none;
+  position: relative;
+}
+.form-switch .form-check-input::before{
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 15px;
+  height: 15px;
+  background: var(--ukn-surface);
+  border-radius: 50%;
+  transition: left var(--ukn-transition-fast);
+}
+.form-switch .form-check-input:checked{
+  background-color: var(--ukn-accent);
+  border-color: var(--ukn-accent);
+  background-image: none;
+}
+.form-switch .form-check-input:checked::before{
+  left: 19px;
+  background: #fff;
+}
+
+/* Standalone switch markup (when not using Bootstrap's .form-check) */
+.ukn-switch{
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ukn-space-2);
+  font-size: .875rem;
+  cursor: pointer;
+}
+.ukn-switch__track{
+  position: relative;
+  flex: none;
+  width: 36px;
+  height: 20px;
+  background: var(--ukn-surface-2);
+  border: 1px solid var(--ukn-border-strong);
+  border-radius: var(--ukn-radius-pill);
+}
+.ukn-switch__track::after{
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 14px;
+  height: 14px;
+  background: var(--ukn-surface);
+  border-radius: 50%;
+  transition: left var(--ukn-transition-fast);
+}
+.ukn-switch input:checked + .ukn-switch__track{
+  background: var(--ukn-accent);
+  border-color: var(--ukn-accent);
+}
+.ukn-switch input:checked + .ukn-switch__track::after{
+  left: 18px;
+  background: #fff;
+}
+.ukn-switch input{
+  position: absolute;
+  opacity: 0;
+  width: 1px;
+  height: 1px;
+}
+
+/* ---- Multi-select / tag input (skill pickers) ---- */
+.ukn-tag-input{
+  display: flex;
+  align-items: center;
+  gap: var(--ukn-space-2);
+  flex-wrap: wrap;
+  padding: 9px;
+  background: var(--ukn-surface-2);
+  border: 1px solid var(--ukn-border);
+  border-radius: var(--ukn-radius-md);
+}
+.ukn-tag-input input{
+  flex: 1;
+  min-width: 110px;
+  border: none;
+  background: none;
+  font-size: .875rem;
+  color: var(--ukn-ink);
+}
+.ukn-tag-input input:focus{
+  outline: none;
+}
+
+/* ---- File / image drop zone ---- */
+.ukn-dropzone{
+  display: flex;
+  align-items: center;
+  gap: var(--ukn-space-3);
+  padding: var(--ukn-space-3);
+  border: 1px dashed var(--ukn-border-strong);
+  border-radius: var(--ukn-radius-md);
+  color: var(--ukn-ink-muted);
+  font-size: .875rem;
+}
+
+/* ---- Form group rhythm ---- */
+.ukn-form-group{
+  margin-bottom: var(--ukn-space-4);
+}
+.ukn-form-row{
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--ukn-space-4);
+}
+
+/* Star rating input (read display uses .ukn-stars in components) */
+.ukn-star-input{
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  color: var(--ukn-accent);
+  font-size: 1.3125rem;
+  letter-spacing: .16em;
+}

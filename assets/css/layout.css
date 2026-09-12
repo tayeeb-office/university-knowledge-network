@@ -1,0 +1,243 @@
+/* ==========================================================================
+   Layout — application shell
+   HEADER
+   ────────────────────────────────────────────────────────────
+   LEFT SIDEBAR | MAIN CONTENT | RIGHT SIDEBAR
+   Breakpoint behavior lives in responsive.css; this file defines the
+   structural grid and the shared containers header.php / left-sidebar.php /
+   right-sidebar.php / footer.php / any page should hook into.
+   ========================================================================== */
+
+.ukn-shell{
+  display: grid;
+  grid-template-columns: var(--ukn-sidebar-left-width) minmax(0, 1fr) var(--ukn-sidebar-right-width);
+  align-items: start;
+  max-width: var(--ukn-shell-max-width);
+  margin: 0 auto;
+}
+
+/* ---- Header ---- */
+.ukn-header{
+  position: sticky;
+  top: 0;
+  z-index: var(--ukn-z-header);
+  display: flex;
+  align-items: center;
+  gap: var(--ukn-space-4);
+  height: var(--ukn-header-height);
+  padding: 0 var(--ukn-space-5);
+  background: var(--ukn-surface);
+  border-bottom: 1px solid var(--ukn-border);
+}
+
+.ukn-header__brand{
+  display: flex;
+  align-items: center;
+  gap: var(--ukn-space-2);
+  flex: 0 0 auto; /* content-based width — sizes to the real logo + text */
+  color: inherit;
+}
+.ukn-header__brand:hover{
+  text-decoration: none;
+  color: inherit;
+}
+/* Approved logo asset (docs/references/original-logo.png). Height-bound,
+   width auto so the source aspect ratio is preserved exactly — never
+   stretch or crop it. */
+.ukn-header__mark{
+  display: block;
+  height: 34px;
+  width: auto;
+  flex: none;
+}
+.ukn-header__title{
+  line-height: 1.05;
+}
+.ukn-header__title strong{
+  display: block;
+  font-weight: 700;
+  font-size: .9375rem;
+  letter-spacing: .01em;
+}
+.ukn-header__title span{
+  display: block;
+  font-size: .6875rem;
+  letter-spacing: .22em;
+  text-transform: uppercase;
+  color: var(--ukn-ink-muted);
+}
+
+/* flex: 1 1 auto with no max-width lets this genuinely consume all the
+   free space between the brand and the actions — capping it here used to
+   leave that free space as dead air (an auto margin was absorbing it on
+   .ukn-header__actions instead of the search box growing into it). A
+   sensible min-width still lives on .ukn-search in forms.css. */
+.ukn-header__search{
+  flex: 1 1 auto;
+  position: relative;
+}
+
+/* Mobile hamburger — opens the left sidebar as a Bootstrap offcanvas.
+   Hidden at ≥768px, shown by responsive.css below that. */
+.ukn-header__menu-toggle{
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  flex: none;
+  background: transparent;
+  border: 1px solid var(--ukn-border);
+  border-radius: var(--ukn-radius-md);
+  color: var(--ukn-ink);
+}
+
+.ukn-header__actions{
+  display: flex;
+  align-items: center;
+  gap: var(--ukn-space-3);
+  flex: 0 0 auto;
+}
+
+/* ---- Left sidebar (role-aware navigation) ---- */
+.ukn-sidebar-left{
+  position: sticky;
+  top: var(--ukn-header-height);
+  height: calc(100vh - var(--ukn-header-height));
+  overflow: auto;
+  padding: var(--ukn-space-4) var(--ukn-space-3);
+  border-right: 1px solid var(--ukn-border);
+  background: var(--ukn-bg);
+}
+
+.ukn-nav-group{
+  margin-bottom: var(--ukn-space-4);
+}
+.ukn-nav-group__title{
+  padding: 0 var(--ukn-space-2) var(--ukn-space-2);
+}
+
+/* Role-aware nav item — left sidebar & mobile offcanvas share this class.
+   Active state is a left accent mark + tinted background, never color
+   alone (brand guide section 26). */
+.ukn-nav-link{
+  display: flex;
+  align-items: center;
+  gap: var(--ukn-space-2);
+  width: 100%;
+  height: 34px;
+  padding: 0 var(--ukn-space-2);
+  margin-bottom: 2px;
+  background: transparent;
+  border: none;
+  border-left: 3px solid transparent;
+  border-radius: var(--ukn-radius-md);
+  color: var(--ukn-ink-muted);
+  text-align: left;
+}
+.ukn-nav-link .ms{
+  font-size: 1.1875rem;
+  flex: none;
+}
+.ukn-nav-link .ukn-nav-text{
+  flex: 1;
+}
+.ukn-nav-link:hover{
+  background: var(--ukn-surface-2);
+  color: var(--ukn-ink);
+  text-decoration: none;
+}
+.ukn-nav-link.is-active{
+  background: var(--ukn-accent-soft);
+  border-left-color: var(--ukn-accent);
+  color: var(--ukn-accent);
+}
+
+/* Footer-style nav row (e.g. mobile offcanvas "Switch to Mentor") — sits
+   below a dashed divider instead of inline with the regular nav rhythm. */
+.ukn-nav-link--footer{
+  height: auto;
+  margin-top: var(--ukn-space-3);
+  margin-bottom: 0;
+  padding-top: var(--ukn-space-3);
+  border-top: 1px dashed var(--ukn-border);
+  border-left-color: transparent;
+  border-radius: 0;
+}
+
+.ukn-sidebar-left__footer{
+  padding: var(--ukn-space-3) var(--ukn-space-2);
+  border-top: 1px dashed var(--ukn-border);
+  font-size: .75rem;
+  line-height: 1.5;
+  color: var(--ukn-ink-muted);
+}
+
+/* ---- Main content — always the visual priority ---- */
+.ukn-main{
+  min-width: 0;
+  padding: var(--ukn-space-5) var(--ukn-space-6) var(--ukn-space-8);
+}
+
+.ukn-page-header{
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--ukn-space-4);
+  padding-bottom: var(--ukn-space-3);
+  margin-bottom: var(--ukn-space-5);
+  border-bottom: 1px solid var(--ukn-border-strong);
+  flex-wrap: wrap;
+}
+.ukn-page-header__sub{
+  margin: 5px 0 0;
+  font-size: .90625rem;
+  color: var(--ukn-ink-muted);
+  max-width: 62ch;
+}
+
+/* ---- Right sidebar — contextual, not identical on every page ---- */
+.ukn-sidebar-right{
+  position: sticky;
+  top: var(--ukn-header-height);
+  height: calc(100vh - var(--ukn-header-height));
+  overflow: auto;
+  padding: var(--ukn-space-5) var(--ukn-space-4) var(--ukn-space-7);
+  border-left: 1px solid var(--ukn-border);
+}
+
+/* Small utility/address caption at the foot of the right sidebar */
+.ukn-sidebar-right__note{
+  margin: 0;
+  padding: var(--ukn-space-1) 2px;
+  font-size: .71875rem;
+  line-height: 1.6;
+  color: var(--ukn-ink-muted);
+}
+
+/* A page that opts out of the right sidebar (settings, notifications, some
+   admin views) simply omits .ukn-sidebar-right and widens main via this
+   modifier on .ukn-shell. */
+.ukn-shell--no-right-sidebar{
+  grid-template-columns: var(--ukn-sidebar-left-width) minmax(0, 1fr);
+}
+.ukn-shell--no-sidebars{
+  grid-template-columns: minmax(0, 1fr);
+}
+
+/* ---- Generic content containers ---- */
+.ukn-container-narrow{
+  max-width: 430px;
+  margin: var(--ukn-space-4) auto 0;
+}
+.ukn-container-form{
+  max-width: 620px;
+  margin: var(--ukn-space-4) auto 0;
+}
+
+/* ---- Footer ---- */
+.ukn-footer{
+  padding: var(--ukn-space-4) var(--ukn-space-5);
+  border-top: 1px solid var(--ukn-border);
+  font-size: .75rem;
+  color: var(--ukn-ink-muted);
+  text-align: center;
+}

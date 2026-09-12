@@ -1,0 +1,133 @@
+/* ==========================================================================
+   Base — resets and bare-element defaults
+   Applies to raw HTML elements only. Component-level styling lives in
+   components.css / forms.css; this file just sets the sane defaults every
+   page inherits before Bootstrap or our components add anything else.
+   ========================================================================== */
+
+*,
+*::before,
+*::after{
+  box-sizing: border-box;
+}
+
+html{
+  -webkit-text-size-adjust: 100%;
+  scroll-behavior: smooth;
+}
+
+body{
+  margin: 0;
+  min-height: 100vh;
+  background: var(--ukn-bg);
+  color: var(--ukn-ink);
+  font-family: var(--ukn-font-serif);
+  font-size: 16px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  transition: background-color var(--ukn-transition-base), color var(--ukn-transition-base);
+}
+
+@media (prefers-reduced-motion: reduce){
+  html{
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after{
+    animation-duration: .001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .001ms !important;
+  }
+}
+
+img,
+svg,
+video{
+  max-width: 100%;
+  height: auto;
+  vertical-align: middle;
+}
+
+hr{
+  margin: var(--ukn-space-4) 0;
+  border: none;
+  border-top: 1px solid var(--ukn-border);
+  opacity: 1;
+}
+
+a{
+  color: var(--ukn-accent);
+  text-decoration: none;
+  transition: color var(--ukn-transition-fast);
+}
+a:hover{
+  color: var(--ukn-ink);
+  text-decoration: underline;
+}
+
+button,
+input,
+select,
+textarea{
+  font-family: inherit;
+  color: inherit;
+}
+button{
+  cursor: pointer;
+}
+button:disabled,
+input:disabled,
+select:disabled,
+textarea:disabled{
+  cursor: not-allowed;
+}
+
+/* Visible, brand-colored focus ring everywhere — accessibility is never
+   sacrificed for aesthetics (brand guide section 27). */
+:focus-visible{
+  outline: 2px solid var(--ukn-accent);
+  outline-offset: 2px;
+}
+
+::selection{
+  background: var(--ukn-accent-soft);
+  color: var(--ukn-ink);
+}
+
+/* Minimal, brand-neutral scrollbar (WebKit) so long feeds/sidebars don't
+   look like a stock browser chrome next to the rest of the interface. */
+::-webkit-scrollbar{
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track{
+  background: transparent;
+}
+::-webkit-scrollbar-thumb{
+  background: var(--ukn-border);
+  border-radius: var(--ukn-radius-pill);
+  border: 2px solid var(--ukn-bg);
+}
+::-webkit-scrollbar-thumb:hover{
+  background: var(--ukn-ink-muted);
+}
+
+/* Material Symbols Outlined — the app's single icon language. Include the
+   Google Fonts <link> tags in each page's <head>; this class just applies
+   consistent, moderate-weight rendering (brand guide section 23). */
+.ms{
+  font-family: 'Material Symbols Outlined';
+  font-weight: 300;
+  font-style: normal;
+  font-size: 1.25rem;
+  line-height: 1;
+  letter-spacing: normal;
+  text-transform: none;
+  display: inline-block;
+  white-space: nowrap;
+  direction: ltr;
+  -webkit-font-feature-settings: 'liga';
+  -webkit-font-smoothing: antialiased;
+}

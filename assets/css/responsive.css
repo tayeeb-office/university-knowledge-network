@@ -1,0 +1,216 @@
+/* ==========================================================================
+   Responsive — app shell breakpoints
+   Rules mirror the approved design spec exactly:
+   ≥1200px  Header + left sidebar + main + right sidebar (main stays dominant)
+   992-1199 Right sidebar narrows to 260px; mentor-style grids go 1-column
+   768-991  Left sidebar collapses to an icon rail; right sidebar modules
+            move below the main feed
+   <768     Offcanvas nav, two header rows, tables become stacked cards
+   Target device widths: 320 / 360 / 390 / 430 / 576 / 768 / 992 / 1200 / 1400+
+   Do not simply shrink the desktop layout — see brand guide section 12.
+   ========================================================================== */
+
+/* ---- ≥1200px : reference layout, nothing to override ---- */
+
+/* ---- 992px–1199.98px : right sidebar narrows ---- */
+@media (max-width: 1199.98px){
+  .ukn-shell{
+    grid-template-columns: var(--ukn-sidebar-left-width) minmax(0, 1fr) var(--ukn-sidebar-right-width-md);
+  }
+}
+
+/* ---- 768px–991.98px : left sidebar becomes an icon rail,
+        right sidebar drops below the main column ---- */
+@media (max-width: 991.98px){
+  .ukn-shell{
+    grid-template-columns: 64px minmax(0, 1fr);
+  }
+  .ukn-sidebar-left{
+    padding: var(--ukn-space-3) var(--ukn-space-1);
+  }
+  .ukn-nav-group__title,
+  .ukn-sidebar-left__footer{
+    display: none;
+  }
+
+  /* Icon-rail collapse applies only to the desktop/tablet left sidebar —
+     scoped to .ukn-sidebar-left so it can never reach the mobile offcanvas
+     menu (includes/mobile-nav.php), which reuses the same .ukn-nav-link /
+     .ukn-nav-text classes but must always show full labels. */
+  .ukn-sidebar-left .ukn-nav-link{
+    justify-content: center;
+    padding: 0;
+  }
+  .ukn-sidebar-left .ukn-nav-link .ukn-nav-text,
+  .ukn-sidebar-left .ukn-nav-link .ukn-count-pill{
+    display: none;
+  }
+
+  .ukn-sidebar-right{
+    grid-column: 1 / -1;
+    position: static;
+    height: auto;
+    overflow: visible;
+    border-left: none;
+    border-top: 1px solid var(--ukn-border);
+    padding: var(--ukn-space-4) var(--ukn-space-5);
+  }
+  .ukn-sidebar-right .ukn-shell-module{
+    display: inline-block;
+    width: 100%;
+  }
+}
+
+/* ---- <768px : offcanvas nav, two-row header, table stacking ---- */
+@media (max-width: 767.98px){
+  .ukn-shell,
+  .ukn-shell--no-right-sidebar{
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .ukn-sidebar-left{
+    display: none; /* becomes Bootstrap .offcanvas content, toggled via JS */
+  }
+
+  /* True mobile shows main content only — no permanent right sidebar, not
+     even reflowed below the feed (that reflow is a tablet-only behavior,
+     see the 991.98px rule above). A page that wants some of that context
+     on mobile surfaces it inside its own main content instead. */
+  .ukn-sidebar-right{
+    display: none;
+  }
+
+  .ukn-main{
+    padding: var(--ukn-space-4) var(--ukn-space-3) var(--ukn-space-7);
+  }
+
+  /* Two header rows: [hamburger · brand ... create/login · bell · profile]
+     then a full-width search row underneath. */
+  .ukn-header{
+    height: auto;
+    flex-wrap: wrap;
+    row-gap: var(--ukn-space-2);
+    padding: var(--ukn-space-2) var(--ukn-space-3);
+  }
+  .ukn-header__menu-toggle{
+    display: inline-grid;
+    order: -1;
+  }
+  .ukn-header__brand{
+    width: auto;
+    flex: 1;
+  }
+  .ukn-header__brand .ukn-header__title span{
+    display: none; /* keep the compact header to one line of brand text */
+  }
+  .ukn-header__search{
+    order: 3;
+    max-width: none;
+    flex-basis: 100%;
+  }
+
+  .ukn-page-header{
+    align-items: flex-start;
+  }
+  .ukn-page-header .ukn-mono{
+    display: none;
+  }
+
+  /* Underline/pill tabs wrap instead of overflowing */
+  .nav-tabs,
+  .ukn-tabs-pill{
+    flex-wrap: wrap;
+  }
+
+  /* Two-column form grids collapse to one column */
+  .ukn-form-row{
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+@media (min-width: 768px){
+  .ukn-header__menu-toggle{
+    display: none;
+  }
+}
+
+/* ---- Tables become stacked cards below 768px ----
+   Apply .ukn-table-responsive-cards to a <table> and add data-label="Column
+   Name" to each <td> so the label can render inline on narrow screens. */
+@media (max-width: 767.98px){
+  .ukn-table-responsive-cards thead{
+    display: none;
+  }
+  .ukn-table-responsive-cards,
+  .ukn-table-responsive-cards tbody,
+  .ukn-table-responsive-cards tr,
+  .ukn-table-responsive-cards td{
+    display: block;
+    width: 100%;
+  }
+  .ukn-table-responsive-cards tr{
+    margin-bottom: var(--ukn-space-3);
+    border: 1px solid var(--ukn-border);
+    border-radius: var(--ukn-radius-lg);
+    overflow: hidden;
+  }
+  .ukn-table-responsive-cards td{
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--ukn-space-3);
+    border: none;
+    border-bottom: 1px solid var(--ukn-border);
+    text-align: right;
+  }
+  .ukn-table-responsive-cards td:last-child{
+    border-bottom: none;
+  }
+  .ukn-table-responsive-cards td::before{
+    content: attr(data-label);
+    font-size: .75rem;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--ukn-ink-muted);
+    text-align: left;
+  }
+}
+
+/* ---- Comfortable touch targets on small screens (≤576px) ---- */
+@media (max-width: 575.98px){
+  .btn,
+  .ukn-tab-pill,
+  .nav-tabs .nav-link,
+  .form-control,
+  .form-select{
+    min-height: 44px;
+  }
+  .btn-icon{
+    width: 40px;
+    height: 40px;
+  }
+
+  /* Feature grids fall back to a single column on the smallest phones */
+  .ukn-grid-2,
+  .ukn-grid-3,
+  .ukn-grid-4{
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .ukn-container-narrow,
+  .ukn-container-form{
+    margin-left: var(--ukn-space-3);
+    margin-right: var(--ukn-space-3);
+  }
+}
+
+/* ---- Generic responsive grid helpers used by page-level stat/card grids ---- */
+.ukn-grid-2{ display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--ukn-space-3); }
+.ukn-grid-3{ display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--ukn-space-3); }
+.ukn-grid-4{ display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--ukn-space-3); }
+
+@media (max-width: 991.98px){
+  .ukn-grid-4{ grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 767.98px){
+  .ukn-grid-3,
+  .ukn-grid-4{ grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
