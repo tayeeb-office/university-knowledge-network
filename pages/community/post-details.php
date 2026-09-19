@@ -21,9 +21,9 @@
  * this one page, so one wouldn't earn its keep) using the exact same
  * structural convention assets/js/components/comments.js's JS-built
  * comments/replies use, so new and server-rendered comments behave
- * identically. Comment voting reuses the same .ukn-vote markup
- * post-card.php's rail uses, so assets/js/components/voting.js drives it
- * for free.
+ * identically. Comments deliberately have NO voting of their own — only
+ * Reply and Report. Post voting is unaffected and still lives on
+ * components/post-card.php's own .ukn-vote-rail.
  *
  * $_GET['id'] only ever indexes into the small $posts lookup below — it
  * is never concatenated into a query or file path, so there is no
@@ -52,22 +52,19 @@ $post = $posts[$requestedId];
 $comments = [
     [
         'author' => 'Rahim Ahmed', 'initials' => 'RA', 'role' => 'Mentor', 'authorHref' => ukn_route_href('mentor-profile') . '&id=2',
-        'time' => '8 min ago', 'votes' => 12,
-        'text' => '2NF removes partial dependency — a non-key column depending on only part of a composite key. 3NF removes transitive dependency — a non-key column depending on another non-key column instead of the key itself. Want me to walk through a students/courses example?',
+        'time' => '8 min ago', 'text' => '2NF removes partial dependency — a non-key column depending on only part of a composite key. 3NF removes transitive dependency — a non-key column depending on another non-key column instead of the key itself. Want me to walk through a students/courses example?',
         'replies' => [
             ['author' => 'Nabila Rahman', 'initials' => 'NR', 'role' => 'Learner', 'time' => '6 min ago', 'text' => 'Yes please — a students/courses example would really help.'],
         ],
     ],
     [
         'author' => 'Ayesha Rahman', 'initials' => 'AR', 'role' => 'Learner', 'authorHref' => ukn_route_href('learner-profile'),
-        'time' => '5 min ago', 'votes' => 6,
-        'text' => 'I had the same confusion. A student-course-instructor example helped me understand the difference.',
+        'time' => '5 min ago', 'text' => 'I had the same confusion. A student-course-instructor example helped me understand the difference.',
         'replies' => [],
     ],
     [
         'author' => 'Hasan Mahmud', 'initials' => 'HM', 'role' => 'Mentor', 'authorHref' => ukn_route_href('mentor-profile') . '&id=3',
-        'time' => '2 min ago', 'votes' => 4,
-        'text' => 'Once you see 2NF and 3NF applied to the same table side by side, the difference stops feeling abstract — happy to share a quick before/after if it helps.',
+        'time' => '2 min ago', 'text' => 'Once you see 2NF and 3NF applied to the same table side by side, the difference stops feeling abstract — happy to share a quick before/after if it helps.',
         'replies' => [],
     ],
 ];
@@ -116,11 +113,6 @@ $comments = [
             </div>
             <p class="ukn-body-sm mb-2"><?= htmlspecialchars($comment['text']) ?></p>
             <div class="d-flex align-items-center gap-3 flex-wrap">
-              <span class="ukn-vote" data-vote-state="0">
-                <button type="button" class="ukn-vote-btn is-up" data-vote-up aria-label="Upvote this comment" aria-pressed="false"><span class="ms" aria-hidden="true">arrow_upward</span></button>
-                <span class="ukn-vote-score" data-vote-score data-vote-base="<?= (int) $comment['votes'] ?>"><?= (int) $comment['votes'] ?></span>
-                <button type="button" class="ukn-vote-btn is-down" data-vote-down aria-label="Downvote this comment" aria-pressed="false"><span class="ms" aria-hidden="true">arrow_downward</span></button>
-              </span>
               <button type="button" class="btn-ghost" data-comment-reply-toggle>Reply</button>
               <button type="button" class="btn-ghost" data-comment-report>Report</button>
             </div>

@@ -4,11 +4,15 @@
  * written generically so any future page with the same markup picks this
  * up automatically, the same reasoning as assets/js/components/voting.js).
  *
- * Comment/reply voting is NOT reimplemented here — each vote control uses
- * the exact same .ukn-vote markup convention (.ukn-vote-btn/.ukn-vote-score)
- * components/post-card.php's vote rail already uses, so
- * assets/js/components/voting.js's existing generic delegation handles it
- * automatically with zero new code.
+ * Comments and replies have NO voting. That is a deliberate product
+ * decision, not an omission: a comment's only actions are Reply and
+ * Report. Nothing here renders .ukn-vote markup or [data-vote-*]
+ * attributes, so assets/js/components/voting.js never matches anything
+ * inside a comment.
+ *
+ * POST voting is untouched and still works exactly as before — it lives
+ * on components/post-card.php's own .ukn-vote-rail, which voting.js
+ * continues to drive.
  *
  * Frontend-only mock state: Reply/Report only ever change the DOM or show
  * a toast — nothing is persisted or sent anywhere. New comments/replies
@@ -24,7 +28,7 @@
     return div.innerHTML;
   }
 
-  /** A new top-level comment — has its own vote control + Reply/Report,
+  /** A new top-level comment — Reply/Report only, no vote control,
    * matching a server-rendered comment exactly (see pages/community/post-details.php). */
   function buildCommentCard(data) {
     var wrap = document.createElement('div');
@@ -43,11 +47,6 @@
           '</div>' +
           '<p class="ukn-body-sm mb-2">' + escapeHtml(data.text) + '</p>' +
           '<div class="d-flex align-items-center gap-3 flex-wrap">' +
-            '<span class="ukn-vote" data-vote-state="0">' +
-              '<button type="button" class="ukn-vote-btn is-up" data-vote-up aria-label="Upvote this comment" aria-pressed="false"><span class="ms" aria-hidden="true">arrow_upward</span></button>' +
-              '<span class="ukn-vote-score" data-vote-score data-vote-base="0">0</span>' +
-              '<button type="button" class="ukn-vote-btn is-down" data-vote-down aria-label="Downvote this comment" aria-pressed="false"><span class="ms" aria-hidden="true">arrow_downward</span></button>' +
-            '</span>' +
             '<button type="button" class="btn-ghost" data-comment-reply-toggle>Reply</button>' +
             '<button type="button" class="btn-ghost" data-comment-report>Report</button>' +
           '</div>' +

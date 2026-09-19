@@ -363,11 +363,6 @@ a.ukn-tag-skill:focus-visible{
 /* ---------------------------------------------------------------------
    Vote control (upvote / score / downvote)
    --------------------------------------------------------------------- */
-.ukn-vote{
-  display: flex;
-  align-items: center;
-  gap: var(--ukn-space-1);
-}
 .ukn-vote-btn{
   display: grid;
   place-items: center;
@@ -996,7 +991,7 @@ a.ukn-shell-module__item:hover{
 /* ---------------------------------------------------------------------
    Reusable card content — layout CSS for components/*.php.
    Each component composes these on top of the generic pieces above
-   (.card, .ukn-avatar, .ukn-tag-skill, .ukn-status, .ukn-vote, .btn,
+   (.card, .ukn-avatar, .ukn-tag-skill, .ukn-status, .ukn-vote-rail, .btn,
    .progress, .ukn-stars, .ukn-dot) rather than duplicating them.
    --------------------------------------------------------------------- */
 

@@ -341,14 +341,36 @@ if (!function_exists('ukn_sidebar_modules_for_context')) {
                 ];
 
             case 'profile':
-                // Role-aware — reuses the same mock role state as the rest of
-                // the app (includes/left-sidebar.php), not a separate system.
+                /**
+                 * Role-aware, and it must FOLLOW A ROLE SWITCH.
+                 *
+                 * This used to pick one branch server-side from
+                 * $currentUser['activeRole'] — which index.php hardcodes to
+                 * 'learner' — so the mentor branch below was unreachable at
+                 * runtime and the sidebar stayed on "Learner Overview" even
+                 * while the rest of the page was acting as Mentor.
+                 *
+                 * A dual-role user now gets BOTH sets rendered, each tagged
+                 * with its role and the inactive one `hidden`, exactly like
+                 * includes/left-sidebar.php's navigation and my-profile.php's
+                 * points card. assets/js/core/role-switch.js already toggles
+                 * every [data-role] element in the document, so switching
+                 * role swaps this sidebar with no new JavaScript.
+                 *
+                 * A single-role user gets only their own set, with no
+                 * [data-role] wrapper — so a Learner can never be shown
+                 * Mentor context, and vice versa.
+                 *
+                 * The values below are unchanged from before: nothing new
+                 * was invented, the two sets were simply both made reachable.
+                 */
                 $activeRole = !empty($currentUser['dualRole'])
                     ? ($currentUser['activeRole'] ?? 'learner')
                     : ($currentUser['role'] ?? 'learner');
+                $isDualRoleUser = !empty($currentUser['loggedIn']) && !empty($currentUser['dualRole']);
 
-                if ($activeRole === 'mentor') {
-                    return [
+                $modulesByRole = [
+                    'mentor' => [
                         [
                             'type' => 'stat-rows',
                             'title' => 'Mentor Overview',
@@ -359,31 +381,47 @@ if (!function_exists('ukn_sidebar_modules_for_context')) {
                                 ['label' => 'Availability', 'value' => '9 hrs / week'],
                             ],
                         ],
-                    ];
-                }
-
-                return [
-                    [
-                        'type' => 'stat-rows',
-                        'title' => 'Learner Overview',
-                        'items' => [
-                            ['label' => 'Learning points', 'value' => '412', 'accent' => true],
-                            ['label' => 'Completed sessions', 'value' => '18'],
+                    ],
+                    'learner' => [
+                        [
+                            'type' => 'stat-rows',
+                            'title' => 'Learner Overview',
+                            'items' => [
+                                ['label' => 'Learning points', 'value' => '412', 'accent' => true],
+                                ['label' => 'Completed sessions', 'value' => '18'],
+                            ],
                         ],
-                    ],
-                    [
-                        'type' => 'tag-list',
-                        'title' => 'Main Skills',
-                        'items' => ['Python', 'React', 'UI/UX Design'],
-                    ],
-                    [
-                        'type' => 'progress-list',
-                        'title' => 'Current Goals',
-                        'items' => [
-                            ['label' => 'Learn Python for Data Analysis', 'pct' => 70],
+                        [
+                            'type' => 'tag-list',
+                            'title' => 'Main Skills',
+                            'items' => ['Python', 'React', 'UI/UX Design'],
+                        ],
+                        [
+                            'type' => 'progress-list',
+                            'title' => 'Current Goals',
+                            'items' => [
+                                ['label' => 'Learn Python for Data Analysis', 'pct' => 70],
+                            ],
                         ],
                     ],
                 ];
+
+                $rolesToRender = $isDualRoleUser
+                    ? ['learner', 'mentor']
+                    : [$activeRole === 'mentor' ? 'mentor' : 'learner'];
+
+                $profileModules = [];
+                foreach ($rolesToRender as $roleKey) {
+                    foreach ($modulesByRole[$roleKey] as $module) {
+                        if ($isDualRoleUser) {
+                            $module['role'] = $roleKey;
+                            $module['hidden'] = ($roleKey !== $activeRole);
+                        }
+                        $profileModules[] = $module;
+                    }
+                }
+
+                return $profileModules;
 
             case 'home':
             default:
@@ -441,8 +479,28 @@ if (!function_exists('ukn_render_sidebar_module')) {
     function ukn_render_sidebar_module(array $module): void
     {
         $type = $module['type'] ?? 'ranked-list';
+
+        /**
+         * Optional role scoping. A module may carry:
+         *   'role'   => 'learner' | 'mentor'   -> emits data-role="..."
+         *   'hidden' => true                    -> starts hidden
+         *
+         * That is the SAME [data-role] convention includes/left-sidebar.php
+         * uses for navigation and pages/profile/my-profile.php uses for its
+         * points card, so assets/js/core/role-switch.js's existing
+         * document-wide applyRole() toggles these modules too — no new
+         * JavaScript, and no second role system.
+         *
+         * Modules without a 'role' key render exactly as before, so every
+         * other sidebar context is unaffected.
+         */
+        $roleAttrs = '';
+        if (!empty($module['role'])) {
+            $roleAttrs = ' data-role="' . htmlspecialchars($module['role']) . '"'
+                . (!empty($module['hidden']) ? ' hidden' : '');
+        }
         ?>
-        <div class="ukn-shell-module">
+        <div class="ukn-shell-module"<?= $roleAttrs ?>>
           <div class="ukn-shell-module__header">
             <span class="ukn-eyebrow"><?= htmlspecialchars($module['title']) ?></span>
           </div>

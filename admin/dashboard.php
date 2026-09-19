@@ -150,8 +150,8 @@ require __DIR__ . '/includes/header.php';
     <h2 class="ukn-h4 mb-0">Recent Users</h2>
     <a href="users.php" class="ukn-body-sm">View All Users</a>
   </div>
-  <div class="table-responsive">
-    <table class="table ukn-admin-table">
+  <div class="table-responsive ukn-admin-scroller">
+    <table class="table ukn-admin-table ukn-admin-table--scroll">
       <thead>
         <tr><th scope="col">User</th><th scope="col">Role</th><th scope="col">Department</th><th scope="col">Joined</th><th scope="col">Status</th><th scope="col">Action</th></tr>
       </thead>
@@ -183,8 +183,8 @@ require __DIR__ . '/includes/header.php';
         <h2 class="ukn-h4 mb-0">Recent &amp; Upcoming Sessions</h2>
         <a href="sessions.php" class="ukn-body-sm">View All Sessions</a>
       </div>
-      <div class="table-responsive">
-        <table class="table ukn-admin-table">
+      <div class="table-responsive ukn-admin-scroller">
+        <table class="table ukn-admin-table ukn-admin-table--scroll">
           <thead>
             <tr><th scope="col">Learner</th><th scope="col">Mentor</th><th scope="col">Skill</th><th scope="col">Date</th><th scope="col">Status</th></tr>
           </thead>

@@ -4,7 +4,7 @@
 --  Engine: InnoDB · Charset: utf8mb4 · Collation: utf8mb4_unicode_ci
 -- =====================================================================
 --
---  21 tables, derived from the existing frontend (pages/, components/,
+--  20 tables, derived from the existing frontend (pages/, components/,
 --  modals/, admin/). Every table below is actually rendered by at least
 --  one existing file — nothing speculative was added.
 --
@@ -29,9 +29,12 @@
 --     status = 'accepted' AND scheduled_date <  CURDATE()  ->  overdue
 --     That is why this ENUM has 5 values where the UI shows 6 labels.
 --
---  5. post_votes and comment_votes are separate tables
---     One polymorphic votes table would lose the foreign key. Two small
---     tables keep real referential integrity, which matters more here.
+--  5. post_votes is the ONLY vote table — comments have no voting
+--     Voting is a POST-only feature. There is deliberately no
+--     comment_votes table and no vote column on `comments`: comments
+--     support Reply and Report only. post_votes is therefore a plain
+--     post-to-user table with a real foreign key, not a polymorphic
+--     "votes" table that would have to give one up.
 --
 --  6. reports.target_id is deliberately polymorphic (post|comment|user)
 --     and therefore has NO foreign key. This is the one place integrity
@@ -60,7 +63,6 @@ DROP TABLE IF EXISTS notifications;
 DROP TABLE IF EXISTS point_transactions;
 DROP TABLE IF EXISTS follows;
 DROP TABLE IF EXISTS saved_posts;
-DROP TABLE IF EXISTS comment_votes;
 DROP TABLE IF EXISTS post_votes;
 DROP TABLE IF EXISTS comments;
 DROP TABLE IF EXISTS post_skills;
@@ -574,6 +576,11 @@ CREATE TABLE post_skills (
 --  Self-referencing for replies. The frontend renders exactly ONE level
 --  of nesting, so application code should reject a parent that itself
 --  already has a parent.
+--
+--  COMMENTS HAVE NO VOTING. There is no vote_score column here and no
+--  comment_votes table anywhere in this schema — a comment's only
+--  actions are Reply and Report. Voting is a POST-only feature; see
+--  `posts.vote_score` and the `post_votes` table.
 -- =====================================================================
 CREATE TABLE comments (
     id           INT UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -582,7 +589,6 @@ CREATE TABLE comments (
     parent_id    INT UNSIGNED NULL,
     content      TEXT NOT NULL,
 
-    vote_score   INT NOT NULL DEFAULT 0 COMMENT 'SIGNED: downvotes can push this below zero',
     report_count INT UNSIGNED NOT NULL DEFAULT 0,
     status       ENUM('visible','hidden') NOT NULL DEFAULT 'visible',
 
@@ -632,30 +638,7 @@ CREATE TABLE post_votes (
 
 
 -- =====================================================================
---  16. comment_votes
--- =====================================================================
-CREATE TABLE comment_votes (
-    user_id    INT UNSIGNED NOT NULL,
-    comment_id INT UNSIGNED NOT NULL,
-    value      TINYINT NOT NULL,
-    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-
-    PRIMARY KEY (user_id, comment_id),
-    KEY idx_comment_votes_comment (comment_id),
-
-    CONSTRAINT fk_comment_votes_user
-        FOREIGN KEY (user_id) REFERENCES users (id)
-        ON UPDATE CASCADE ON DELETE CASCADE,
-    CONSTRAINT fk_comment_votes_comment
-        FOREIGN KEY (comment_id) REFERENCES comments (id)
-        ON UPDATE CASCADE ON DELETE CASCADE,
-
-    CONSTRAINT chk_comment_votes_value CHECK (value IN (-1, 1))
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-
--- =====================================================================
---  17. saved_posts
+--  16. saved_posts
 --  Backs pages/community/saved-posts.php and the bookmark toggle on
 --  every post card.
 -- =====================================================================
@@ -677,7 +660,7 @@ CREATE TABLE saved_posts (
 
 
 -- =====================================================================
---  18. follows
+--  17. follows
 --  Powers the Home feed's "Following" tab and every Follow button.
 -- =====================================================================
 CREATE TABLE follows (
@@ -700,7 +683,7 @@ CREATE TABLE follows (
 
 
 -- =====================================================================
---  19. point_transactions
+--  18. point_transactions
 --  APPEND-ONLY ledger. Every points figure in the UI is a SUM() over
 --  this table. Corrections are new compensating rows, never UPDATEs.
 --
@@ -746,7 +729,7 @@ CREATE TABLE point_transactions (
 
 
 -- =====================================================================
---  20. notifications
+--  19. notifications
 --  One feed per user. Read by the header badge, the header dropdown and
 --  pages/notifications/notifications.php — which currently hold three
 --  different hardcoded lists; this table collapses them into one source.
@@ -772,7 +755,7 @@ CREATE TABLE notifications (
 
 
 -- =====================================================================
---  21. reports
+--  20. reports
 --  Moderation queue for admin/reports.php.
 --
 --  target_id is POLYMORPHIC (post | comment | user) and therefore has no

@@ -95,7 +95,28 @@ $adminNavItems = [
     </button>
 
     <a href="dashboard.php" class="ukn-header__brand">
-      <span class="ukn-header__title">
+      <?php /*
+        d-none d-lg-block: below Bootstrap's lg breakpoint (992px) the admin
+        sidebar is an offcanvas, and the compact header identifies the page
+        with the "Admin" badge ALONE — no "University", no "Knowledge Network".
+        The full brand still renders inside the open offcanvas
+        (admin/includes/footer.php), which is untouched.
+
+        This lives in the MARKUP rather than only in
+        assets/css/admin/admin-layout.css on purpose. That stylesheet is
+        served with no Cache-Control and no version query string, so a
+        browser that cached an earlier copy keeps applying the OLD rule and
+        goes on showing "University" — which is exactly the bug the manual
+        screenshot caught, while a fresh browser (and Playwright) saw the
+        fixed version. Bootstrap's utilities come from a versioned CDN URL
+        and the PHP page itself is not cached, so this takes effect
+        immediately for everyone, stale stylesheet or not.
+
+        .ukn-header__brand is display:flex, so the title is already a
+        blockified flex item — d-lg-block is visually identical to the
+        current desktop rendering.
+      */ ?>
+      <span class="ukn-header__title d-none d-lg-block">
         <strong>University</strong>
         <span>Knowledge Network</span>
       </span>

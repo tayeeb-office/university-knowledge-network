@@ -31,15 +31,41 @@ $aboutBio = $isMentor
     ? "I'm a Computer Science student who mentors Python, database design and data analysis through project-based sessions. I enjoy helping other students get unstuck on real assignments rather than toy examples."
     : "I'm a Computer Science student interested in Python, databases, and data analysis. I'm currently improving my backend and problem-solving skills.";
 
+/**
+ * Points stat — the ONE stat that must follow the CURRENT ACTIVE ROLE.
+ *
+ * Learner active -> "Learning Points" / 412
+ * Mentor  active -> "Mentor Points"   / 520
+ *
+ * A dual-role user can flip role without a page load, and role state is
+ * still client-side (localStorage['ukn_active_role'], applied by
+ * assets/js/core/role-switch.js). Rather than adding a second role
+ * system, this reuses the EXACT convention includes/left-sidebar.php
+ * already uses for the nav: render both variants server-side, each
+ * wrapped in [data-role="..."], with the inactive one `hidden`.
+ * role-switch.js's applyRole() already toggles every [data-role] element
+ * in the document, so this needs no new JavaScript at all.
+ *
+ * A single-role user gets only their own card, with no [data-role]
+ * wrapper — again mirroring left-sidebar.php's $rolesToRender — so a
+ * Learner can never be shown Mentor Points and vice versa.
+ */
+$pointsStatByRole = [
+    'learner' => ['label' => 'Learning Points', 'value' => '412', 'icon' => 'military_tech', 'trend' => '+64 this month'],
+    'mentor'  => ['label' => 'Mentor Points',   'value' => '520', 'icon' => 'military_tech', 'trend' => '+20 this month'],
+];
+
+$isDualRoleUser = !empty($currentUser['loggedIn']) && !empty($currentUser['dualRole']);
+$pointsRolesToRender = $isDualRoleUser ? ['learner', 'mentor'] : [$isMentor ? 'mentor' : 'learner'];
+
+/** The remaining stats stay exactly as they were — role-forked server-side. */
 $profileStats = $isMentor
     ? [
-        ['label' => 'Mentor Points', 'value' => '520', 'icon' => 'military_tech', 'trend' => '+20 this month'],
         ['label' => 'Average Rating', 'value' => '4.8', 'icon' => 'star'],
         ['label' => 'Completed Sessions', 'value' => '27', 'icon' => 'event_available'],
         ['label' => 'Teaching Skills', 'value' => '3', 'icon' => 'school'],
     ]
     : [
-        ['label' => 'Learning Points', 'value' => '412', 'icon' => 'military_tech', 'trend' => '+64 this month'],
         ['label' => 'Completed Sessions', 'value' => '18', 'icon' => 'event_available'],
         ['label' => 'Skills Learning', 'value' => '4', 'icon' => 'workspaces'],
         ['label' => 'Current Goals', 'value' => '3', 'icon' => 'flag'],
@@ -100,6 +126,13 @@ $myPost = [
 </div>
 
 <div class="row g-3 mb-4">
+  <?php foreach ($pointsRolesToRender as $pointsRole): ?>
+    <div
+      class="col-6 col-lg-3"
+      data-profile-points-stat="<?= htmlspecialchars($pointsRole) ?>"
+      <?= $isDualRoleUser ? 'data-role="' . htmlspecialchars($pointsRole) . '"' . ($pointsRole === $activeRole ? '' : ' hidden') : '' ?>
+    ><?php ukn_stat_card($pointsStatByRole[$pointsRole]); ?></div>
+  <?php endforeach; ?>
   <?php foreach ($profileStats as $stat): ?>
     <div class="col-6 col-lg-3"><?php ukn_stat_card($stat); ?></div>
   <?php endforeach; ?>

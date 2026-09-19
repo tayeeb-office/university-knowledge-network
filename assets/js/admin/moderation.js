@@ -679,7 +679,6 @@
         setText('text', row.getAttribute('data-comment-text'));
         setText('posted', row.getAttribute('data-comment-posted'));
         setText('post', row.getAttribute('data-comment-post-title'));
-        setText('votes', row.getAttribute('data-comment-votes'));
         setText('replies', row.getAttribute('data-comment-replies'));
         var reports = row.getAttribute('data-comment-reports') || '0';
         setText('reports', reports === '0' ? '0' : reports + ' reports');
@@ -740,8 +739,6 @@
             return parseInt(a.getAttribute('data-comment-date-sort'), 10) - parseInt(b.getAttribute('data-comment-date-sort'), 10);
           case 'most-reported':
             return parseInt(b.getAttribute('data-comment-reports'), 10) - parseInt(a.getAttribute('data-comment-reports'), 10);
-          case 'most-voted':
-            return parseInt(b.getAttribute('data-comment-votes'), 10) - parseInt(a.getAttribute('data-comment-votes'), 10);
           case 'newest':
           default:
             return parseInt(b.getAttribute('data-comment-date-sort'), 10) - parseInt(a.getAttribute('data-comment-date-sort'), 10);

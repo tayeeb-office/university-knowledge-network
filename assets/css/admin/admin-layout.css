@@ -51,8 +51,25 @@
    offcanvas (admin/includes/footer.php) take over navigation instead,
    matching the .btn-icon.d-lg-none trigger in admin/includes/header.php. */
 @media (max-width: 991.98px){
-  .ukn-admin-header .ukn-header__brand .ukn-header__title span{
+  /* Sidebar is CLOSED at this width, so the compact header identifies the
+     page as "Admin" and nothing else. The full "University Knowledge
+     Network" brand is untouched inside the offcanvas sidebar
+     (admin/includes/footer.php), which is not inside .ukn-admin-header
+     and so is unaffected by this rule.
+
+     NOTE: the AUTHORITATIVE hide is now the `d-none d-lg-block` utility on
+     the element itself in admin/includes/header.php. This rule is kept
+     only as a fallback for the case where Bootstrap's CDN stylesheet does
+     not load. It is deliberately redundant: this file is served with no
+     Cache-Control and no version query string, so relying on it ALONE
+     meant a browser holding a cached copy kept showing "University". */
+  .ukn-admin-header .ukn-header__brand .ukn-header__title{
     display: none;
+  }
+  /* With the title gone, the badge is the first thing in the brand link;
+     its gutter would otherwise push "Admin" off the left edge. */
+  .ukn-admin-header .ukn-admin-badge{
+    margin-left: 0;
   }
   .ukn-shell.ukn-shell--no-right-sidebar{
     grid-template-columns: minmax(0, 1fr);
@@ -65,11 +82,11 @@
   }
 }
 
-@media (max-width: 430px){
-  .ukn-admin-badge{
-    display: none;
-  }
-}
+/* NOTE: the "Admin" badge is deliberately NOT hidden at narrow widths.
+   With the brand title hidden above, it is the only thing identifying the
+   Admin interface in the compact header, so hiding it here (as this file
+   previously did below 430px) left the header with no page identity at
+   all at 320-430px. */
 
 /* Generic compact admin list row — reused by the Dashboard's Popular
    Skills/Pending Reports/Recent Activity cards now, and intended for

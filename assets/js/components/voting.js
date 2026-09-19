@@ -1,8 +1,12 @@
 /**
- * Generic upvote/downvote toggle — works for any .ukn-vote or
- * .ukn-vote-rail control on the page (components/post-card.php today;
- * a future post-details page can reuse the exact same markup and this
- * same handler picks it up automatically via delegation).
+ * POST upvote/downvote toggle — drives the .ukn-vote-rail control in
+ * components/post-card.php, on every page that renders a post card
+ * (Home, Post Details, My Posts, Saved Posts, profiles, Skill Details),
+ * via one delegated listener.
+ *
+ * Voting is a POST-only feature. Comments have no voting at all — see
+ * assets/js/components/comments.js — so this deliberately matches only
+ * .ukn-vote-rail and can never bind to anything inside a comment.
  *
  * Frontend-only mock state: clicking just adjusts the displayed number
  * (relative to the server-rendered data-vote-base) and toggles which
@@ -42,7 +46,7 @@
       return;
     }
 
-    var group = (upBtn || downBtn).closest('.ukn-vote, .ukn-vote-rail');
+    var group = (upBtn || downBtn).closest('.ukn-vote-rail');
     if (!group) {
       return;
     }
