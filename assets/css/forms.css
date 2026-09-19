@@ -24,6 +24,11 @@ textarea.form-control{
   padding: 10px 11px;
   resize: vertical;
 }
+/* Comfortable writing area for longer content (Create/Edit Post body,
+   Rating's written review). */
+textarea.form-control.ukn-textarea-lg{
+  min-height: 160px;
+}
 .form-select{
   background-color: var(--ukn-surface-2);
 }
@@ -259,12 +264,35 @@ textarea.form-control{
   gap: var(--ukn-space-4);
 }
 
-/* Star rating input (read display uses .ukn-stars in components) */
+/* Interactive star-rating input (rating-modal.php) — one radio per star,
+   1-5, visually-hidden but still keyboard/screen-reader accessible
+   (.ukn-visually-hidden, not display:none, so Tab/arrow keys and AT
+   still reach it). Radios render 5-4-3-2-1 in the DOM with the group
+   row-reversed, which is what lets a plain CSS general-sibling selector
+   light up "this star and everything before it" on :checked/:hover — the
+   standard accessible CSS-only star-rating technique. The ★ glyph
+   matches .ukn-stars (assets/css/utilities.css) so read-only and
+   interactive stars look identical across the app. */
 .ukn-star-input{
   display: flex;
-  align-items: center;
+  flex-direction: row-reverse;
+  justify-content: flex-end;
   gap: 2px;
+}
+.ukn-star-input label{
+  font-size: 1.5rem;
+  line-height: 1;
+  color: var(--ukn-border-strong);
+  cursor: pointer;
+  transition: color var(--ukn-transition-fast);
+}
+.ukn-star-input input:checked ~ label,
+.ukn-star-input label:hover,
+.ukn-star-input label:hover ~ label{
   color: var(--ukn-accent);
-  font-size: 1.3125rem;
-  letter-spacing: .16em;
+}
+.ukn-star-input input:focus-visible + label{
+  outline: 2px solid var(--ukn-accent);
+  outline-offset: 2px;
+  border-radius: var(--ukn-radius-sm);
 }

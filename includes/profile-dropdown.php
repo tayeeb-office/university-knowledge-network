@@ -1,0 +1,81 @@
+<?php
+/**
+ * Profile dropdown panel — content for the account-menu `.dropdown-menu`
+ * in includes/header.php. header.php includes this file before
+ * includes/left-sidebar.php runs, so ukn_route_href() (defined there)
+ * isn't available yet — the handful of links below are plain hardcoded
+ * index.php?page=... URLs for the same reason includes/header.php itself
+ * hardcodes index.php?page=login etc. All internal navigation routes
+ * through index.php's front controller (see index.php's $routes
+ * whitelist) rather than linking pages/**\/*.php files directly.
+ *
+ * "Switch to Mentor/Learner" opens modals/role-switch-modal.php (same
+ * trigger pattern already used in includes/mobile-nav.php, rather than
+ * creating a second role-switch component); picking a role there is
+ * handled by assets/js/core/role-switch.js, which also keeps the
+ * [data-role-label] / [data-role-switch-label] / [data-role-dashboard-link]
+ * elements below in sync — this file only needs to render their correct
+ * *initial* value for the first page load. "Theme: Light/Dark" is wired
+ * up by assets/js/core/theme.js — the single shared theme implementation
+ * used everywhere in the app, not a one-off toggle just for this menu.
+ * Both are frontend-only mock/visual behavior — no backend, no real
+ * authorization.
+ */
+$currentUser = $currentUser ?? [
+    'loggedIn'   => true,
+    'role'       => 'learner',   // 'visitor' | 'learner' | 'mentor'
+    'dualRole'   => true,
+    'activeRole' => 'learner',
+    'name'       => 'Nabila Rahman',
+    'initials'   => 'NR',
+    'meta'       => 'Learner · Computer Science',
+];
+
+$activeRole = $currentUser['dualRole'] ? $currentUser['activeRole'] : $currentUser['role'];
+$roleLabel = ucfirst($activeRole);
+$otherRole = $activeRole === 'mentor' ? 'Learner' : 'Mentor';
+$dashboardHref = $activeRole === 'mentor' ? 'index.php?page=mentor-dashboard' : 'index.php?page=learner-dashboard';
+?>
+<div class="ukn-dropdown-panel__header">
+  <span class="ukn-cluster">
+    <span class="ukn-avatar ukn-avatar-lg" aria-hidden="true"><?= htmlspecialchars($currentUser['initials']) ?></span>
+    <span>
+      <span class="d-block fw-bold"><?= htmlspecialchars($currentUser['name']) ?></span>
+      <span class="ukn-body-sm"><?= htmlspecialchars($currentUser['meta']) ?></span>
+    </span>
+  </span>
+</div>
+
+<?php if ($currentUser['dualRole']): ?>
+<div class="ukn-dropdown-panel__item ukn-row-between">
+  <span class="ukn-eyebrow">Current role</span>
+  <span class="ukn-status ukn-status-accent" data-role-label><?= htmlspecialchars($roleLabel) ?></span>
+</div>
+<?php endif; ?>
+
+<a href="index.php?page=my-profile" class="dropdown-item">
+  <span class="ms" aria-hidden="true">person</span>View Profile
+</a>
+<a
+  href="<?= htmlspecialchars($dashboardHref) ?>"
+  class="dropdown-item"
+  data-role-dashboard-link
+  data-dashboard-href-learner="index.php?page=learner-dashboard"
+  data-dashboard-href-mentor="index.php?page=mentor-dashboard"
+>
+  <span class="ms" aria-hidden="true">dashboard</span>Dashboard
+</a>
+<?php if ($currentUser['dualRole']): ?>
+  <button type="button" class="dropdown-item" data-bs-toggle="modal" data-bs-target="#roleSwitchModal">
+    <span class="ms" aria-hidden="true">swap_horiz</span><span data-role-switch-label>Switch to <?= htmlspecialchars($otherRole) ?></span>
+  </button>
+<?php endif; ?>
+<button type="button" id="uknThemeToggle" class="dropdown-item" aria-pressed="false">
+  <span class="ms" aria-hidden="true">dark_mode</span><span data-theme-label>Theme: Light</span>
+</button>
+<a href="index.php?page=settings" class="dropdown-item">
+  <span class="ms" aria-hidden="true">settings</span>Settings
+</a>
+<button type="button" class="dropdown-item">
+  <span class="ms" aria-hidden="true">logout</span>Log out
+</button>

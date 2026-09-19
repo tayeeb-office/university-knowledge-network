@@ -32,7 +32,21 @@ $currentUser = $currentUser ?? [
     'initials'   => 'NR',
     'meta'       => 'Learner · Computer Science',
 ];
-$notificationCount = $notificationCount ?? 3;
+
+/**
+ * Mock notifications — the single source of truth for both the bell badge
+ * count below and includes/notification-dropdown.php (included further
+ * down, so it already sees this same $notifications variable). A page can
+ * still override just $notificationCount, or supply its own $notifications
+ * array, before including this file.
+ */
+$notifications = $notifications ?? [
+    ['icon' => 'event_available', 'text' => 'Rahim Ahmed accepted your Python session request.', 'time' => '2 min ago', 'kind' => 'Session', 'unread' => true],
+    ['icon' => 'chat_bubble', 'text' => 'Sara Khan replied to your discussion.', 'time' => '10 min ago', 'kind' => 'Community', 'unread' => true],
+    ['icon' => 'person_add', 'text' => 'Hasan Mahmud followed you.', 'time' => '1 hr ago', 'kind' => 'Community', 'unread' => true],
+    ['icon' => 'check_circle', 'text' => 'Your JavaScript mentoring session has been completed.', 'time' => 'Yesterday', 'kind' => 'Session', 'unread' => false],
+];
+$notificationCount = $notificationCount ?? count(array_filter($notifications, static fn (array $n): bool => !empty($n['unread'])));
 $showRightSidebar = $showRightSidebar ?? true;
 ?>
 <header class="ukn-header">
@@ -47,24 +61,31 @@ $showRightSidebar = $showRightSidebar ?? true;
     <span class="ms" aria-hidden="true">menu</span>
   </button>
 
-  <a href="index.php" class="ukn-header__brand">
-    <img src="assets/images/logo/ukn-logo.png" alt="" class="ukn-header__mark">
+  <a href="index.php?page=home" class="ukn-header__brand">
     <span class="ukn-header__title">
       <strong>University</strong>
       <span>Knowledge Network</span>
     </span>
   </a>
 
-  <form class="ukn-header__search ukn-search ukn-search--header" role="search" action="pages/search/search-results.php" method="get">
+  <form class="ukn-header__search ukn-search ukn-search--header" role="search" action="index.php" method="get">
+    <input type="hidden" name="page" value="search">
     <span class="ms" aria-hidden="true">search</span>
     <label for="uknGlobalSearch" class="ukn-visually-hidden">Search skills, mentors, discussions</label>
-    <input type="search" id="uknGlobalSearch" name="q" class="form-control" placeholder="Search skills, mentors, discussions">
+    <input
+      type="search"
+      id="uknGlobalSearch"
+      name="q"
+      class="form-control"
+      placeholder="Search skills, mentors, discussions"
+      value="<?= ($page ?? '') === 'search' ? htmlspecialchars(trim((string) ($_GET['q'] ?? ''))) : '' ?>"
+    >
   </form>
 
   <div class="ukn-header__actions">
     <?php if (!$currentUser['loggedIn']): ?>
-      <a href="pages/auth/login.php" class="btn btn-outline-secondary btn-sm">Log in</a>
-      <a href="pages/auth/register.php" class="btn btn-primary btn-sm">Register</a>
+      <a href="index.php?page=login" class="btn btn-outline-secondary btn-sm">Log in</a>
+      <a href="index.php?page=register" class="btn btn-primary btn-sm">Register</a>
     <?php else: ?>
       <button
         type="button"
@@ -78,17 +99,19 @@ $showRightSidebar = $showRightSidebar ?? true;
       <div class="dropdown">
         <button
           type="button"
+          id="uknNotifToggle"
           class="btn-icon position-relative"
           data-bs-toggle="dropdown"
           aria-expanded="false"
+          aria-controls="uknNotifDropdown"
           aria-label="Notifications"
         >
           <span class="ms" aria-hidden="true">notifications</span>
           <?php if ($notificationCount > 0): ?>
-            <span class="ukn-count-pill ukn-count-pill--corner"><?= (int) $notificationCount ?></span>
+            <span class="ukn-count-pill ukn-count-pill--corner" data-notification-badge><?= (int) $notificationCount ?></span>
           <?php endif; ?>
         </button>
-        <div class="dropdown-menu dropdown-menu-end ukn-dropdown-panel p-0">
+        <div id="uknNotifDropdown" class="dropdown-menu dropdown-menu-end ukn-dropdown-panel p-0" aria-labelledby="uknNotifToggle">
           <?php include __DIR__ . '/notification-dropdown.php'; ?>
         </div>
       </div>
@@ -96,15 +119,17 @@ $showRightSidebar = $showRightSidebar ?? true;
       <div class="dropdown">
         <button
           type="button"
+          id="uknProfileToggle"
           class="ukn-profile-trigger"
           data-bs-toggle="dropdown"
           aria-expanded="false"
+          aria-controls="uknProfileDropdown"
           aria-label="Account menu"
         >
           <span class="ukn-avatar ukn-avatar-sm" aria-hidden="true"><?= htmlspecialchars($currentUser['initials']) ?></span>
           <span class="ms" aria-hidden="true">expand_more</span>
         </button>
-        <div class="dropdown-menu dropdown-menu-end ukn-dropdown-panel p-0">
+        <div id="uknProfileDropdown" class="dropdown-menu dropdown-menu-end ukn-dropdown-panel p-0" aria-labelledby="uknProfileToggle">
           <?php include __DIR__ . '/profile-dropdown.php'; ?>
         </div>
       </div>

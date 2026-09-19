@@ -1,0 +1,99 @@
+/* ==========================================================================
+   Settings — page-specific composition. Cards/switches/buttons all reuse
+   existing global classes as-is; the only genuinely new layout pieces are
+   the local settings nav + content grid, the compact label/control row
+   inside each settings card, and the Danger Zone card's warning border.
+   ========================================================================== */
+
+.ukn-settings-layout{
+  display: grid;
+  grid-template-columns: 210px minmax(0, 1fr);
+  gap: var(--ukn-space-3);
+  align-items: start;
+}
+@media (max-width: 767.98px){
+  .ukn-settings-layout{
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Local, in-page settings nav — plain anchor links, not a second global
+   sidebar. Stacks as its own small card on desktop; becomes a horizontal
+   scrollable strip on mobile so it never squeezes into an unreadable
+   vertical list at 320px. */
+.ukn-settings-nav{
+  display: flex;
+  flex-direction: column;
+  background: var(--ukn-surface);
+  border: 1px solid var(--ukn-border);
+  border-radius: var(--ukn-radius-lg);
+  overflow: hidden;
+  position: sticky;
+  top: var(--ukn-space-3);
+}
+.ukn-settings-nav a{
+  padding: var(--ukn-space-3);
+  border-bottom: 1px solid var(--ukn-border);
+  border-left: 3px solid transparent;
+  color: var(--ukn-ink);
+  text-decoration: none;
+  font-size: .90625rem;
+}
+.ukn-settings-nav a:last-child{
+  border-bottom: none;
+}
+.ukn-settings-nav a:hover{
+  background: var(--ukn-surface-2);
+}
+.ukn-settings-nav a.is-active{
+  background: var(--ukn-accent-soft);
+  border-left-color: var(--ukn-accent);
+  font-weight: 700;
+}
+@media (max-width: 767.98px){
+  .ukn-settings-nav{
+    flex-direction: row;
+    overflow-x: auto;
+    position: static;
+    -webkit-overflow-scrolling: touch;
+  }
+  .ukn-settings-nav a{
+    border-bottom: none;
+    border-left: none;
+    border-bottom: 3px solid transparent;
+    flex: none;
+    white-space: nowrap;
+  }
+  .ukn-settings-nav a.is-active{
+    border-left-color: transparent;
+    border-bottom-color: var(--ukn-accent);
+  }
+}
+
+/* One label+help / control row inside a settings card (Account,
+   Appearance, Notifications, Privacy & Role all use this same row). */
+.ukn-settings-row{
+  display: flex;
+  align-items: center;
+  gap: var(--ukn-space-3);
+  padding: var(--ukn-space-3);
+  border-bottom: 1px solid var(--ukn-border);
+  flex-wrap: wrap;
+}
+.ukn-settings-row:last-child{
+  border-bottom: none;
+}
+.ukn-settings-row__text{
+  flex: 1 1 200px;
+  min-width: 0;
+}
+
+.ukn-danger-zone{
+  border-color: var(--ukn-danger);
+}
+.ukn-danger-zone__title{
+  font-size: 1.0625rem;
+  font-weight: 700;
+  color: var(--ukn-danger);
+  margin-bottom: var(--ukn-space-2);
+}

@@ -1,0 +1,13 @@
+/* ==========================================================================
+   Admin Reports — page-specific rules only. The table, filter toolbar,
+   pagination footer, stat cards and status badges all reuse tables.css/
+   forms.css/admin-layout.css/components.css exactly as Sessions/Posts/
+   Comments already do; this file only styles the Report Review modal's
+   own "Decision" block, which no earlier Admin page needed.
+   ========================================================================== */
+
+.ukn-report-decision{
+  margin-top: var(--ukn-space-3);
+  padding-top: var(--ukn-space-3);
+  border-top: 1px solid var(--ukn-border);
+}

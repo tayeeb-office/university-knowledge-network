@@ -27,15 +27,23 @@ $activeNav = $activeNav ?? 'home';
 $navRole = $currentUser['loggedIn']
     ? ($currentUser['dualRole'] ? $currentUser['activeRole'] : $currentUser['role'])
     : 'visitor';
-$navGroups = ukn_nav_groups_for_role($navRole);
 $otherRole = $currentUser['activeRole'] === 'mentor' ? 'Learner' : 'Mentor';
+
+/**
+ * Mirrors includes/left-sidebar.php exactly: dual-role users get both
+ * role's navigation pre-rendered in [data-role] blocks, toggled by the
+ * same assets/js/core/role-switch.js that drives the desktop sidebar —
+ * one shared role state, not two independent ones.
+ */
+$isDualRoleUser = $currentUser['loggedIn'] && $currentUser['dualRole'];
+$rolesToRender = $isDualRoleUser ? ['learner', 'mentor'] : [$navRole];
 ?>
 <div class="offcanvas offcanvas-start ukn-mobile-nav" tabindex="-1" id="uknMobileNav" aria-labelledby="uknMobileNavLabel">
   <div class="offcanvas-header">
     <?php if ($currentUser['loggedIn']): ?>
       <div class="ukn-cluster">
         <span class="ukn-avatar" aria-hidden="true"><?= htmlspecialchars($currentUser['initials']) ?></span>
-        <span>
+        <span class="ukn-mobile-nav__user-text">
           <span class="d-block fw-bold" id="uknMobileNavLabel"><?= htmlspecialchars($currentUser['name']) ?></span>
           <span class="ukn-body-sm"><?= htmlspecialchars($currentUser['meta']) ?></span>
         </span>
@@ -48,28 +56,32 @@ $otherRole = $currentUser['activeRole'] === 'mentor' ? 'Learner' : 'Mentor';
     </button>
   </div>
   <div class="offcanvas-body d-flex flex-column">
-    <?php foreach ($navGroups as $group): ?>
-      <div class="ukn-nav-group">
-        <span class="ukn-eyebrow ukn-nav-group__title"><?= htmlspecialchars($group['title']) ?></span>
-        <?php foreach ($group['items'] as $item):
-          $isActive = $item['route'] === $activeNav;
-        ?>
-          <a
-            href="<?= htmlspecialchars(ukn_route_href($item['route'])) ?>"
-            class="ukn-nav-link<?= $isActive ? ' is-active' : '' ?>"
-            <?= $isActive ? 'aria-current="page"' : '' ?>
-          >
-            <span class="ms" aria-hidden="true"><?= htmlspecialchars($item['icon']) ?></span>
-            <span class="ukn-nav-text"><?= htmlspecialchars($item['label']) ?></span>
-            <?php if (!empty($item['count'])): ?>
-              <span class="ukn-count-pill"><?= (int) $item['count'] ?></span>
-            <?php endif; ?>
-          </a>
+    <?php foreach ($rolesToRender as $roleKey): ?>
+      <div<?= $isDualRoleUser ? ' data-role="' . htmlspecialchars($roleKey) . '"' . ($roleKey === $navRole ? '' : ' hidden') : '' ?>>
+        <?php foreach (ukn_nav_groups_for_role($roleKey) as $group): ?>
+          <div class="ukn-nav-group">
+            <span class="ukn-eyebrow ukn-nav-group__title"><?= htmlspecialchars($group['title']) ?></span>
+            <?php foreach ($group['items'] as $item):
+              $isActive = $item['route'] === $activeNav;
+            ?>
+              <a
+                href="<?= htmlspecialchars(ukn_route_href($item['route'])) ?>"
+                class="ukn-nav-link<?= $isActive ? ' is-active' : '' ?>"
+                <?= $isActive ? 'aria-current="page"' : '' ?>
+              >
+                <span class="ms" aria-hidden="true"><?= htmlspecialchars($item['icon']) ?></span>
+                <span class="ukn-nav-text"><?= htmlspecialchars($item['label']) ?></span>
+                <?php if (!empty($item['count'])): ?>
+                  <span class="ukn-count-pill"<?= $item['route'] === 'notifications' ? ' data-notification-badge' : '' ?>><?= (int) $item['count'] ?></span>
+                <?php endif; ?>
+              </a>
+            <?php endforeach; ?>
+          </div>
         <?php endforeach; ?>
       </div>
     <?php endforeach; ?>
 
-    <?php if ($currentUser['loggedIn'] && $currentUser['dualRole']): ?>
+    <?php if ($isDualRoleUser): ?>
       <button
         type="button"
         class="ukn-nav-link ukn-nav-link--footer mt-auto"
@@ -77,7 +89,7 @@ $otherRole = $currentUser['activeRole'] === 'mentor' ? 'Learner' : 'Mentor';
         data-bs-target="#roleSwitchModal"
       >
         <span class="ms" aria-hidden="true">swap_horiz</span>
-        <span class="ukn-nav-text">Switch to <?= htmlspecialchars($otherRole) ?></span>
+        <span class="ukn-nav-text" data-role-switch-label>Switch to <?= htmlspecialchars($otherRole) ?></span>
       </button>
     <?php endif; ?>
   </div>

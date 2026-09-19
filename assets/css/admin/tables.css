@@ -1,0 +1,84 @@
+/* ==========================================================================
+   Admin tables — shared by every admin page that lists records (Dashboard's
+   Recent Users/Sessions now; Users/Departments/Skill Categories/Skills/
+   Sessions/Posts/Comments/Reports later). Real semantic <table>/<thead>/
+   <tbody>/<th> markup throughout (screen readers get real table semantics
+   at every width) — below 768px it visually reflows into stacked rows
+   using each cell's own data-label, rather than hiding columns or forcing
+   horizontal scroll.
+   ========================================================================== */
+
+.ukn-admin-table{
+  --bs-table-bg: transparent;
+  margin-bottom: 0;
+}
+.ukn-admin-table thead th{
+  font-size: .75rem;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--ukn-ink-muted);
+  border-bottom-color: var(--ukn-border);
+  white-space: nowrap;
+}
+.ukn-admin-table td,
+.ukn-admin-table th{
+  padding: var(--ukn-space-2) var(--ukn-space-3);
+  border-bottom-color: var(--ukn-border);
+  vertical-align: middle;
+}
+
+@media (max-width: 767.98px){
+  .ukn-admin-table thead{
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+  .ukn-admin-table,
+  .ukn-admin-table tbody,
+  .ukn-admin-table tr,
+  .ukn-admin-table td{
+    display: block;
+    width: 100%;
+  }
+  .ukn-admin-table tr{
+    padding: var(--ukn-space-2) 0;
+    border-bottom: 1px solid var(--ukn-border);
+  }
+  .ukn-admin-table td{
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--ukn-space-3);
+    padding: 6px 0;
+    border-bottom: none;
+    text-align: right;
+  }
+  .ukn-admin-table td::before{
+    content: attr(data-label);
+    flex: none;
+    font-size: .75rem;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    color: var(--ukn-ink-muted);
+    text-align: left;
+  }
+  /* The Actions cell's own controls (View button + kebab menu) already
+     read fine as a right-aligned pair without a redundant "Actions"
+     label repeated on every single row. */
+  .ukn-admin-table td[data-label="Actions"]::before{
+    display: none;
+  }
+}
+
+/* Client-side pagination footer under a paginated admin table/list. */
+.ukn-admin-pagination{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--ukn-space-2);
+  border-top: 1px solid var(--ukn-border);
+}

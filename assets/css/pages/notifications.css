@@ -1,0 +1,17 @@
+/* ==========================================================================
+   Notifications — page-specific composition only. Every row reuses
+   components/notification-item.php's own .ukn-dropdown-panel__item styling
+   as-is (icon, text, unread tint/bold/dot — components.css already
+   defines all of it), deliberately WITHOUT the dropdown-only
+   .ukn-dropdown-panel__list class, since that class's 360px max-height +
+   scroll cap makes sense inside a small header dropdown but not on a full
+   page meant to show its whole list. The one thing this page's own
+   .card wrapper needs that the dropdown didn't: the last row's
+   border-bottom sits flush against the card's own bottom edge, which
+   reads as a stray double line — removed here only, not from the shared
+   component.
+   ========================================================================== */
+
+.ukn-notification-list .ukn-dropdown-panel__item:last-child{
+  border-bottom: 0;
+}

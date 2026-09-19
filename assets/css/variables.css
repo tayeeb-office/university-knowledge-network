@@ -37,6 +37,10 @@
   --ukn-accent: var(--ukn-orange);
   --ukn-accent-ink: var(--ukn-white);
   --ukn-accent-soft: #FFE9DF;
+  /* Deep orange for hover/active on primary-orange controls — a fixed,
+     non-theme-flipping shade so hovering the Create button never lands on
+     black (light theme) or white (dark theme). */
+  --ukn-accent-strong: #E6530F;
 
   /* ---- Semantic status colors (used alongside icons/labels, never
      color alone — see brand guide section 5) ---- */

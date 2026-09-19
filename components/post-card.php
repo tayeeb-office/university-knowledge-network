@@ -1,0 +1,212 @@
+<?php
+/**
+ * Post card — reusable community-feed post component.
+ * Used by: Home feed, My Posts, Saved Posts, and Post Details (via the
+ * 'detail' variant — full content instead of a clamped excerpt, a plain
+ * heading instead of a self-link, and a comments anchor instead of a
+ * comments link, since Post Details already IS that post's own page).
+ *
+ * Usage:
+ *   require_once __DIR__ . '/../components/post-card.php';
+ *   foreach ($posts as $post) { ukn_post_card($post); }        // feed (default)
+ *   ukn_post_card($post, ['variant' => 'detail']);              // Post Details
+ *
+ * $post shape (all keys optional except 'id'/'title'):
+ *   [
+ *     'id'         => 1,
+ *     'href'       => 'index.php?page=post-details',
+ *     'author'     => 'Nabila Rahman',
+ *     'authorHref' => 'index.php?page=learner-profile',  // optional — omit for plain (non-link) name
+ *     'initials'   => 'NR',
+ *     'role'       => 'Learner',
+ *     'department' => 'Computer Science',
+ *     'time'       => '5 hours ago',
+ *     'title'      => 'Need Help Understanding Database Normalization',
+ *     'excerpt'    => 'I get 1NF and 2NF but 3NF stops making sense...',
+ *                     // 'detail' variant: paragraphs separated by a
+ *                     // blank line ("\n\n") each render as their own <p>
+ *     'tags'       => ['MySQL', 'Database', '3NF'],       // rendered as clickable skill links
+ *     'score'      => 96,
+ *     'voteState'  => 0,       // -1 downvoted, 0 none, 1 upvoted (mock only)
+ *     'comments'   => 24,
+ *     'saved'      => false,
+ *     'following'  => false,   // mock only — read by a feed's "Following" filter, see data-following
+ *     'isOwner'    => true,    // default true (preserves prior behavior) — set false to hide Edit/Delete
+ *   ]
+ * $options: ['variant' => 'feed' (default) | 'detail']
+ *
+ * Voting/saving are frontend-only mock state, wired up by
+ * assets/js/components/voting.js and assets/js/components/save-post.js
+ * (generic, delegated — no backend, no persistence beyond the DOM).
+ *
+ * "More actions" opens Edit/Delete via the shared modal system
+ * (modals/edit-post-modal.php, modals/delete-confirmation-modal.php —
+ * both included once from includes/footer.php) rather than a bespoke
+ * menu — no real update or deletion happens. Only shown when
+ * $post['isOwner'] is true (a feed passing other people's posts sets
+ * this false so non-owners never see owner-only controls). Edit carries
+ * this post's own title/content/skills as data-edit-post-* attributes,
+ * and Delete's confirmation title names this post specifically — both
+ * read by assets/js/core/modal.js's contextual-modal handling (same
+ * pattern as Request Session / Rating), so editing/deleting Post A then
+ * Post B never shows stale data from A. assets/js/pages/community.js
+ * additionally removes the card itself once a delete is confirmed (via
+ * data-remove-post-card, same convention as skill/goal/session removal
+ * elsewhere in this project).
+ */
+if (!function_exists('ukn_post_card')) {
+    function ukn_post_card(array $post, array $options = []): void
+    {
+        $post += [
+            'href' => '#', 'author' => 'Member', 'authorHref' => null, 'initials' => '?', 'role' => 'Learner',
+            'department' => '', 'time' => '', 'title' => 'Untitled post', 'excerpt' => '',
+            'tags' => [], 'score' => 0, 'voteState' => 0, 'comments' => 0, 'saved' => false,
+            'following' => false, 'isOwner' => true,
+        ];
+        $isDetail = ($options['variant'] ?? 'feed') === 'detail';
+        $upClass = $post['voteState'] === 1 ? ' is-active' : '';
+        $downClass = $post['voteState'] === -1 ? ' is-active' : '';
+
+        /** Known catalog skills (pages/skills/skills.php) so a post's tags
+         * link to the SAME skill id skill-details.php actually reads —
+         * previously this only ever passed a name, which skill-details.php
+         * has no way to look up, silently falling back to Python for
+         * every tag. A tag outside this small catalog still falls back
+         * that same safe way, same as every other unmapped-id case in
+         * this project. */
+        $skillIds = [
+            'python' => 1, 'mysql' => 2, 'react' => 3, 'ui/ux design' => 4, 'data analysis' => 5,
+            'public speaking' => 6, 'database design' => 7, 'arduino' => 8, 'academic writing' => 9, 'digital marketing' => 10,
+        ];
+
+        /** Derived, not caller-supplied — assets/js/pages/community.js's My
+         * Posts / Saved Posts search+skill filter reads these directly off
+         * this same <article> (never a wrapper div around it, which would
+         * desync the moment JS also needs to .remove() this exact element —
+         * see that file's docblock). Harmless, inert data on every other
+         * page that renders this component without filtering (Home, Post
+         * Details). */
+        $searchText = strtolower($post['title'] . ' ' . $post['author'] . ' ' . implode(' ', $post['tags']));
+        $skillsAttr = strtolower(implode('|', $post['tags']));
+        ?>
+        <article
+          class="card ukn-post-card mb-3<?= $isDetail ? '' : ' ukn-card-interactive' ?>"
+          data-post-id="<?= htmlspecialchars((string) ($post['id'] ?? '')) ?>"
+          data-votes="<?= (int) $post['score'] ?>"
+          data-following="<?= $post['following'] ? 'true' : 'false' ?>"
+          data-post-search="<?= htmlspecialchars($searchText) ?>"
+          data-post-skills="<?= htmlspecialchars($skillsAttr) ?>"
+        >
+          <div class="ukn-vote-rail">
+            <button type="button" class="ukn-vote-btn is-up<?= $upClass ?>" data-vote-up aria-label="Upvote this post" aria-pressed="<?= $post['voteState'] === 1 ? 'true' : 'false' ?>">
+              <span class="ms" aria-hidden="true">arrow_upward</span>
+            </button>
+            <span class="ukn-vote-score" data-vote-score data-vote-base="<?= (int) $post['score'] ?>"><?= (int) $post['score'] ?></span>
+            <button type="button" class="ukn-vote-btn is-down<?= $downClass ?>" data-vote-down aria-label="Downvote this post" aria-pressed="<?= $post['voteState'] === -1 ? 'true' : 'false' ?>">
+              <span class="ms" aria-hidden="true">arrow_downward</span>
+            </button>
+          </div>
+          <div class="ukn-post-card__body">
+            <div class="ukn-post-card__meta">
+              <span class="ukn-avatar ukn-avatar-sm" aria-hidden="true"><?= htmlspecialchars($post['initials']) ?></span>
+              <?php if ($post['authorHref']): ?>
+                <a href="<?= htmlspecialchars($post['authorHref']) ?>" class="text-body fw-bold"><?= htmlspecialchars($post['author']) ?></a>
+              <?php else: ?>
+                <strong class="text-body"><?= htmlspecialchars($post['author']) ?></strong>
+              <?php endif; ?>
+              <span class="ukn-role-chip"><?= htmlspecialchars($post['role']) ?></span>
+              <?php if ($post['department']): ?><span><?= htmlspecialchars($post['department']) ?></span><?php endif; ?>
+              <?php if ($post['time']): ?><span class="ukn-dot"><?= htmlspecialchars($post['time']) ?></span><?php endif; ?>
+            </div>
+            <?php if ($isDetail): ?>
+              <h1 class="ukn-post-card__title ukn-post-card__title--detail"><?= htmlspecialchars($post['title']) ?></h1>
+            <?php else: ?>
+              <h2 class="ukn-post-card__title">
+                <a href="<?= htmlspecialchars($post['href']) ?>"><?= htmlspecialchars($post['title']) ?></a>
+              </h2>
+            <?php endif; ?>
+            <?php if ($post['excerpt']):
+              if ($isDetail):
+                foreach (preg_split('/\n\s*\n/', trim($post['excerpt'])) as $paragraph): ?>
+                  <p class="ukn-body ukn-prose mb-2"><?= htmlspecialchars($paragraph) ?></p>
+                <?php endforeach;
+              else: ?>
+                <p class="ukn-body ukn-prose ukn-clamp-3 mb-2"><?= htmlspecialchars($post['excerpt']) ?></p>
+              <?php endif;
+            endif; ?>
+            <?php if ($post['tags']): ?>
+              <div class="d-flex flex-wrap gap-2 mb-2">
+                <?php foreach ($post['tags'] as $tag):
+                  $skillId = $skillIds[strtolower($tag)] ?? null;
+                  $tagHref = 'index.php?page=skill-details' . ($skillId ? '&id=' . $skillId : '');
+                ?>
+                  <a href="<?= htmlspecialchars($tagHref) ?>" class="ukn-tag-skill"><?= htmlspecialchars($tag) ?></a>
+                <?php endforeach; ?>
+              </div>
+            <?php endif; ?>
+            <div class="d-flex align-items-center gap-1 flex-wrap">
+              <?php if ($isDetail): ?>
+                <a href="#comments" class="btn-ghost">
+                  <span class="ms" aria-hidden="true">chat_bubble</span><span data-post-comment-count><?= (int) $post['comments'] ?></span> comments
+                </a>
+              <?php else: ?>
+                <a href="<?= htmlspecialchars($post['href']) ?>" class="btn-ghost">
+                  <span class="ms" aria-hidden="true">chat_bubble</span><?= (int) $post['comments'] ?> comments
+                </a>
+              <?php endif; ?>
+              <button
+                type="button"
+                class="btn-ghost<?= $post['saved'] ? ' is-active' : '' ?>"
+                data-save-post
+                data-saved="<?= $post['saved'] ? 'true' : 'false' ?>"
+                aria-pressed="<?= $post['saved'] ? 'true' : 'false' ?>"
+              >
+                <span class="ms" aria-hidden="true" data-save-icon><?= $post['saved'] ? 'bookmark' : 'bookmark_border' ?></span>
+                <span data-save-label><?= $post['saved'] ? 'Saved' : 'Save' ?></span>
+              </button>
+              <button type="button" class="btn-ghost">
+                <span class="ms" aria-hidden="true">share</span>Share
+              </button>
+              <?php if (!empty($post['isOwner'])): ?>
+                <div class="dropdown ms-auto">
+                  <button type="button" class="btn-icon btn-icon-sm" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Post options">
+                    <span class="ms" aria-hidden="true">more_horiz</span>
+                  </button>
+                  <ul class="dropdown-menu dropdown-menu-end">
+                    <li>
+                      <button
+                        type="button"
+                        class="dropdown-item"
+                        data-bs-toggle="modal"
+                        data-bs-target="#editPostModal"
+                        data-edit-post-id="<?= htmlspecialchars((string) ($post['id'] ?? '')) ?>"
+                        data-edit-post-title="<?= htmlspecialchars($post['title']) ?>"
+                        data-edit-post-content="<?= htmlspecialchars($post['excerpt']) ?>"
+                        data-edit-post-skills="<?= htmlspecialchars(implode('|', $post['tags'])) ?>"
+                      >
+                        <span class="ms" aria-hidden="true">edit</span>Edit post
+                      </button>
+                    </li>
+                    <li>
+                      <button
+                        type="button"
+                        class="dropdown-item ukn-text-danger"
+                        data-bs-toggle="modal"
+                        data-bs-target="#deleteConfirmationModal"
+                        data-delete-title="<?= htmlspecialchars('Delete “' . $post['title'] . '”?') ?>"
+                        data-delete-message="The post and its comments, votes and references will be removed. This action cannot be undone."
+                        data-success-message="Post deleted."
+                        data-remove-post-card
+                      >
+                        <span class="ms" aria-hidden="true">delete</span>Delete post
+                      </button>
+                    </li>
+                  </ul>
+                </div>
+              <?php endif; ?>
+            </div>
+          </div>
+        </article>
+        <?php
+    }
+}

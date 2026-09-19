@@ -1,0 +1,27 @@
+/* ==========================================================================
+   Learner Requests / Sessions / Session Details — page-specific composition
+   on top of the shared card/nav-tabs/status vocabulary in components.css.
+   The status tabs reuse Bootstrap's own .nav-tabs (already retheme'd in
+   components.css specifically for this page), and components/session-card.php
+   is already fully themed — this file only adds the couple of small,
+   genuinely page-specific rules nothing else already covers.
+   ========================================================================== */
+
+/* Muted "(N)" count next to each tab label — read from our own ink-muted
+   token rather than Bootstrap's unthemed --bs-secondary-color so it stays
+   correct in both themes. */
+.ukn-tab-count{
+  color: var(--ukn-ink-muted);
+  font-size: .8125rem;
+}
+
+/* Session Details' label/value fact rows — a lightweight <dl>-like list
+   using Bootstrap's row/col so it naturally stacks label-above-value on
+   narrow screens instead of a fixed two-column table. */
+.ukn-session-fact{
+  padding: var(--ukn-space-3) 0;
+  border-top: 1px solid var(--ukn-border);
+}
+.ukn-session-fact:first-child{
+  border-top: none;
+}

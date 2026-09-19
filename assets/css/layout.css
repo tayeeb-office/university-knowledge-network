@@ -30,41 +30,43 @@
   border-bottom: 1px solid var(--ukn-border);
 }
 
+/* Text-only brand — no logo mark. Width matches --ukn-sidebar-left-width
+   (the same variable .ukn-shell's grid uses for the sidebar column
+   below), so the header follows the same horizontal grid as the body:
+   the search field starts right after this column, the way .ukn-main
+   starts right after .ukn-sidebar-left. Overridden back to a
+   content-based width on mobile (see responsive.css) where there's no
+   sidebar column to line up with. */
 .ukn-header__brand{
   display: flex;
   align-items: center;
-  gap: var(--ukn-space-2);
-  flex: 0 0 auto; /* content-based width — sizes to the real logo + text */
+  flex: 0 0 auto;
+  width: var(--ukn-sidebar-left-width);
   color: inherit;
 }
 .ukn-header__brand:hover{
   text-decoration: none;
   color: inherit;
 }
-/* Approved logo asset (docs/references/original-logo.png). Height-bound,
-   width auto so the source aspect ratio is preserved exactly — never
-   stretch or crop it. */
-.ukn-header__mark{
-  display: block;
-  height: 34px;
-  width: auto;
-  flex: none;
-}
 .ukn-header__title{
-  line-height: 1.05;
+  line-height: 1.2;
 }
+/* "University" — always the brand accent orange, in both themes. */
 .ukn-header__title strong{
   display: block;
   font-weight: 700;
-  font-size: .9375rem;
-  letter-spacing: .01em;
+  font-size: 1.25rem;
+  letter-spacing: .02em;
+  color: var(--ukn-accent);
 }
+/* "Knowledge Network" — theme-aware ink (black in light, white in dark). */
 .ukn-header__title span{
   display: block;
-  font-size: .6875rem;
-  letter-spacing: .22em;
+  margin-top: 2px;
+  font-size: .8125rem;
+  letter-spacing: .14em;
   text-transform: uppercase;
-  color: var(--ukn-ink-muted);
+  color: var(--ukn-ink);
 }
 
 /* flex: 1 1 auto with no max-width lets this genuinely consume all the

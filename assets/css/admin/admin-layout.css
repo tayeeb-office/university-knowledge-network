@@ -1,0 +1,119 @@
+/* ==========================================================================
+   Admin shell — layout only. Reuses the user-facing app's own shell
+   classes (.ukn-shell/.ukn-header/.ukn-sidebar-left/.ukn-nav-link/
+   .ukn-main/.ukn-page-header, all from assets/css/layout.css) as-is; this
+   file only adds the handful of things admin genuinely needs on top of
+   that — a header that spreads brand/actions apart instead of hosting a
+   search field, an "Admin" indicator, the admin identity chip, and the
+   mobile collapse breakpoint (admin does not load the user shell's own
+   responsive.css, since that file's breakpoints are tuned to the
+   Learner/Mentor 3-column shell, not this 2-column one).
+   ========================================================================== */
+
+.ukn-admin-header{
+  justify-content: space-between;
+}
+/* The user header pins .ukn-header__brand to the sidebar column's exact
+   width so the search field lines up with .ukn-main below it; admin has
+   no such field to line up, and that fixed width would cramp the "Admin"
+   badge, so it sizes to its own content instead. */
+.ukn-admin-header .ukn-header__brand{
+  width: auto;
+}
+.ukn-admin-header-spacer{
+  flex: 1 1 auto;
+}
+
+.ukn-admin-badge{
+  display: inline-flex;
+  align-items: center;
+  margin-left: var(--ukn-space-2);
+  padding: 2px 8px;
+  font-size: .6875rem;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--ukn-accent);
+  border: 1px solid var(--ukn-accent);
+  border-radius: var(--ukn-radius-sm);
+}
+
+.ukn-admin-identity{
+  display: flex;
+  align-items: center;
+  gap: var(--ukn-space-2);
+}
+.ukn-admin-identity__text{
+  line-height: 1.25;
+}
+
+/* Below 992px: no permanent sidebar column — the hamburger + #uknMobileNav
+   offcanvas (admin/includes/footer.php) take over navigation instead,
+   matching the .btn-icon.d-lg-none trigger in admin/includes/header.php. */
+@media (max-width: 991.98px){
+  .ukn-admin-header .ukn-header__brand .ukn-header__title span{
+    display: none;
+  }
+  .ukn-shell.ukn-shell--no-right-sidebar{
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .ukn-sidebar-left{
+    display: none;
+  }
+  .ukn-main{
+    padding: var(--ukn-space-4) var(--ukn-space-3) var(--ukn-space-6);
+  }
+}
+
+@media (max-width: 430px){
+  .ukn-admin-badge{
+    display: none;
+  }
+}
+
+/* Generic compact admin list row — reused by the Dashboard's Popular
+   Skills/Pending Reports/Recent Activity cards now, and intended for
+   future admin pages (Reports, Comments, ...) needing the same compact
+   "denser than a user-facing card, still readable" row pattern instead
+   of each page inventing its own. */
+.ukn-admin-row{
+  display: flex;
+  align-items: center;
+  gap: var(--ukn-space-3);
+  padding: var(--ukn-space-2) 0;
+  border-bottom: 1px solid var(--ukn-border);
+}
+.ukn-admin-row:last-child{
+  border-bottom: none;
+}
+.ukn-admin-row--wrap{
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+
+/* A stat-card.php card made clickable (Admin Sessions' summary cards
+   filter the table below when clicked) without changing how it looks —
+   resets all button chrome and lets the card underneath render exactly
+   as it does everywhere else it's used non-interactively. */
+.ukn-admin-stat-btn{
+  display: block;
+  width: 100%;
+  padding: 0;
+  background: none;
+  border: none;
+  text-align: left;
+  border-radius: var(--ukn-radius-lg);
+}
+.ukn-admin-stat-btn:focus-visible{
+  outline: 2px solid var(--ukn-accent);
+  outline-offset: 2px;
+}
+
+/* Generic responsive grid for a row of components/stat-card.php cards —
+   Dashboard's own stat row and admin/user-details.php's Learner/Mentor
+   Activity cards both use this same layout. */
+.ukn-admin-stat-grid{
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: var(--ukn-space-3);
+}

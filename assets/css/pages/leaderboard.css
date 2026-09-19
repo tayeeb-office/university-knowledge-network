@@ -1,0 +1,22 @@
+/* ==========================================================================
+   Leaderboard — page-specific composition only. Tabs/time pills reuse
+   .ukn-tabs-pill/.ukn-tab-pill as-is; ranked rows reuse
+   components/leaderboard-row.php's default 'row' variant as-is. The one
+   genuinely new layout here is the Top 3 podium grid, arranging that same
+   component's 'podium' variant into docs/ui's 3-column card layout.
+   ========================================================================== */
+
+.ukn-leaderboard-podium{
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--ukn-space-3);
+  margin-bottom: var(--ukn-space-4);
+}
+
+/* Fewer than 3 ranked members in a filtered/searched view — never leave a
+   lone card stretched across the full grid width. */
+@media (max-width: 575.98px){
+  .ukn-leaderboard-podium{
+    grid-template-columns: 1fr;
+  }
+}

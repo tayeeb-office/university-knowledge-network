@@ -1,0 +1,77 @@
+<?php
+/**
+ * Create Post modal — opened from includes/header.php's "+ Create"
+ * button (data-bs-target="#createPostModal"). Included once from
+ * includes/footer.php.
+ *
+ * Shares its exact form layout/classes with modals/edit-post-modal.php
+ * (same fields, same skill-picker, same dropzone) so the two are
+ * obviously the same system — only the title, pre-filled values and
+ * submit label differ. See that file's docblock for the shared pattern.
+ *
+ * assets/js/core/validation.js checks the required fields on submit;
+ * assets/js/core/modal.js drives the skill-tag picker and the mock
+ * "success -> toast -> close" flow. There is no real post creation.
+ */
+?>
+<div class="modal fade" id="createPostModal" tabindex="-1" aria-labelledby="createPostModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
+    <div class="modal-content">
+      <form data-mock-form="post" data-success-message="Post created successfully." novalidate>
+        <div class="modal-header">
+          <h2 class="modal-title ukn-h3" id="createPostModalLabel">Create Post</h2>
+          <button type="button" class="btn-icon" data-bs-dismiss="modal" aria-label="Close">
+            <span class="ms" aria-hidden="true">close</span>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="ukn-form-group">
+            <label for="createPostTitle" class="form-label">Post Title <span class="ukn-text-danger" aria-hidden="true">*</span></label>
+            <input type="text" class="form-control" id="createPostTitle" name="title" placeholder="A clear, specific title" maxlength="120" data-validate="required">
+            <div class="ukn-field-message is-invalid" data-error-for="title" hidden>
+              <span class="ms" aria-hidden="true">error</span>Please add a title for your post.
+            </div>
+          </div>
+
+          <div class="ukn-form-group">
+            <label for="createPostContent" class="form-label">Post Content <span class="ukn-text-danger" aria-hidden="true">*</span></label>
+            <textarea class="form-control ukn-textarea-lg" id="createPostContent" name="content" placeholder="What did you learn, or what are you stuck on?" data-validate="required"></textarea>
+            <div class="ukn-field-message is-invalid" data-error-for="content" hidden>
+              <span class="ms" aria-hidden="true">error</span>Add some content before publishing.
+            </div>
+          </div>
+
+          <div class="ukn-form-group">
+            <label for="createPostSkillInput" class="form-label">Related Skills <span class="ukn-text-danger" aria-hidden="true">*</span></label>
+            <div class="ukn-tag-input" data-skill-picker>
+              <input type="text" id="createPostSkillInput" placeholder="Type a skill, press Enter (e.g. Python, MySQL)" list="createPostSkillOptions" data-skill-input>
+            </div>
+            <datalist id="createPostSkillOptions">
+              <option value="Python"></option>
+              <option value="MySQL"></option>
+              <option value="React"></option>
+              <option value="UI/UX Design"></option>
+              <option value="Data Analysis"></option>
+              <option value="Public Speaking"></option>
+            </datalist>
+            <input type="hidden" name="skills" data-skill-value data-validate="required">
+            <div class="ukn-field-message is-invalid" data-error-for="skills" hidden>
+              <span class="ms" aria-hidden="true">error</span>Add at least one related skill.
+            </div>
+          </div>
+
+          <div class="ukn-form-group mb-0">
+            <label class="form-label">Attachment (optional)</label>
+            <div class="ukn-dropzone">
+              <span class="ms" aria-hidden="true">image</span>Drop an image or screenshot here (optional)
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary btn-sm">Publish Post</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

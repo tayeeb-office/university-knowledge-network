@@ -32,3 +32,19 @@ $showRightSidebar = $showRightSidebar ?? true;
 <?php endif; ?>
 
 <?php include __DIR__ . '/mobile-nav.php'; ?>
+<?php
+/**
+ * Shared modal library — included once here, regardless of whether the
+ * current page actually uses any of them, so every trigger's
+ * data-bs-target always finds its modal already in the DOM. See
+ * assets/js/core/modal.js for the shared submit/skill-picker/delete
+ * behavior all of these use.
+ */
+include __DIR__ . '/../modals/create-post-modal.php';
+include __DIR__ . '/../modals/edit-post-modal.php';
+include __DIR__ . '/../modals/session-request-modal.php';
+include __DIR__ . '/../modals/rating-modal.php';
+include __DIR__ . '/../modals/delete-confirmation-modal.php';
+include __DIR__ . '/../modals/role-switch-modal.php';
+include __DIR__ . '/../modals/change-password-modal.php';
+?>

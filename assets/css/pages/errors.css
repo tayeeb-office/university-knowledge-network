@@ -1,0 +1,51 @@
+/* ==========================================================================
+   403 / 404 / 500 — one shared error-page visual language (per docs/ui's
+   r.errors card), reused by all three pages/errors/*.php files rather
+   than three unrelated designs. A large-but-controlled code, a short
+   heading, a short message and a clear primary action — nothing else.
+   ========================================================================== */
+
+.ukn-error-page{
+  max-width: 420px;
+  margin: var(--ukn-space-7) auto;
+  text-align: center;
+  padding: var(--ukn-space-5);
+  background: var(--ukn-surface);
+  border: 1px solid var(--ukn-border);
+  border-radius: var(--ukn-radius-lg);
+}
+.ukn-error-page__code{
+  font-family: var(--ukn-font-serif);
+  font-size: 3.5rem;
+  line-height: 1;
+  color: var(--ukn-accent);
+  margin-bottom: var(--ukn-space-3);
+}
+.ukn-error-page__divider{
+  border: none;
+  border-top: 1px solid var(--ukn-border);
+  margin: 0 0 var(--ukn-space-3);
+}
+.ukn-error-page__heading{
+  margin: 0 0 var(--ukn-space-2);
+}
+.ukn-error-page__message{
+  color: var(--ukn-ink-muted);
+  margin: 0 0 var(--ukn-space-4);
+}
+.ukn-error-page__actions{
+  display: flex;
+  gap: var(--ukn-space-2);
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 430px){
+  .ukn-error-page{
+    margin: var(--ukn-space-4) auto;
+    padding: var(--ukn-space-4) var(--ukn-space-3);
+  }
+  .ukn-error-page__code{
+    font-size: 2.75rem;
+  }
+}

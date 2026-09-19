@@ -24,6 +24,11 @@ if (!function_exists('ukn_nav_groups_for_role')) {
      * Role -> grouped nav items, mirroring the approved design's navFor().
      * 'visitor' | 'mentor' | 'learner' (dual-role users pass their
      * currently active role — see brand guide section 10).
+     *
+     * Admin is intentionally not a case here: admin/*.php uses its own,
+     * more data-oriented navigation (assets/css/admin/admin-layout.css),
+     * not this member-facing sidebar — keeping the two systems separate
+     * is what "admin-ready" means for this component.
      */
     function ukn_nav_groups_for_role(string $role): array
     {
@@ -32,12 +37,13 @@ if (!function_exists('ukn_nav_groups_for_role')) {
 
         switch ($role) {
             case 'visitor':
+                // Public navigation only — no Dashboard, Sessions, Points,
+                // Saved Posts, Notifications or Profile management.
                 return [
                     ['title' => 'Browse', 'items' => [
                         $item('home', 'Home', 'home'),
                         $item('workspaces', 'Skills', 'skills'),
                         $item('person_search', 'Find Mentors', 'find-mentors'),
-                        $item('leaderboard', 'Leaderboard', 'leaderboard'),
                     ]],
                     ['title' => 'Account', 'items' => [
                         $item('login', 'Log in', 'login'),
@@ -54,7 +60,7 @@ if (!function_exists('ukn_nav_groups_for_role')) {
                     ]],
                     ['title' => 'Mentoring', 'items' => [
                         $item('dashboard', 'Dashboard', 'mentor-dashboard'),
-                        $item('inbox', 'Learner Requests', 'sessions', 5),
+                        $item('inbox', 'Learner Requests', 'learner-requests', 5),
                         $item('event', 'Sessions', 'sessions'),
                         $item('school', 'Teaching Skills', 'teaching-skills'),
                         $item('schedule', 'Availability', 'availability'),
@@ -63,7 +69,7 @@ if (!function_exists('ukn_nav_groups_for_role')) {
                     ]],
                     ['title' => 'You', 'items' => [
                         $item('notifications', 'Notifications', 'notifications', 3),
-                        $item('person', 'Profile', 'profile'),
+                        $item('person', 'Profile', 'my-profile'),
                         $item('hub', 'Skill Network', 'skill-network'),
                         $item('settings', 'Settings', 'settings'),
                     ]],
@@ -90,7 +96,7 @@ if (!function_exists('ukn_nav_groups_for_role')) {
                     ]],
                     ['title' => 'You', 'items' => [
                         $item('notifications', 'Notifications', 'notifications', 3),
-                        $item('person', 'Profile', 'profile'),
+                        $item('person', 'Profile', 'my-profile'),
                         $item('hub', 'Skill Network', 'skill-network'),
                         $item('settings', 'Settings', 'settings'),
                     ]],
@@ -100,35 +106,20 @@ if (!function_exists('ukn_nav_groups_for_role')) {
 }
 
 if (!function_exists('ukn_route_href')) {
-    /** Route slug -> page file, per docs/ui .../UKN-FRONTEND-STRUCTURE.md. */
+    /**
+     * Route slug -> the URL a nav link should point to.
+     *
+     * Every internal page now routes through index.php's front controller
+     * (index.php?page=<slug>) instead of linking pages/**\/*.php files
+     * directly — that was the bug where sidebar links opened an empty
+     * page with no header/sidebar/footer at all, since those page files
+     * hold only page-specific content, not the shell. index.php owns the
+     * actual slug -> file whitelist ($routes there) used to decide what
+     * to include; this function only ever needs to know the slug.
+     */
     function ukn_route_href(string $route): string
     {
-        $map = [
-            'home'              => 'index.php',
-            'skills'            => 'pages/skills/skills.php',
-            'find-mentors'      => 'pages/mentors/find-mentors.php',
-            'recommendations'   => 'pages/mentors/recommendations.php',
-            'leaderboard'       => 'pages/leaderboard/leaderboard.php',
-            'login'             => 'pages/auth/login.php',
-            'register'          => 'pages/auth/register.php',
-            'saved-posts'       => 'pages/community/saved-posts.php',
-            'my-posts'          => 'pages/community/my-posts.php',
-            'learner-dashboard' => 'pages/dashboard/learner-dashboard.php',
-            'mentor-dashboard'  => 'pages/dashboard/mentor-dashboard.php',
-            'learning-skills'   => 'pages/skills/learning-skills.php',
-            'teaching-skills'   => 'pages/skills/teaching-skills.php',
-            'learning-goals'    => 'pages/learning/learning-goals.php',
-            'availability'      => 'pages/learning/availability.php',
-            'sessions'          => 'pages/sessions/sessions.php',
-            'points'            => 'pages/points/points.php',
-            'ratings'           => 'pages/ratings/ratings.php',
-            'notifications'     => 'pages/notifications/notifications.php',
-            'profile'           => 'pages/profile/my-profile.php',
-            'skill-network'     => 'pages/network/skill-network.php',
-            'settings'          => 'pages/settings/settings.php',
-        ];
-
-        return $map[$route] ?? 'index.php';
+        return $route === '' ? 'index.php' : 'index.php?page=' . rawurlencode($route);
     }
 }
 
@@ -146,29 +137,42 @@ $activeNav = $activeNav ?? 'home';
 $navRole = $currentUser['loggedIn']
     ? ($currentUser['dualRole'] ? $currentUser['activeRole'] : $currentUser['role'])
     : 'visitor';
-$navGroups = ukn_nav_groups_for_role($navRole);
+
+/**
+ * Dual-role users get BOTH role's navigation rendered up front, each
+ * wrapped in a [data-role] block — assets/js/core/role-switch.js just
+ * toggles which one is `hidden`, so switching role never needs a reload
+ * and never needs JS to know what a role's navigation contains (that
+ * stays entirely owned by ukn_nav_groups_for_role() above). Everyone
+ * else (single-role members, visitors) only ever gets the one relevant
+ * set, with no [data-role] wrapper at all.
+ */
+$isDualRoleUser = $currentUser['loggedIn'] && $currentUser['dualRole'];
+$rolesToRender = $isDualRoleUser ? ['learner', 'mentor'] : [$navRole];
 ?>
 <nav class="ukn-sidebar-left" aria-label="Primary">
-  <?php foreach ($navGroups as $group): ?>
-    <div class="ukn-nav-group">
-      <span class="ukn-eyebrow ukn-nav-group__title"><?= htmlspecialchars($group['title']) ?></span>
-      <?php foreach ($group['items'] as $item):
-        $isActive = $item['route'] === $activeNav;
-      ?>
-        <a
-          href="<?= htmlspecialchars(ukn_route_href($item['route'])) ?>"
-          class="ukn-nav-link<?= $isActive ? ' is-active' : '' ?>"
-          <?= $isActive ? 'aria-current="page"' : '' ?>
-          data-bs-toggle="tooltip"
-          data-bs-placement="right"
-          title="<?= htmlspecialchars($item['label']) ?>"
-        >
-          <span class="ms" aria-hidden="true"><?= htmlspecialchars($item['icon']) ?></span>
-          <span class="ukn-nav-text"><?= htmlspecialchars($item['label']) ?></span>
-          <?php if (!empty($item['count'])): ?>
-            <span class="ukn-count-pill"><?= (int) $item['count'] ?></span>
-          <?php endif; ?>
-        </a>
+  <?php foreach ($rolesToRender as $roleKey): ?>
+    <div<?= $isDualRoleUser ? ' data-role="' . htmlspecialchars($roleKey) . '"' . ($roleKey === $navRole ? '' : ' hidden') : '' ?>>
+      <?php foreach (ukn_nav_groups_for_role($roleKey) as $group): ?>
+        <div class="ukn-nav-group">
+          <span class="ukn-eyebrow ukn-nav-group__title"><?= htmlspecialchars($group['title']) ?></span>
+          <?php foreach ($group['items'] as $item):
+            $isActive = $item['route'] === $activeNav;
+          ?>
+            <a
+              href="<?= htmlspecialchars(ukn_route_href($item['route'])) ?>"
+              class="ukn-nav-link<?= $isActive ? ' is-active' : '' ?>"
+              <?= $isActive ? 'aria-current="page"' : '' ?>
+              title="<?= htmlspecialchars($item['label']) ?>"
+            >
+              <span class="ms" aria-hidden="true"><?= htmlspecialchars($item['icon']) ?></span>
+              <span class="ukn-nav-text"><?= htmlspecialchars($item['label']) ?></span>
+              <?php if (!empty($item['count'])): ?>
+                <span class="ukn-count-pill"<?= $item['route'] === 'notifications' ? ' data-notification-badge' : '' ?>><?= (int) $item['count'] ?></span>
+              <?php endif; ?>
+            </a>
+          <?php endforeach; ?>
+        </div>
       <?php endforeach; ?>
     </div>
   <?php endforeach; ?>

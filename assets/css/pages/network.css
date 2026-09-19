@@ -1,0 +1,122 @@
+/* ==========================================================================
+   Skill Network — page-specific composition. The toolbar search reuses
+   .ukn-search as-is (same icon+input pattern as the Header Search); tabs/
+   buttons reuse .btn-icon/.btn-icon-sm and plain Bootstrap controls. The
+   graph canvas itself has no CSS here — Cytoscape draws directly onto its
+   own <canvas>, styled from assets/js/pages/network.js reading these same
+   CSS custom properties, not from rules in this file.
+   ========================================================================== */
+
+/* Graph (flexible) + Selected Skill panel (fixed width) side by side on
+   desktop, matching docs/ui's r.skillNetwork grid — stacks on narrow
+   screens instead of ever squeezing the graph down to nothing. */
+.ukn-network-layout{
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  gap: var(--ukn-space-3);
+  align-items: start;
+}
+@media (max-width: 991.98px){
+  .ukn-network-layout{
+    grid-template-columns: 1fr;
+  }
+}
+
+.ukn-network-graph-card{
+  padding: 0;
+  overflow: hidden;
+}
+
+.ukn-network-toolbar{
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--ukn-space-2);
+  padding: var(--ukn-space-3);
+  border-bottom: 1px solid var(--ukn-border);
+}
+.ukn-network-toolbar__search{
+  flex: 1 1 200px;
+  min-width: 160px;
+}
+
+/* Graph container — controlled, non-zero, non-absurd height (never
+   collapses to 0, never a multi-screen-tall fixed box). */
+.ukn-network-graph-wrap{
+  position: relative;
+}
+#skill-network-graph{
+  width: 100%;
+  height: 600px;
+  background: var(--ukn-surface-2);
+}
+@media (max-width: 767.98px){
+  #skill-network-graph{
+    height: 420px;
+  }
+}
+@media (max-width: 575.98px){
+  #skill-network-graph{
+    height: 360px;
+  }
+}
+
+.ukn-network-legend{
+  position: absolute;
+  left: var(--ukn-space-3);
+  bottom: var(--ukn-space-3);
+  background: var(--ukn-surface);
+  border: 1px solid var(--ukn-border);
+  border-radius: var(--ukn-radius-md);
+  padding: var(--ukn-space-2) var(--ukn-space-3);
+  font-size: .8125rem;
+  line-height: 1.9;
+  pointer-events: none;
+}
+/* At very small heights the legend overlay would cover too much of an
+   already-shrunk graph; the same legend meaning (skill/current-skill/
+   link strength) is still available via the always-visible semantic
+   skill list below, so hiding it here loses nothing. */
+@media (max-width: 575.98px){
+  .ukn-network-legend{
+    display: none;
+  }
+}
+.ukn-network-legend__dot{
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--ukn-surface);
+  border: 2px solid var(--ukn-ink);
+  margin-right: 6px;
+}
+.ukn-network-legend__dot--current{
+  background: var(--ukn-accent);
+  border-color: var(--ukn-accent);
+}
+.ukn-network-legend__line{
+  display: inline-block;
+  width: 18px;
+  height: 0;
+  border-top: 2px solid var(--ukn-ink-muted);
+  margin-right: 6px;
+  vertical-align: middle;
+}
+.ukn-network-legend__line--strong{
+  border-top-width: 3px;
+  border-color: var(--ukn-ink);
+}
+.ukn-network-legend__line--related{
+  border-top-width: 1px;
+  border-style: dashed;
+}
+
+/* Selected Skill panel — plain .card otherwise (padded directly since its
+   content sits straight inside the .card, no separate .card-body here). */
+.ukn-network-panel{
+  padding: var(--ukn-space-4) var(--ukn-space-3);
+}
+.ukn-network-panel [data-network-panel-empty]{
+  color: var(--ukn-ink-muted);
+}

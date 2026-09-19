@@ -22,6 +22,12 @@
 .ukn-rounded-md{ border-radius: var(--ukn-radius-md) !important; }
 .ukn-rounded-lg{ border-radius: var(--ukn-radius-lg) !important; }
 
+/* ---- Flex sizing ---- */
+/* min-width:0 override for a flex/grid child that must be allowed to
+   shrink below its content's natural width (needed for ellipsis/wrap to
+   work at all inside a flex row) — no Bootstrap utility covers this. */
+.ukn-min-w-0{ min-width: 0 !important; }
+
 /* ---- Text truncation ---- */
 .ukn-truncate{
   overflow: hidden;

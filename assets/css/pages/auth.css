@@ -1,0 +1,69 @@
+/* ==========================================================================
+   Login / Register — page-specific composition on top of the shared
+   card/form vocabulary in components.css / forms.css. No page-only
+   colors or theme rules — everything here is layout/spacing only.
+   ========================================================================== */
+
+/* ---- Centered auth card — reuses .ukn-container-narrow (layout.css,
+   max-width 430px) for the ~420-520px target width; no new width rule
+   needed here. ---- */
+.ukn-auth-card .card-body{
+  padding: var(--ukn-space-6) var(--ukn-space-5);
+}
+.ukn-auth-card__sub{
+  color: var(--ukn-ink-muted);
+  margin: 4px 0 var(--ukn-space-5);
+}
+.ukn-auth-card__footer{
+  margin: var(--ukn-space-4) 0 0;
+  text-align: center;
+  font-size: .875rem;
+  color: var(--ukn-ink-muted);
+}
+
+/* Remember Me + Forgot Password share one row on wide enough screens,
+   wrap cleanly on narrow ones — no horizontal overflow at 320px. */
+.ukn-auth-row{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--ukn-space-2);
+  margin-bottom: var(--ukn-space-4);
+}
+.ukn-auth-row .form-check{
+  margin-bottom: 0;
+}
+
+/* ---- Password strength meter (Register only) — frontend guidance only,
+   not a real security signal (brand guide / prompt section 18). ---- */
+.ukn-strength{
+  display: flex;
+  align-items: center;
+  gap: var(--ukn-space-2);
+  margin-top: var(--ukn-space-2);
+  font-size: .8125rem;
+  color: var(--ukn-ink-muted);
+}
+.ukn-strength__track{
+  flex: 1;
+  height: 4px;
+  border-radius: var(--ukn-radius-pill);
+  background: var(--ukn-surface-2);
+  overflow: hidden;
+}
+.ukn-strength__bar{
+  display: block;
+  height: 100%;
+  width: 0;
+  background: var(--ukn-border-strong);
+  transition: width var(--ukn-transition-fast), background-color var(--ukn-transition-fast);
+}
+.ukn-strength[data-level="weak"] .ukn-strength__bar{ width: 33%; background: var(--ukn-danger); }
+.ukn-strength[data-level="medium"] .ukn-strength__bar{ width: 66%; background: var(--ukn-warning); }
+.ukn-strength[data-level="strong"] .ukn-strength__bar{ width: 100%; background: var(--ukn-success); }
+.ukn-strength__label{
+  flex: none;
+  min-width: 4.5em;
+  text-align: right;
+}
