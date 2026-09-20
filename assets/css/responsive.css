@@ -1,26 +1,9 @@
-/* ==========================================================================
-   Responsive — app shell breakpoints
-   Rules mirror the approved design spec exactly:
-   ≥1200px  Header + left sidebar + main + right sidebar (main stays dominant)
-   992-1199 Right sidebar narrows to 260px; mentor-style grids go 1-column
-   768-991  Left sidebar collapses to an icon rail; right sidebar modules
-            move below the main feed
-   <768     Offcanvas nav, two header rows, tables become stacked cards
-   Target device widths: 320 / 360 / 390 / 430 / 576 / 768 / 992 / 1200 / 1400+
-   Do not simply shrink the desktop layout — see brand guide section 12.
-   ========================================================================== */
-
-/* ---- ≥1200px : reference layout, nothing to override ---- */
-
-/* ---- 992px–1199.98px : right sidebar narrows ---- */
 @media (max-width: 1199.98px){
   .ukn-shell{
     grid-template-columns: var(--ukn-sidebar-left-width) minmax(0, 1fr) var(--ukn-sidebar-right-width-md);
   }
 }
 
-/* ---- 768px–991.98px : left sidebar becomes an icon rail,
-        right sidebar drops below the main column ---- */
 @media (max-width: 991.98px){
   .ukn-shell{
     grid-template-columns: 64px minmax(0, 1fr);
@@ -29,13 +12,6 @@
     padding: var(--ukn-space-3) var(--ukn-space-1);
   }
 
-  /* .ukn-header__brand is normally pinned to --ukn-sidebar-left-width
-     (222px) so the header lines up with the sidebar column below it
-     (see layout.css) — but at this tier the sidebar itself has just
-     collapsed to a 64px icon rail, so that 222px reservation no longer
-     lines up with anything and only crowds the search field. Let the
-     brand size to its own text instead; the freed space goes straight
-     to .ukn-header__search (flex: 1 1 auto already). */
   .ukn-header__brand{
     width: auto;
   }
@@ -43,11 +19,6 @@
   .ukn-sidebar-left__footer{
     display: none;
   }
-
-  /* Icon-rail collapse applies only to the desktop/tablet left sidebar —
-     scoped to .ukn-sidebar-left so it can never reach the mobile offcanvas
-     menu (includes/mobile-nav.php), which reuses the same .ukn-nav-link /
-     .ukn-nav-text classes but must always show full labels. */
   .ukn-sidebar-left .ukn-nav-link{
     justify-content: center;
     padding: 0;
@@ -56,7 +27,6 @@
   .ukn-sidebar-left .ukn-nav-link .ukn-count-pill{
     display: none;
   }
-
   .ukn-sidebar-right{
     grid-column: 1 / -1;
     position: static;
@@ -71,31 +41,21 @@
     width: 100%;
   }
 }
-
-/* ---- <768px : offcanvas nav, two-row header, table stacking ---- */
 @media (max-width: 767.98px){
   .ukn-shell,
   .ukn-shell--no-right-sidebar{
     grid-template-columns: minmax(0, 1fr);
   }
   .ukn-sidebar-left{
-    display: none; /* becomes Bootstrap .offcanvas content, toggled via JS */
+    display: none;
   }
-
-  /* True mobile shows main content only — no permanent right sidebar, not
-     even reflowed below the feed (that reflow is a tablet-only behavior,
-     see the 991.98px rule above). A page that wants some of that context
-     on mobile surfaces it inside its own main content instead. */
   .ukn-sidebar-right{
     display: none;
   }
-
   .ukn-main{
     padding: var(--ukn-space-4) var(--ukn-space-3) var(--ukn-space-7);
   }
 
-  /* Two header rows: [hamburger · brand ... create/login · bell · profile]
-     then a full-width search row underneath. */
   .ukn-header{
     height: auto;
     flex-wrap: wrap;
@@ -106,10 +66,6 @@
     display: inline-grid;
     order: -1;
   }
-  /* Both brand lines stay visible on mobile (text-only brand, no logo) —
-     shrink and truncate instead of hiding "Knowledge Network" outright.
-     min-width: 0 lets this flex child actually shrink below its text's
-     natural width so ellipsis can kick in rather than overflowing. */
   .ukn-header__brand{
     width: auto;
     flex: 1;
@@ -124,14 +80,11 @@
     text-overflow: ellipsis;
     white-space: nowrap;
   }
-  /* The desktop brand text size increase (layout.css) is deliberately
-     not carried over here — the compact two-row mobile header doesn't
-     have the same room, so this keeps a modest bump instead. */
   .ukn-header__brand .ukn-header__title strong{
-    font-size: 1.0625rem; /* ~17px */
+    font-size: 1.0625rem;
   }
   .ukn-header__brand .ukn-header__title span{
-    font-size: .6875rem; /* ~11px */
+    font-size: .6875rem;
     letter-spacing: .1em;
   }
   .ukn-header__search{
@@ -139,31 +92,19 @@
     max-width: none;
     flex-basis: 100%;
   }
-
-  /* Notification/profile dropdown panels are 320px wide by default — wider
-     than a 320-430px viewport can host without touching both edges. Cap
-     the width so it comfortably fits with margin at every tested size
-     (320/360/390/430) instead of relying on Popper's auto-repositioning
-     alone. Bootstrap's dropdown-menu-end alignment still anchors it to
-     the trigger, it just has less width to work with. */
   .ukn-dropdown-panel{
     width: min(280px, calc(100vw - 24px));
   }
-
   .ukn-page-header{
     align-items: flex-start;
   }
   .ukn-page-header .ukn-mono{
     display: none;
   }
-
-  /* Underline/pill tabs wrap instead of overflowing */
   .nav-tabs,
   .ukn-tabs-pill{
     flex-wrap: wrap;
   }
-
-  /* Two-column form grids collapse to one column */
   .ukn-form-row{
     grid-template-columns: minmax(0, 1fr);
   }
@@ -174,23 +115,15 @@
   }
 }
 
-/* At the narrowest phones (320-359px) the mobile brand size above leaves
-   too little room next to the hamburger + Create/Notification/Profile
-   actions — step it down one notch here so "University" never has to
-   ellipsis, instead of shrinking the whole 320-767px range for it. */
 @media (max-width: 359.98px){
   .ukn-header__brand .ukn-header__title strong{
-    font-size: .9375rem; /* ~15px */
+    font-size: .9375rem;
   }
   .ukn-header__brand .ukn-header__title span{
-    font-size: .625rem; /* ~10px */
+    font-size: .625rem;
     letter-spacing: .08em;
   }
 }
-
-/* ---- Tables become stacked cards below 768px ----
-   Apply .ukn-table-responsive-cards to a <table> and add data-label="Column
-   Name" to each <td> so the label can render inline on narrow screens. */
 @media (max-width: 767.98px){
   .ukn-table-responsive-cards thead{
     display: none;
@@ -229,8 +162,6 @@
     text-align: left;
   }
 }
-
-/* ---- Comfortable touch targets on small screens (≤576px) ---- */
 @media (max-width: 575.98px){
   .btn,
   .ukn-tab-pill,
@@ -244,26 +175,20 @@
     width: 40px;
     height: 40px;
   }
-
-  /* Feature grids fall back to a single column on the smallest phones */
   .ukn-grid-2,
   .ukn-grid-3,
   .ukn-grid-4{
     grid-template-columns: minmax(0, 1fr);
   }
-
   .ukn-container-narrow,
   .ukn-container-form{
     margin-left: var(--ukn-space-3);
     margin-right: var(--ukn-space-3);
   }
 }
-
-/* ---- Generic responsive grid helpers used by page-level stat/card grids ---- */
 .ukn-grid-2{ display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--ukn-space-3); }
 .ukn-grid-3{ display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--ukn-space-3); }
 .ukn-grid-4{ display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--ukn-space-3); }
-
 @media (max-width: 991.98px){
   .ukn-grid-4{ grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
@@ -271,9 +196,6 @@
   .ukn-grid-3,
   .ukn-grid-4{ grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
-
-/* Role-switch modal's two choice cards (modals/role-switch-modal.php)
-   stack on the smallest phones instead of squeezing side by side. */
 @media (max-width: 479.98px){
   .ukn-role-choice-grid{
     grid-template-columns: minmax(0, 1fr);

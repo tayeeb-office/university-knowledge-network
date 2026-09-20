@@ -1,42 +1,4 @@
 <?php
-/**
- * Right sidebar — contextual, reusable sidebar module system.
- *
- * A page selects what renders here with ONE variable, set before
- * including includes/header.php:
- *
- *   $rightSidebarContext = 'dashboard-learner';
- *
- * Recognized contexts: home | dashboard-learner | dashboard-mentor |
- * skills | mentors | recommendations | sessions | points | post |
- * leaderboard | profile. Defaults to 'home' when unset — this file is
- * never hard-wired to Home specifically.
- *
- * To turn the sidebar off entirely (Settings, Notifications, error pages,
- * full-width views), set $showRightSidebar = false before including
- * includes/header.php. That existing mechanism (includes/header.php /
- * includes/footer.php) is what keeps this file from being included at
- * all and collapses .ukn-shell to two columns with no leftover gap — it
- * is untouched here.
- *
- * A page can still bypass the context system entirely by setting
- * $sidebarModules itself (same array shape ukn_sidebar_modules_for_context()
- * returns below) — the context lookup only fills $sidebarModules in when
- * a page hasn't already set it, so nothing that already relies on that
- * escape hatch breaks.
- *
- * Every module renders through ukn_render_sidebar_module() as one of a
- * small set of reusable TYPES, so new contexts never need bespoke markup:
- *   ranked-list   — rank/avatar + primary/secondary text + trailing value
- *   stat-rows     — label / value rows (Points, Session counts, ...)
- *   tag-list      — wrapped chips (Related Skills, Matching Factors, ...)
- *   link-list     — clickable title + meta rows (Trending Discussions, ...)
- *   progress-list — label + percentage bar (Current Goals)
- *   mini-session  — compact date-badge session card
- *   author-card   — avatar + identity + Follow button (About Author)
- * All mock data below is frontend-only — no database, no real stats.
- */
-
 if (!function_exists('ukn_sidebar_modules_for_context')) {
     function ukn_sidebar_modules_for_context(string $context, array $currentUser): array
     {
@@ -92,7 +54,6 @@ if (!function_exists('ukn_sidebar_modules_for_context')) {
                         ],
                     ],
                 ];
-
             case 'dashboard-mentor':
                 return [
                     [
@@ -124,7 +85,6 @@ if (!function_exists('ukn_sidebar_modules_for_context')) {
                         ],
                     ],
                 ];
-
             case 'skills':
                 return [
                     [
@@ -167,9 +127,7 @@ if (!function_exists('ukn_sidebar_modules_for_context')) {
                         ],
                     ],
                 ];
-
             case 'mentors':
-                // Find Mentors — mentor-related context only, no learner stats here.
                 return [
                     [
                         'type' => 'ranked-list',
@@ -208,7 +166,6 @@ if (!function_exists('ukn_sidebar_modules_for_context')) {
                         ],
                     ],
                 ];
-
             case 'recommendations':
                 return [
                     [
@@ -226,7 +183,6 @@ if (!function_exists('ukn_sidebar_modules_for_context')) {
                         'items' => ['Skill', 'Availability', 'Rating', 'Experience', 'Mentor Points'],
                     ],
                 ];
-
             case 'sessions':
                 return [
                     [
@@ -247,7 +203,6 @@ if (!function_exists('ukn_sidebar_modules_for_context')) {
                         ],
                     ],
                 ];
-
             case 'points':
                 return [
                     [
@@ -271,7 +226,6 @@ if (!function_exists('ukn_sidebar_modules_for_context')) {
                         ],
                     ],
                 ];
-
             case 'post':
                 return [
                     [
@@ -295,15 +249,7 @@ if (!function_exists('ukn_sidebar_modules_for_context')) {
                         ],
                     ],
                 ];
-
             case 'leaderboard':
-                // Role-aware — same mock role state as everywhere else
-                // (see the 'profile' case below), never a second role
-                // system. Values are kept consistent with the visible
-                // mock leaderboard in pages/leaderboard/leaderboard.php
-                // (Learner: Nabila Rahman ranks #1 with 412 Learning
-                // Points; Mentor: she ranks #2 with 520 Mentor Points,
-                // behind Rahim Ahmed).
                 $activeRole = !empty($currentUser['dualRole'])
                     ? ($currentUser['activeRole'] ?? 'learner')
                     : ($currentUser['role'] ?? 'learner');
@@ -324,7 +270,6 @@ if (!function_exists('ukn_sidebar_modules_for_context')) {
                         ],
                     ];
                 }
-
                 return [
                     [
                         'type' => 'stat-rows',
@@ -339,36 +284,11 @@ if (!function_exists('ukn_sidebar_modules_for_context')) {
                         ],
                     ],
                 ];
-
             case 'profile':
-                /**
-                 * Role-aware, and it must FOLLOW A ROLE SWITCH.
-                 *
-                 * This used to pick one branch server-side from
-                 * $currentUser['activeRole'] — which index.php hardcodes to
-                 * 'learner' — so the mentor branch below was unreachable at
-                 * runtime and the sidebar stayed on "Learner Overview" even
-                 * while the rest of the page was acting as Mentor.
-                 *
-                 * A dual-role user now gets BOTH sets rendered, each tagged
-                 * with its role and the inactive one `hidden`, exactly like
-                 * includes/left-sidebar.php's navigation and my-profile.php's
-                 * points card. assets/js/core/role-switch.js already toggles
-                 * every [data-role] element in the document, so switching
-                 * role swaps this sidebar with no new JavaScript.
-                 *
-                 * A single-role user gets only their own set, with no
-                 * [data-role] wrapper — so a Learner can never be shown
-                 * Mentor context, and vice versa.
-                 *
-                 * The values below are unchanged from before: nothing new
-                 * was invented, the two sets were simply both made reachable.
-                 */
                 $activeRole = !empty($currentUser['dualRole'])
                     ? ($currentUser['activeRole'] ?? 'learner')
                     : ($currentUser['role'] ?? 'learner');
                 $isDualRoleUser = !empty($currentUser['loggedIn']) && !empty($currentUser['dualRole']);
-
                 $modulesByRole = [
                     'mentor' => [
                         [
@@ -405,11 +325,9 @@ if (!function_exists('ukn_sidebar_modules_for_context')) {
                         ],
                     ],
                 ];
-
                 $rolesToRender = $isDualRoleUser
                     ? ['learner', 'mentor']
                     : [$activeRole === 'mentor' ? 'mentor' : 'learner'];
-
                 $profileModules = [];
                 foreach ($rolesToRender as $roleKey) {
                     foreach ($modulesByRole[$roleKey] as $module) {
@@ -420,9 +338,7 @@ if (!function_exists('ukn_sidebar_modules_for_context')) {
                         $profileModules[] = $module;
                     }
                 }
-
                 return $profileModules;
-
             case 'home':
             default:
                 return [
@@ -473,27 +389,11 @@ if (!function_exists('ukn_sidebar_modules_for_context')) {
         }
     }
 }
-
 if (!function_exists('ukn_render_sidebar_module')) {
-    /** Renders one module — dispatches on $module['type'], see file docblock. */
     function ukn_render_sidebar_module(array $module): void
     {
         $type = $module['type'] ?? 'ranked-list';
 
-        /**
-         * Optional role scoping. A module may carry:
-         *   'role'   => 'learner' | 'mentor'   -> emits data-role="..."
-         *   'hidden' => true                    -> starts hidden
-         *
-         * That is the SAME [data-role] convention includes/left-sidebar.php
-         * uses for navigation and pages/profile/my-profile.php uses for its
-         * points card, so assets/js/core/role-switch.js's existing
-         * document-wide applyRole() toggles these modules too — no new
-         * JavaScript, and no second role system.
-         *
-         * Modules without a 'role' key render exactly as before, so every
-         * other sidebar context is unaffected.
-         */
         $roleAttrs = '';
         if (!empty($module['role'])) {
             $roleAttrs = ' data-role="' . htmlspecialchars($module['role']) . '"'
@@ -504,7 +404,6 @@ if (!function_exists('ukn_render_sidebar_module')) {
           <div class="ukn-shell-module__header">
             <span class="ukn-eyebrow"><?= htmlspecialchars($module['title']) ?></span>
           </div>
-
           <?php switch ($type):
             case 'stat-rows': ?>
               <?php foreach ($module['items'] as $row): ?>
@@ -514,7 +413,6 @@ if (!function_exists('ukn_render_sidebar_module')) {
                 </div>
               <?php endforeach; ?>
             <?php break;
-
             case 'tag-list': ?>
               <div class="ukn-shell-module__item">
                 <div class="d-flex flex-wrap gap-2">
@@ -524,7 +422,6 @@ if (!function_exists('ukn_render_sidebar_module')) {
                 </div>
               </div>
             <?php break;
-
             case 'link-list': ?>
               <?php foreach ($module['items'] as $link): ?>
                 <a href="<?= htmlspecialchars($link['href']) ?>" class="ukn-shell-module__item">
@@ -537,7 +434,6 @@ if (!function_exists('ukn_render_sidebar_module')) {
                 </a>
               <?php endforeach; ?>
             <?php break;
-
             case 'progress-list': ?>
               <?php foreach ($module['items'] as $goal): $pct = (int) $goal['pct']; ?>
                 <div class="ukn-shell-module__item d-block">
@@ -559,7 +455,6 @@ if (!function_exists('ukn_render_sidebar_module')) {
                 </div>
               <?php endforeach; ?>
             <?php break;
-
             case 'mini-session': ?>
               <?php foreach ($module['items'] as $session): ?>
                 <div class="ukn-shell-module__item">
@@ -574,7 +469,6 @@ if (!function_exists('ukn_render_sidebar_module')) {
                 </div>
               <?php endforeach; ?>
             <?php break;
-
             case 'author-card': ?>
               <?php foreach ($module['items'] as $author): ?>
                 <div class="ukn-shell-module__item d-block">
@@ -593,7 +487,6 @@ if (!function_exists('ukn_render_sidebar_module')) {
                 </div>
               <?php endforeach; ?>
             <?php break;
-
             case 'ranked-list':
             default: ?>
               <?php foreach ($module['items'] as $item): ?>
@@ -611,7 +504,6 @@ if (!function_exists('ukn_render_sidebar_module')) {
                 </div>
               <?php endforeach; ?>
           <?php endswitch; ?>
-
           <?php if (!empty($module['action'])): ?>
             <a href="<?= htmlspecialchars($module['actionHref'] ?? '#') ?>" class="ukn-shell-module__action">
               <?= htmlspecialchars($module['action']) ?>
@@ -621,7 +513,6 @@ if (!function_exists('ukn_render_sidebar_module')) {
         <?php
     }
 }
-
 $currentUser = $currentUser ?? [
     'loggedIn'   => true,
     'role'       => 'learner',
@@ -638,7 +529,6 @@ $sidebarModules = $sidebarModules ?? ukn_sidebar_modules_for_context($rightSideb
   <?php foreach ($sidebarModules as $module): ?>
     <?php ukn_render_sidebar_module($module); ?>
   <?php endforeach; ?>
-
   <p class="ukn-sidebar-right__note">
     UKN Community Guidelines &middot; Help &middot; Privacy<br>
     Student Union Building, Room 214

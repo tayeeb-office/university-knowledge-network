@@ -1,15 +1,3 @@
-/* ==========================================================================
-   My Profile / Edit Profile / Learner Profile / Mentor Profile —
-   page-specific composition on top of the shared card/avatar/tag/stat
-   vocabulary in components.css, forms.css and Bootstrap's own grid.
-   Almost everything on these pages (header layout, stats grid, skill
-   chips, rating breakdown, availability rows) reuses existing classes
-   as-is — this file only adds what nothing else already provides.
-   ========================================================================== */
-
-/* Edit Profile's photo panel wants a slightly larger avatar than the
-   existing .ukn-avatar-xl (52px, used in profile headers/dropdowns) without
-   introducing a whole new size step used nowhere else. */
 .ukn-avatar-photo{
   width: 88px;
   height: 88px;

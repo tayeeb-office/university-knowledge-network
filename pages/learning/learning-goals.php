@@ -1,42 +1,13 @@
 <?php
-/**
- * Learning Goals — main center content only. Routed via
- * index.php?page=learning-goals (see index.php's $routes map). The header,
- * left sidebar, contextual right sidebar and footer come from the shell —
- * not from here.
- *
- * Learner-oriented, but frontend-only: opening this route in Mentor mode
- * does not corrupt role state or break the shell (no real authorization
- * exists yet) — it just shows the same learner-facing content regardless
- * of the currently active role.
- *
- * The approved design (docs/ui/) shows a plain "+ Add goal" button with no
- * visible modal in the static mockup, and Edit is a lightweight icon
- * action — not a whole extra page. Per this prompt's own instruction not
- * to invent a second global modal engine, Create/Edit Goal share ONE
- * page-specific Bootstrap modal (#goalFormModal, defined below, not added
- * to includes/footer.php's global modal set — it belongs only to this
- * page) rather than a dedicated page or two near-duplicate modals. Delete
- * reuses the one global modals/delete-confirmation-modal.php via
- * components/goal-card.php's 'showDelete' option (see that file). All
- * interactivity lives in assets/js/pages/learning.js.
- *
- * Frontend-only mock data throughout — no real goal persistence, no
- * database, no backend of any kind. Refreshing resets any create/edit/
- * complete/delete made in this session.
- */
 require_once __DIR__ . '/../../components/stat-card.php';
 require_once __DIR__ . '/../../components/goal-card.php';
 require_once __DIR__ . '/../../components/empty-state.php';
-
 $skillOptions = ['Python', 'MySQL', 'Data Analysis', 'Database Design', 'Public Speaking', 'React', 'UI/UX Design'];
-
 $activeGoals = [
     ['id' => 1, 'title' => 'Learn Python for Data Analysis', 'skill' => 'Python', 'progress' => 65, 'targetDate' => 'December 15, 2026', 'targetDateRaw' => '2026-12-15', 'status' => 'in-progress'],
     ['id' => 2, 'title' => 'Improve Database Design Skills', 'skill' => 'Database Design', 'progress' => 40, 'targetDate' => 'November 30, 2026', 'targetDateRaw' => '2026-11-30', 'status' => 'in-progress'],
     ['id' => 3, 'title' => 'Become Confident in Public Speaking', 'skill' => 'Public Speaking', 'progress' => 70, 'targetDate' => 'January 20, 2027', 'targetDateRaw' => '2027-01-20', 'status' => 'in-progress'],
 ];
-
 $completedGoals = [
     ['id' => 4, 'title' => 'Learn SQL Fundamentals', 'skill' => 'MySQL', 'progress' => 100, 'targetDate' => 'August 28, 2026', 'targetDateRaw' => '2026-08-28', 'status' => 'completed'],
     ['id' => 5, 'title' => 'Build My First React Project', 'skill' => 'React', 'progress' => 100, 'targetDate' => 'July 12, 2026', 'targetDateRaw' => '2026-07-12', 'status' => 'completed'],
@@ -44,11 +15,9 @@ $completedGoals = [
     ['id' => 7, 'title' => 'Design a Simple UI Mockup', 'skill' => 'UI/UX Design', 'progress' => 100, 'targetDate' => 'May 15, 2026', 'targetDateRaw' => '2026-05-15', 'status' => 'completed'],
     ['id' => 8, 'title' => 'Finish Database Normalization Basics', 'skill' => 'Database Design', 'progress' => 100, 'targetDate' => 'April 2, 2026', 'targetDateRaw' => '2026-04-02', 'status' => 'completed'],
 ];
-
 $activeCount = count($activeGoals);
 $completedCount = count($completedGoals);
 $averageProgress = $activeCount ? (int) round(array_sum(array_column($activeGoals, 'progress')) / $activeCount) : 0;
-
 $summaryStats = [
     ['label' => 'Active Goals', 'value' => (string) $activeCount, 'icon' => 'flag'],
     ['label' => 'Completed Goals', 'value' => (string) $completedCount, 'icon' => 'check_circle'],
@@ -65,13 +34,11 @@ $summaryStats = [
     <span class="ms" aria-hidden="true">add</span>Create Goal
   </button>
 </div>
-
 <div class="row g-3 mb-4">
   <?php foreach ($summaryStats as $stat): ?>
     <div class="col-6 col-lg-3"><?php ukn_stat_card($stat); ?></div>
   <?php endforeach; ?>
 </div>
-
 <div class="ukn-tabs-pill mb-4" data-goal-filters role="group" aria-label="Filter learning goals">
   <button type="button" class="ukn-tab-pill is-active" data-goal-filter="active" aria-pressed="true">
     In Progress (<span data-goal-count="active"><?= $activeCount ?></span>)
@@ -80,7 +47,6 @@ $summaryStats = [
     Completed (<span data-goal-count="completed"><?= $completedCount ?></span>)
   </button>
 </div>
-
 <div data-goal-section="active">
   <div data-goal-list>
     <?php foreach ($activeGoals as $goal): ukn_goal_card($goal + ['showDelete' => true]); endforeach; ?>
@@ -94,7 +60,6 @@ $summaryStats = [
     ]); ?>
   </div>
 </div>
-
 <div data-goal-section="completed" hidden>
   <div data-goal-list>
     <?php foreach ($completedGoals as $goal): ukn_goal_card($goal + ['showDelete' => true]); endforeach; ?>
@@ -107,17 +72,6 @@ $summaryStats = [
     ]); ?>
   </div>
 </div>
-
-<!--
-  Page-specific Create/Edit Goal modal — deliberately NOT added to
-  includes/footer.php's shared modal set (that file's docblock lists the
-  modals every page gets regardless of use; this one belongs only here).
-  One form serves both actions: assets/js/pages/learning.js resets it to
-  blank/"Create Goal" when opened via [data-goal-create], or pre-fills it
-  from the clicked card's data-goal-* attributes and relabels it
-  "Edit Goal" / "Save Changes" when opened via a goal-card.php [data-goal-edit]
-  button — see that file for the shared markup contract.
--->
 <div class="modal fade" id="goalFormModal" tabindex="-1" aria-labelledby="goalFormModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
@@ -137,7 +91,6 @@ $summaryStats = [
               <span class="ms" aria-hidden="true">error</span>Please enter a goal title.
             </div>
           </div>
-
           <div class="ukn-form-row">
             <div class="ukn-form-group">
               <label for="goalFormSkill" class="form-label">Related Skill <span class="ukn-text-danger" aria-hidden="true">*</span></label>
@@ -159,12 +112,10 @@ $summaryStats = [
               </div>
             </div>
           </div>
-
           <div class="ukn-form-group">
             <label for="goalFormDescription" class="form-label">Description (optional)</label>
             <textarea class="form-control" id="goalFormDescription" name="description" placeholder="What does finishing this goal look like?"></textarea>
           </div>
-
           <div class="ukn-form-group mb-0">
             <label for="goalFormProgress" class="form-label">Progress</label>
             <div class="d-flex align-items-center gap-3">

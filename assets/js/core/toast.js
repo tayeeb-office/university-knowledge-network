@@ -1,13 +1,5 @@
-/**
- * Shared toast notifications — one function every mock success flow
- * (Create/Edit Post, Session Request, Rating, Delete) calls, reusing the
- * existing themed .toast/.toast-body CSS (assets/css/components.css) and
- * Bootstrap's own Toast component. No new notification system, no
- * backend — this only renders a message that was handed to it.
- */
 (function () {
   'use strict';
-
   function ensureContainer() {
     var container = document.getElementById('uknToastContainer');
     if (!container) {
@@ -18,7 +10,6 @@
     }
     return container;
   }
-
   function showToast(message, type) {
     if (typeof bootstrap === 'undefined' || !bootstrap.Toast) {
       return;
@@ -27,7 +18,6 @@
 
     var container = ensureContainer();
     var icon = type === 'danger' ? 'error' : (type === 'info' ? 'info' : 'check_circle');
-
     var toastEl = document.createElement('div');
     toastEl.className = 'toast ukn-toast-' + type;
     toastEl.setAttribute('role', 'status');
@@ -36,27 +26,22 @@
 
     var body = document.createElement('div');
     body.className = 'toast-body';
-
     var iconEl = document.createElement('span');
     iconEl.className = 'ms';
     iconEl.setAttribute('aria-hidden', 'true');
     iconEl.textContent = icon;
-
     var textEl = document.createElement('span');
     textEl.textContent = message;
-
     body.appendChild(iconEl);
     body.appendChild(textEl);
     toastEl.appendChild(body);
     container.appendChild(toastEl);
-
     var toast = new bootstrap.Toast(toastEl, { delay: 3200 });
     toastEl.addEventListener('hidden.bs.toast', function () {
       toastEl.remove();
     });
     toast.show();
   }
-
   window.UKN = window.UKN || {};
   window.UKN.showToast = showToast;
 })();

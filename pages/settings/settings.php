@@ -1,43 +1,13 @@
 <?php
-/**
- * Settings — main center content only. Routed via index.php?page=settings
- * (see index.php's $routes map). The header and left sidebar come from
- * the shell; this route isn't in index.php's $sidebarContextByPage map,
- * so it renders full width with no app-level right sidebar (matching
- * docs/ui's own settings layout, which spends its whole width on a local
- * settings nav + content grid instead).
- *
- * Structure follows docs/ui's r.settings block (settingsNav/settingsGroups
- * in the design canvas): a local, in-page settings nav (plain anchor
- * links + IntersectionObserver-driven active state in
- * assets/js/pages/settings.js — NOT a second global sidebar) next to
- * grouped setting cards, consolidated to the sections that actually have
- * real content: Account, Appearance, Notifications, Privacy & Role, plus
- * a Danger Zone. "Edit Profile" reuses the existing dedicated page rather
- * than re-implementing name/bio/avatar editing here.
- *
- * Appearance reuses the existing global window.UKN.theme singleton
- * (assets/js/core/theme.js) — no second theme state, no "System" option
- * (the current architecture doesn't persist one). Change Password is a
- * new small shared modal (modals/change-password-modal.php) validated by
- * assets/js/pages/settings.js the same way pages/auth/register.php
- * validates its own password fields — frontend-only, nothing is ever
- * stored. "Deactivate Account" reuses the one shared
- * modals/delete-confirmation-modal.php instead of a second confirm
- * dialog. Every other toggle here is frontend-only mock preference state
- * that resets on reload — there is no notification/privacy backend yet.
- */
 $activeRole = !empty($currentUser['dualRole']) ? ($currentUser['activeRole'] ?? 'learner') : ($currentUser['role'] ?? 'learner');
 $isMentor = $activeRole === 'mentor';
 $otherRole = $isMentor ? 'Learner' : 'Mentor';
-
 $profile = [
     'name' => $currentUser['name'] ?? 'Nabila Rahman',
     'initials' => $currentUser['initials'] ?? 'NR',
     'department' => 'Computer Science',
     'email' => 'nabila.rahman@university.edu',
 ];
-
 $notificationOptions = $isMentor
     ? [
         ['id' => 'notifLearnerRequests', 'label' => 'Learner requests', 'help' => 'A learner requests a session with you', 'checked' => true],
@@ -58,7 +28,6 @@ $notificationOptions = $isMentor
     <p class="ukn-page-header__sub">Manage your profile preferences and application experience.</p>
   </div>
 </div>
-
 <div class="card mb-3">
   <div class="card-body d-flex align-items-center gap-3 flex-wrap">
     <span class="ukn-avatar ukn-avatar-lg flex-shrink-0" aria-hidden="true"><?= htmlspecialchars($profile['initials']) ?></span>
@@ -70,7 +39,6 @@ $notificationOptions = $isMentor
     <a href="<?= htmlspecialchars(ukn_route_href('edit-profile')) ?>" class="btn btn-outline-secondary btn-sm flex-shrink-0">Edit Profile</a>
   </div>
 </div>
-
 <div class="ukn-settings-layout">
   <nav class="ukn-settings-nav" aria-label="Settings sections" data-settings-nav>
     <a href="#account" data-settings-nav-link class="is-active">Account</a>
@@ -78,7 +46,6 @@ $notificationOptions = $isMentor
     <a href="#notifications" data-settings-nav-link>Notifications</a>
     <a href="#privacy" data-settings-nav-link>Privacy &amp; Role</a>
   </nav>
-
   <div class="ukn-settings-content">
     <section class="card mb-3" id="account" data-settings-section aria-labelledby="accountHeading">
       <div class="card-header"><h2 id="accountHeading" class="ukn-h4 mb-0">Account</h2></div>
@@ -104,7 +71,6 @@ $notificationOptions = $isMentor
         <span class="ukn-body-sm flex-shrink-0">English</span>
       </div>
     </section>
-
     <section class="card mb-3" id="appearance" data-settings-section aria-labelledby="appearanceHeading">
       <div class="card-header"><h2 id="appearanceHeading" class="ukn-h4 mb-0">Appearance</h2></div>
       <div class="ukn-settings-row">
@@ -124,7 +90,6 @@ $notificationOptions = $isMentor
         </div>
       </div>
     </section>
-
     <section class="card mb-3" id="notifications" data-settings-section aria-labelledby="notificationsHeading">
       <div class="card-header"><h2 id="notificationsHeading" class="ukn-h4 mb-0">Notifications</h2></div>
       <?php foreach ($notificationOptions as $option): ?>
@@ -140,7 +105,6 @@ $notificationOptions = $isMentor
         </div>
       <?php endforeach; ?>
     </section>
-
     <section class="card mb-3" id="privacy" data-settings-section aria-labelledby="privacyHeading">
       <div class="card-header"><h2 id="privacyHeading" class="ukn-h4 mb-0">Privacy &amp; Role</h2></div>
       <div class="ukn-settings-row">
@@ -207,12 +171,10 @@ $notificationOptions = $isMentor
         <?php endif; ?>
       </div>
     </section>
-
     <div class="d-flex gap-2 flex-wrap mb-3" data-settings-save-bar>
       <button type="button" class="btn btn-primary btn-sm" data-settings-save disabled>Save Changes</button>
       <button type="button" class="btn btn-outline-secondary btn-sm" data-settings-reset disabled>Reset Preferences</button>
     </div>
-
     <div class="card ukn-danger-zone">
       <div class="card-body">
         <div class="ukn-danger-zone__title">Danger Zone</div>

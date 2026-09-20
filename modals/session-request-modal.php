@@ -1,30 +1,4 @@
 <?php
-/**
- * Session Request modal — ONE shared instance opened from any mentor's
- * "Request Session" action (components/mentor-card.php, Find Mentors,
- * Recommendations, Skill Details, the dashboards, Mentor Profile — every
- * page reuses this exact modal, never a per-page or per-card copy).
- *
- * Two ways this modal's content ends up matching whichever mentor was
- * actually clicked:
- *   1. components/mentor-card.php's Request Session button carries the
- *      mentor as data-request-* attributes; assets/js/core/modal.js reads
- *      them from event.relatedTarget on show.bs.modal and swaps the
- *      elements below (data-request-avatar / -name-el / -meta-el /
- *      -rating-el / the #sessionRequestSkill options) — this is what
- *      Find Mentors and Recommendations rely on, since a listing page has
- *      many mentor cards sharing this one modal.
- *   2. pages/profile/mentor-profile.php instead sets $requestMentor
- *      server-side before includes/footer.php includes this file, for its
- *      one single mentor — its trigger button carries none of the
- *      data-request-* attributes above, so assets/js/core/modal.js's
- *      listener leaves this PHP-rendered content untouched.
- *
- * $requestMentor below is just this file's own hardcoded fallback for
- * whichever of the two paths above didn't run (e.g. the very first paint
- * before any modal has been opened yet). Frontend-only: assets/js/core/modal.js
- * drives the mock "Send Request" flow; no real booking is created.
- */
 $requestMentor = $requestMentor ?? [
     'name' => 'Rahim Ahmed', 'initials' => 'RA', 'department' => 'Computer Science',
     'skill' => 'Python', 'rating' => 4.9,
@@ -50,7 +24,6 @@ $requestMentor = $requestMentor ?? [
               <div class="ukn-body-sm" data-request-rating-el>★ <?= htmlspecialchars((string) $requestMentor['rating']) ?></div>
             </div>
           </div>
-
           <div class="ukn-form-row">
             <div class="ukn-form-group">
               <label for="sessionRequestSkill" class="form-label">Skill <span class="ukn-text-danger" aria-hidden="true">*</span></label>
@@ -73,7 +46,6 @@ $requestMentor = $requestMentor ?? [
               </select>
             </div>
           </div>
-
           <div class="ukn-form-row">
             <div class="ukn-form-group">
               <label for="sessionRequestDate" class="form-label">Preferred Date <span class="ukn-text-danger" aria-hidden="true">*</span></label>
@@ -90,7 +62,6 @@ $requestMentor = $requestMentor ?? [
               </div>
             </div>
           </div>
-
           <div class="ukn-form-group mb-0">
             <label for="sessionRequestMessage" class="form-label">Message (optional)</label>
             <textarea class="form-control" id="sessionRequestMessage" name="message" placeholder="I need help understanding Python data analysis basics."></textarea>

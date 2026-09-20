@@ -1,45 +1,6 @@
 <?php
-/**
- * Session Details — main center content only. Routed via
- * index.php?page=session-details[&id=..][&from=requests|sessions] (see
- * index.php's $routes map). The header and left sidebar come from the
- * shell. This route is deliberately absent from index.php's
- * $sidebarContextByPage map, so it renders with no app-level right
- * sidebar at all (that decision has to happen before includes/header.php
- * runs, which is why it lives in index.php rather than as a
- * $showRightSidebar override in this file) — the approved design gives
- * this specific screen its own dedicated "Mentor" info panel instead of
- * the generic Sessions sidebar (Pending/Upcoming/Completed/Cancelled
- * counts), which would just be redundant here.
- *
- * $_GET['id'] only ever indexes into the small $sessions lookup below —
- * never concatenated into a query or file path, so there is no injection/
- * traversal surface. An unrecognized id falls back to id 201 (an Upcoming
- * session). $_GET['from'] only ever picks between two whitelisted back-
- * navigation targets — anything else (or missing) defaults to Sessions,
- * per this prompt's own "if origin cannot be safely determined" rule.
- *
- * Actions here reuse the exact data-session-accept / data-reject-session /
- * data-cancel-session / data-session-mark-complete / data-rating-* markup
- * contract components/session-card.php already established, wrapped in one
- * element carrying data-session-id/-status/-details-href — so the very
- * same assets/js/pages/sessions.js handlers that drive the session lists
- * drive this single-session view too, with no second implementation.
- * Reject/Cancel reuse modals/delete-confirmation-modal.php; Rate Mentor
- * reuses modals/rating-modal.php — both the one shared instance already
- * included once from includes/footer.php.
- *
- * Role-aware actions are computed purely from the existing global
- * $currentUser role state (no second role store) — never from "whichever
- * mock participant happens to be named Nabila" in a given record, matching
- * this project's established no-real-authorization stance throughout.
- *
- * Frontend-only mock data throughout — no real accept/reject/cancel/
- * complete/rating persistence, no database.
- */
 $activeRole = !empty($currentUser['dualRole']) ? ($currentUser['activeRole'] ?? 'learner') : ($currentUser['role'] ?? 'learner');
 $isMentorView = $activeRole === 'mentor';
-
 $sessions = [
     101 => ['refId' => 'UKN-1048', 'status' => 'pending', 'timeline' => 'Requested 2 days ago',
         'learner' => ['name' => 'Mahi Noor', 'department' => 'Computer Science', 'href' => ukn_route_href('learner-profile')],
@@ -80,11 +41,9 @@ $sessions = [
 $requestedId = isset($_GET['id']) && is_string($_GET['id']) && isset($sessions[(int) $_GET['id']]) ? (int) $_GET['id'] : 201;
 $session = $sessions[$requestedId];
 $session += ['ratingStatus' => null, 'ratingValue' => null];
-
 $backTarget = (isset($_GET['from']) && $_GET['from'] === 'requests') ? 'requests' : 'sessions';
 $backHref = $backTarget === 'requests' ? ukn_route_href('learner-requests') : ukn_route_href('sessions');
 $backLabel = $backTarget === 'requests' ? 'Back to Learner Requests' : 'Back to Sessions';
-
 $statusMeta = [
     'pending'   => ['label' => 'Pending',   'class' => 'ukn-status-accent'],
     'accepted'  => ['label' => 'Accepted',  'class' => 'ukn-status-success'],
@@ -94,7 +53,6 @@ $statusMeta = [
     'cancelled' => ['label' => 'Cancelled', 'class' => 'ukn-status-danger'],
 ];
 $meta = $statusMeta[$session['status']] ?? $statusMeta['upcoming'];
-
 $facts = [
     ['label' => 'Session', 'value' => '#' . $session['refId']],
     ['label' => 'Learner', 'value' => $session['learner']['name'] . ' · ' . $session['learner']['department'], 'href' => $session['learner']['href']],
@@ -112,7 +70,6 @@ $facts = [
     <h1>Session Details</h1>
   </div>
 </div>
-
 <div class="row g-3">
   <div class="col-lg-8">
     <div class="card mb-3" data-session-id="<?= $requestedId ?>" data-session-status="<?= htmlspecialchars($session['status']) ?>" data-session-details-href="">
@@ -134,14 +91,12 @@ $facts = [
             </div>
           </div>
         <?php endforeach; ?>
-
         <?php if ($session['message']): ?>
           <div class="mt-3 p-3 ukn-bg-surface-2 ukn-rounded-md">
             <div class="ukn-eyebrow mb-2"><?= $session['status'] === 'cancelled' ? 'Cancellation Note' : 'Request Message' ?></div>
             <p class="ukn-body mb-0"><?= htmlspecialchars($session['message']) ?></p>
           </div>
         <?php endif; ?>
-
         <div class="d-flex gap-2 flex-wrap mt-3" data-session-actions>
           <?php if ($session['status'] === 'pending' && $isMentorView): ?>
             <button type="button" class="btn btn-primary btn-sm" data-session-accept>Accept Request</button>
@@ -182,7 +137,6 @@ $facts = [
       </div>
     </div>
   </div>
-
   <div class="col-lg-4">
     <div class="card">
       <div class="card-body">

@@ -1,17 +1,4 @@
-/* ==========================================================================
-   Post Details / My Posts / Saved Posts — page-specific composition on
-   top of the shared card/post-card/vote/avatar vocabulary in
-   components.css. Comments/replies reuse plain .card + .ukn-cluster +
-   Bootstrap's own responsive spacing utilities (ms-2/ms-md-4 for reply
-   indentation that shrinks on mobile) — nothing needed a new class.
-   Comments have no vote control; the .ukn-vote-rail vocabulary belongs
-   to POSTS only. The one genuinely new rule is the detail-page post heading,
-   which components/post-card.php's 'detail' variant renders as a real
-   <h1> but needs to look like this project's page-title scale rather
-   than a feed card's smaller title.
-   ========================================================================== */
-
 .ukn-post-card__title--detail{
-  font-size: 1.75rem; /* matches .ukn-h1 — this IS the page's main heading */
+  font-size: 1.75rem;
   line-height: 1.2;
 }

@@ -1,38 +1,15 @@
 <?php
-/**
- * Admin User Details — the "View" destination from admin/users.php (and
- * admin/dashboard.php's Recent Users table). Reuses the exact same
- * admin/includes/users-data.php mock dataset users.php reads, so the two
- * pages can never disagree about the same id.
- *
- * ?id= is only ever used to look up a key in that in-memory mock array —
- * never as a file path, never in an include(). An id that isn't in the
- * dataset (missing, non-numeric, or simply unknown) renders a clean
- * "User Not Found" state instead of a PHP warning or a silently-wrong
- * fallback user. "Users" stays the active sidebar item even here, since
- * this page is reached FROM Users, not from its own nav entry.
- *
- * No password/hash/token of any kind is ever read or displayed. Suspend/
- * Restore reuses the same shared modals/delete-confirmation-modal.php +
- * assets/js/admin/users.js mock state change users.php's table uses —
- * not a second confirmation mechanism.
- */
 require_once __DIR__ . '/includes/users-data.php';
 require_once __DIR__ . '/../components/stat-card.php';
-
 $adminActiveNav = 'users';
 $users = ukn_admin_mock_users();
-
 $requestedId = isset($_GET['id']) && is_string($_GET['id']) && ctype_digit($_GET['id']) ? (int) $_GET['id'] : null;
 $user = ($requestedId !== null && isset($users[$requestedId])) ? $users[$requestedId] : null;
-
 $adminPageTitle = $user ? $user['name'] : 'User Not Found';
 $adminPageSub = $user ? 'Admin management view for this user.' : '';
 $adminPageStyles = ['../assets/css/admin/tables.css'];
 $adminPageScripts = $user ? ['../assets/js/admin/users.js'] : [];
-
 require __DIR__ . '/includes/header.php';
-
 if (!$user) {
     ?>
     <div class="ukn-state ukn-state--dashed">
@@ -45,12 +22,10 @@ if (!$user) {
     require __DIR__ . '/includes/footer.php';
     return;
 }
-
 $roleLabels = ['learner' => 'Learner', 'mentor' => 'Mentor', 'dual' => 'Learner + Mentor'];
 $statusLabels = ['active' => 'Active', 'inactive' => 'Inactive', 'suspended' => 'Suspended'];
 $statusClass = ['active' => 'ukn-status-accent', 'inactive' => 'ukn-status-neutral', 'suspended' => 'ukn-status-neutral'];
 $isSuspended = $user['status'] === 'suspended';
-
 function ukn_admin_user_sessions(int $id, array $user): array
 {
     $known = [
@@ -76,7 +51,6 @@ function ukn_admin_user_sessions(int $id, array $user): array
         ['participant' => $isMentorSession ? 'A learner' : 'A mentor', 'skill' => $skill, 'date' => 'Sep 5, 2026', 'role' => $isMentorSession ? 'Mentor' : 'Learner', 'status' => 'Completed'],
     ];
 }
-
 function ukn_admin_user_activity(array $user): array
 {
     $activity = [];
@@ -92,7 +66,6 @@ function ukn_admin_user_activity(array $user): array
     }
     return $activity;
 }
-
 $sessionsPreview = ukn_admin_user_sessions($requestedId, $user);
 $activity = ukn_admin_user_activity($user);
 ?>
@@ -139,7 +112,6 @@ $activity = ukn_admin_user_activity($user);
     </div>
   </div>
 </div>
-
 <div class="row g-3 mb-4">
   <div class="col-lg-4">
     <div class="card h-100">
@@ -158,7 +130,6 @@ $activity = ukn_admin_user_activity($user);
       </div>
     </div>
   </div>
-
   <div class="col-lg-8">
     <?php if (!empty($user['learner'])): ?>
       <div class="card mb-3">
@@ -181,7 +152,6 @@ $activity = ukn_admin_user_activity($user);
         </div>
       </div>
     <?php endif; ?>
-
     <?php if (!empty($user['mentor'])): ?>
       <div class="card mb-3">
         <div class="card-header"><h3 class="ukn-h4 mb-0">Mentor Activity</h3></div>
@@ -203,7 +173,6 @@ $activity = ukn_admin_user_activity($user);
         </div>
       </div>
     <?php endif; ?>
-
     <div class="card mb-3">
       <div class="card-header d-flex align-items-center justify-content-between">
         <h3 class="ukn-h4 mb-0">Recent Sessions</h3>
@@ -228,7 +197,6 @@ $activity = ukn_admin_user_activity($user);
         </table>
       </div>
     </div>
-
     <div class="card">
       <div class="card-header"><h3 class="ukn-h4 mb-0">Recent Activity</h3></div>
       <div class="card-body">
@@ -247,5 +215,4 @@ $activity = ukn_admin_user_activity($user);
     </div>
   </div>
 </div>
-
 <?php require __DIR__ . '/includes/footer.php'; ?>

@@ -1,28 +1,4 @@
 <?php
-/**
- * Learner card — reusable learner summary component.
- * Used by: mentor-facing views of learners (e.g. a mentor's "Recent
- * Learners" list, Skill Details), sharing the same .ukn-person-card__*
- * layout as components/mentor-card.php so the two stay visually
- * consistent without duplicating that CSS.
- *
- * Usage:
- *   require_once __DIR__ . '/../components/learner-card.php';
- *   foreach ($learners as $learner) { ukn_learner_card($learner); }
- *
- * $learner shape:
- *   [
- *     'name' => 'Sara Khan', 'initials' => 'SK',
- *     'department' => 'Business Administration',
- *     'skills' => ['UI/UX Design', 'Figma'],
- *     'points' => 366, 'sessions' => 12,
- *     'profileHref' => 'index.php?page=learner-profile',
- *     'following' => false,   // omit entirely to hide the Follow button
- *   ]
- *
- * Follow/Following has no backend — assets/js/components/follow.js
- * toggles the label/state visually only.
- */
 if (!function_exists('ukn_learner_card')) {
     function ukn_learner_card(array $learner): void
     {
@@ -43,7 +19,6 @@ if (!function_exists('ukn_learner_card')) {
                 <div class="ukn-body-sm ukn-truncate"><?= htmlspecialchars($learner['department']) ?></div>
               </div>
             </div>
-
             <?php if ($learner['skills']): ?>
               <div class="d-flex flex-wrap gap-2 my-3">
                 <?php foreach ($learner['skills'] as $skill): ?>
@@ -51,7 +26,6 @@ if (!function_exists('ukn_learner_card')) {
                 <?php endforeach; ?>
               </div>
             <?php endif; ?>
-
             <div class="ukn-person-card__stats ukn-person-card__stats--2up">
               <div>
                 <span class="ukn-eyebrow">Learning Points</span>
@@ -62,7 +36,6 @@ if (!function_exists('ukn_learner_card')) {
                 <div><?= $learner['sessions'] !== null ? (int) $learner['sessions'] : '—' ?></div>
               </div>
             </div>
-
             <div class="d-flex gap-2">
               <a href="<?= htmlspecialchars($learner['profileHref']) ?>" class="btn btn-outline-secondary btn-sm flex-fill">View Profile</a>
               <?php if ($learner['following'] !== null): ?>

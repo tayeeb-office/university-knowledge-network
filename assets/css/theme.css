@@ -1,11 +1,3 @@
-/* ==========================================================================
-   Theme — Light (default) & Dark
-   Uses Bootstrap 5.3's color-mode attribute (data-bs-theme) so both our
-   tokens and Bootstrap's own component styles switch together. Toggled by
-   assets/js/core/theme.js, typically on <html data-bs-theme="dark">.
-   ========================================================================== */
-
-/* Explicit light theme (also the implicit default from variables.css) */
 :root,
 [data-bs-theme="light"]{
   --ukn-bg: var(--ukn-cream);
@@ -20,15 +12,11 @@
   --ukn-danger-soft: #FBE7E5;
   --ukn-warning-soft: #FBEEDA;
   --ukn-info-soft: #E4EEFD;
-
   --ukn-grain-blend: multiply;
   --ukn-grain-opacity: .07;
   --ukn-shadow-card: var(--ukn-shadow-flat);
-
   color-scheme: light;
 }
-
-/* Dark theme — charcoal surfaces on true black, per brand guide section 14 */
 [data-bs-theme="dark"]{
   --ukn-bg: var(--ukn-black);
   --ukn-surface: var(--ukn-charcoal);
@@ -42,16 +30,11 @@
   --ukn-danger-soft: #34120F;
   --ukn-warning-soft: #33230A;
   --ukn-info-soft: #0F2440;
-
   --ukn-grain-blend: screen;
   --ukn-grain-opacity: .05;
   --ukn-shadow-card: none;
-
   color-scheme: dark;
 }
-
-/* Respect the OS preference only when the app hasn't set an explicit
-   color mode yet (no data-bs-theme attribute on the root). */
 @media (prefers-color-scheme: dark){
   :root:not([data-bs-theme]){
     --ukn-bg: var(--ukn-black);
@@ -66,16 +49,12 @@
     --ukn-danger-soft: #34120F;
     --ukn-warning-soft: #33230A;
     --ukn-info-soft: #0F2440;
-
     --ukn-grain-blend: screen;
     --ukn-grain-opacity: .05;
     --ukn-shadow-card: none;
-
     color-scheme: dark;
   }
 }
-
-/* ---- Theme toggle control (header button driven by theme.js) ---- */
 .ukn-theme-toggle{
   display: inline-flex;
   align-items: center;

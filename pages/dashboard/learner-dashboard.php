@@ -1,38 +1,18 @@
 <?php
-/**
- * Learner Dashboard — main center content only. Routed via
- * index.php?page=learner-dashboard (see index.php's $routes map). The
- * header, left sidebar, contextual right sidebar ($rightSidebarContext =
- * 'dashboard-learner', set by index.php's $sidebarContextByPage map) and
- * footer come from the shell — not from here.
- *
- * The right sidebar already covers the compact Learning Summary /
- * Learning Points glance (includes/right-sidebar.php), so this file
- * deliberately does NOT repeat a Point Activity list or a full Recent
- * Activity feed here — that would just be the same numbers twice. What
- * it adds instead is what the sidebar can't fit: a fuller goals/sessions/
- * recommendations view and the one chart worth having.
- *
- * Frontend-only mock data throughout — no real stats calculation, no
- * database, no backend of any kind.
- */
 require_once __DIR__ . '/../../components/stat-card.php';
 require_once __DIR__ . '/../../components/goal-card.php';
 require_once __DIR__ . '/../../components/session-card.php';
 require_once __DIR__ . '/../../components/mentor-card.php';
-
 $learnerStats = [
     ['label' => 'Learning Points', 'value' => '412', 'icon' => 'military_tech', 'trend' => '+64 this month'],
     ['label' => 'Completed Sessions', 'value' => '18', 'icon' => 'event_available'],
     ['label' => 'Upcoming Sessions', 'value' => '2', 'icon' => 'event_upcoming'],
     ['label' => 'Skills Learning', 'value' => '4', 'icon' => 'workspaces'],
 ];
-
 $learnerGoals = [
     ['title' => 'Learn Python for Data Analysis', 'skill' => 'Python', 'progress' => 65, 'targetDate' => 'December 2026'],
     ['title' => 'Improve Database Design Skills', 'skill' => 'DBMS', 'progress' => 40, 'targetDate' => 'November 2026'],
 ];
-
 $learnerSessions = [
     [
         'counterparty' => 'Rahim Ahmed', 'counterpartyInitials' => 'RA', 'skill' => 'Python',
@@ -45,7 +25,6 @@ $learnerSessions = [
         'status' => 'upcoming', 'detailsHref' => ukn_route_href('session-details'),
     ],
 ];
-
 $recommendedMentors = [
     [
         'name' => 'Rahim Ahmed', 'initials' => 'RA', 'department' => 'Computer Science', 'primarySkill' => 'Python',
@@ -63,9 +42,7 @@ $recommendedMentors = [
         'profileHref' => ukn_route_href('mentor-profile'),
     ],
 ];
-
 $learningSkills = ['Python', 'MySQL', 'Data Analysis', 'Public Speaking'];
-
 $sessionsChartLabels = ['Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep'];
 $sessionsChartValues = [4, 6, 5, 8, 7, 10];
 ?>
@@ -75,7 +52,6 @@ $sessionsChartValues = [4, 6, 5, 8, 7, 10];
     <p class="ukn-page-header__sub">Track your learning progress, goals and upcoming sessions.</p>
   </div>
 </div>
-
 <div class="row g-3 mb-4">
   <?php foreach ($learnerStats as $stat): ?>
     <div class="col-6 col-lg-3"><?php ukn_stat_card($stat); ?></div>
@@ -111,7 +87,6 @@ $sessionsChartValues = [4, 6, 5, 8, 7, 10];
     <?php foreach ($learnerGoals as $goal): ukn_goal_card($goal); endforeach; ?>
   </div>
 </div>
-
 <div class="mb-4">
   <div class="d-flex align-items-center justify-content-between mb-3">
     <h2 class="ukn-h4 mb-0">Upcoming Sessions</h2>
@@ -119,7 +94,6 @@ $sessionsChartValues = [4, 6, 5, 8, 7, 10];
   </div>
   <?php foreach ($learnerSessions as $session): ukn_session_card($session); endforeach; ?>
 </div>
-
 <div class="mb-4">
   <div class="d-flex align-items-center justify-content-between mb-3">
     <h2 class="ukn-h4 mb-0">Recommended Mentors</h2>
@@ -131,7 +105,6 @@ $sessionsChartValues = [4, 6, 5, 8, 7, 10];
     <?php endforeach; ?>
   </div>
 </div>
-
 <div class="card">
   <div class="card-body">
     <div class="d-flex align-items-center justify-content-between mb-3">

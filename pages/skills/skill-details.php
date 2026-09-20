@@ -1,47 +1,16 @@
 <?php
-/**
- * Skill Details — main center content only. Routed via
- * index.php?page=skill-details[&id=..] (see index.php's $routes map). The
- * header, left sidebar, contextual right sidebar ($rightSidebarContext =
- * 'skills', set by index.php's $sidebarContextByPage map — same Popular/
- * Trending Skills/Categories/Most Requested modules as the rest of the
- * Skills system, see includes/right-sidebar.php) and footer come from the
- * shell — not from here, and are not duplicated here.
- *
- * $_GET['id'] only ever indexes into the small $skills lookup below — it
- * is never concatenated into a query or file path, so there is no
- * injection/traversal surface. An unrecognized id falls back to id 1
- * (Python), matching this project's routing example.
- *
- * The primary "Add to Learning" / "Add to Teaching" action reuses the
- * exact same [data-skill-toggle]/[data-state]/[data-skill-toggle-label]
- * markup contract as components/skill-card.php's directory variant, so
- * assets/js/pages/skills.js's one generic toggle handler drives this too
- * — no second toggle implementation. Frontend-only mock data throughout —
- * no real search/recommendation/matching logic, no database.
- */
 require_once __DIR__ . '/../../components/mentor-card.php';
 require_once __DIR__ . '/../../components/post-card.php';
-
 $activeRole = !empty($currentUser['dualRole']) ? ($currentUser['activeRole'] ?? 'learner') : ($currentUser['role'] ?? 'learner');
 $isMentor = $activeRole === 'mentor';
-
-/** Matches pages/skills/skills.php exactly, so "already added" agrees everywhere. */
 $myLearningSkills = ['Python', 'MySQL', 'Data Analysis', 'Public Speaking'];
 $myTeachingSkills = ['Python', 'Database Design', 'Data Analysis'];
-
-/**
- * A small, reused cast of mentors (same people/stats already established
- * on the Dashboards and Mentor Profile pages) rather than inventing a new
- * name per skill.
- */
 $mentorPool = [
     'Rahim Ahmed'    => ['initials' => 'RA', 'department' => 'Computer Science', 'skill' => 'Python', 'rating' => 4.9, 'points' => 520, 'sessions' => 127, 'profileHref' => ukn_route_href('mentor-profile') . '&id=2'],
     'Hasan Mahmud'   => ['initials' => 'HM', 'department' => 'Electrical Engineering', 'skill' => 'Arduino', 'rating' => 4.7, 'points' => 365, 'sessions' => 52, 'profileHref' => ukn_route_href('mentor-profile') . '&id=3'],
     'Sara Khan'      => ['initials' => 'SK', 'department' => 'Business Administration', 'skill' => 'Public Speaking', 'rating' => 4.8, 'points' => 410, 'sessions' => 47, 'profileHref' => ukn_route_href('mentor-profile')],
     'Tanvir Hossain' => ['initials' => 'TH', 'department' => 'Electrical Engineering', 'skill' => 'Data Analysis', 'rating' => 4.7, 'points' => 388, 'sessions' => 41, 'profileHref' => ukn_route_href('mentor-profile')],
 ];
-
 $categoryMentors = [
     'Programming'   => ['Rahim Ahmed', 'Tanvir Hossain'],
     'Data'          => ['Tanvir Hossain', 'Rahim Ahmed'],
@@ -51,7 +20,6 @@ $categoryMentors = [
     'Engineering'   => ['Hasan Mahmud', 'Tanvir Hossain'],
     'Academic'      => ['Sara Khan', 'Rahim Ahmed'],
 ];
-
 $categoryTopics = [
     'Programming'   => ['Data Structures', 'APIs', 'Version Control', 'Algorithms'],
     'Data'          => ['Statistics', 'Data Visualization', 'Data Cleaning'],
@@ -61,7 +29,6 @@ $categoryTopics = [
     'Engineering'   => ['Circuit Design', 'Sensors', 'Robotics'],
     'Academic'      => ['Research Methods', 'Citation Styles', 'Essay Structure'],
 ];
-
 $skills = [
     1 => ['name' => 'Python', 'category' => 'Programming', 'mentors' => 124, 'learners' => 340, 'sessionsHeld' => 1248, 'discussions' => 86,
         'description' => 'A versatile programming language used for software development, automation, data analysis and machine learning.',
@@ -110,16 +77,13 @@ $skills = [
         'description' => 'Reaching an audience through social media, content and basic campaign analytics.',
         'about' => 'Sessions cover the basics of reaching an audience — content planning, social platforms and reading enough analytics to know if something worked.'],
 ];
-
 $requestedId = isset($_GET['id']) && is_string($_GET['id']) && isset($skills[(int) $_GET['id']]) ? (int) $_GET['id'] : 1;
 $skill = $skills[$requestedId];
 $skill += ['relatedTopics' => $categoryTopics[$skill['category']] ?? [], 'discussionPosts' => []];
-
 $kind = $isMentor ? 'teaching' : 'learning';
 $kindLabel = $isMentor ? 'Teaching' : 'Learning';
 $mySkillNames = $isMentor ? $myTeachingSkills : $myLearningSkills;
 $isAdded = in_array($skill['name'], $mySkillNames, true);
-
 $topMentorNames = $categoryMentors[$skill['category']] ?? ['Rahim Ahmed', 'Sara Khan'];
 $topMentors = array_map(static function (string $name) use ($mentorPool, $skill) {
     $mentor = $mentorPool[$name];
@@ -137,7 +101,6 @@ $topMentors = array_map(static function (string $name) use ($mentorPool, $skill)
       <span class="ukn-eyebrow"><?= htmlspecialchars($skill['category']) ?></span>
     </div>
     <p class="ukn-body mt-2 mb-0"><?= htmlspecialchars($skill['description']) ?></p>
-
     <div class="d-flex align-items-center gap-4 flex-wrap mt-3 pt-3 ukn-border-top">
       <div>
         <div class="ukn-eyebrow">Mentors</div>
@@ -167,7 +130,6 @@ $topMentors = array_map(static function (string $name) use ($mentorPool, $skill)
     </div>
   </div>
 </div>
-
 <?php if ($skill['about']): ?>
 <div class="card mb-4">
   <div class="card-body">
@@ -183,7 +145,6 @@ $topMentors = array_map(static function (string $name) use ($mentorPool, $skill)
   </div>
 </div>
 <?php endif; ?>
-
 <div class="mb-4">
   <div class="d-flex align-items-center justify-content-between mb-3">
     <h2 class="ukn-h4 mb-0">Top Mentors for <?= htmlspecialchars($skill['name']) ?></h2>
@@ -195,7 +156,6 @@ $topMentors = array_map(static function (string $name) use ($mentorPool, $skill)
     <?php endforeach; ?>
   </div>
 </div>
-
 <?php if ($skill['discussionPosts']): ?>
 <div>
   <h2 class="ukn-h4 mb-3">Related Community Discussions</h2>

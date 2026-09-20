@@ -1,27 +1,4 @@
 <?php
-/**
- * ============================================================================
- *  DEVELOPMENT-ONLY COMPONENT PREVIEW — NOT A PRODUCTION PAGE
- * ============================================================================
- * This file exists ONLY so the reusable components/*.php library can be
- * checked visually before any real page uses them. It is:
- *   - NOT registered in index.php's $routes whitelist
- *   - NOT linked from the header, sidebar, or any nav item
- *   - safe to delete once real pages are built and exercise these
- *     components themselves
- *
- * It assembles the real application shell (same includes/header.php +
- * includes/footer.php every real page uses) so components render in their
- * actual light/dark, responsive, themed context — but the "page" itself
- * is just a scroll of every component in every state, which is not
- * something a real page would ever look like.
- *
- * Reachable only by opening this file's path directly, e.g.
- * http://localhost/university-knowledge-network-frontend/component-preview.dev.php
- *
- * Frontend-only mock data throughout — no backend, no database.
- */
-
 require_once __DIR__ . '/components/post-card.php';
 require_once __DIR__ . '/components/mentor-card.php';
 require_once __DIR__ . '/components/learner-card.php';
@@ -38,7 +15,6 @@ require_once __DIR__ . '/components/loading-state.php';
 require_once __DIR__ . '/components/empty-state.php';
 require_once __DIR__ . '/components/error-state.php';
 require_once __DIR__ . '/components/success-state.php';
-
 $currentUser = [
     'loggedIn' => true, 'role' => 'learner', 'dualRole' => true, 'activeRole' => 'learner',
     'name' => 'Nabila Rahman', 'initials' => 'NR', 'meta' => 'Learner · Computer Science',
@@ -53,12 +29,10 @@ $pageTitle = '[DEV] Component Preview · University Knowledge Network';
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title><?= htmlspecialchars($pageTitle) ?></title>
-
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20,300,0,0" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
-
   <link rel="stylesheet" href="assets/css/variables.css">
   <link rel="stylesheet" href="assets/css/theme.css">
   <link rel="stylesheet" href="assets/css/base.css">
@@ -72,19 +46,16 @@ $pageTitle = '[DEV] Component Preview · University Knowledge Network';
 </head>
 <body>
   <?php include __DIR__ . '/includes/header.php'; ?>
-
   <div class="alert alert-warning mb-4">
     <span class="ms" aria-hidden="true">construction</span>
     <div><strong>Development-only preview.</strong> Not a real page, not in the route whitelist, not linked from navigation. Delete once real pages exercise these components directly.</div>
   </div>
-
   <div class="ukn-page-header">
     <div>
       <h1>Component Library Preview</h1>
       <p class="ukn-page-header__sub">Every reusable card/state component, in its documented states, for visual QA only.</p>
     </div>
   </div>
-
   <h2 class="ukn-eyebrow mb-3">01 — Post Card (default / voted / saved)</h2>
   <?php
   ukn_post_card([
@@ -102,7 +73,6 @@ $pageTitle = '[DEV] Component Preview · University Knowledge Network';
       'tags' => ['React', 'JavaScript'], 'score' => 215, 'voteState' => 1, 'comments' => 38, 'saved' => true,
   ]);
   ?>
-
   <h2 class="ukn-eyebrow mb-3 mt-4">02 — Mentor Card (normal / recommendation)</h2>
   <div class="ukn-grid-2">
     <?php
@@ -119,7 +89,6 @@ $pageTitle = '[DEV] Component Preview · University Knowledge Network';
     ], ['variant' => 'recommendation']);
     ?>
   </div>
-
   <h2 class="ukn-eyebrow mb-3 mt-4">03 — Learner Card (normal / follow state)</h2>
   <div class="ukn-grid-2">
     <?php
@@ -134,7 +103,6 @@ $pageTitle = '[DEV] Component Preview · University Knowledge Network';
     ]);
     ?>
   </div>
-
   <h2 class="ukn-eyebrow mb-3 mt-4">04 — Skill Card (normal / selected-action state)</h2>
   <div class="ukn-grid-3">
     <?php
@@ -143,7 +111,6 @@ $pageTitle = '[DEV] Component Preview · University Knowledge Network';
     ukn_skill_card(['name' => 'UI/UX Design', 'category' => 'Design', 'mentors' => 38, 'learners' => 155, 'href' => 'index.php?page=skill-details', 'learningState' => 'added', 'teachingState' => 'add']);
     ?>
   </div>
-
   <h2 class="ukn-eyebrow mb-3 mt-4">05 — Session Card (pending / upcoming / completed / cancelled)</h2>
   <?php
   ukn_session_card(['counterparty' => 'Sara Khan', 'counterpartyInitials' => 'SK', 'skill' => 'Python', 'day' => '18', 'month' => 'Sep', 'time' => 'Thu 5:00pm', 'duration' => '60 min', 'status' => 'pending', 'message' => 'Could we go over pandas merge and groupby before Friday\'s deadline?', 'detailsHref' => 'index.php?page=session-details']);
@@ -151,7 +118,6 @@ $pageTitle = '[DEV] Component Preview · University Knowledge Network';
   ukn_session_card(['counterparty' => 'Tanvir Hossain', 'counterpartyInitials' => 'TH', 'skill' => 'JavaScript', 'day' => '09', 'month' => 'Sep', 'time' => 'Tue 4:00pm', 'duration' => '60 min', 'status' => 'completed', 'detailsHref' => 'index.php?page=session-details']);
   ukn_session_card(['counterparty' => 'Hasan Mahmud', 'counterpartyInitials' => 'HM', 'skill' => 'Data Analysis', 'day' => '05', 'month' => 'Sep', 'time' => 'Fri 3:00pm', 'duration' => '45 min', 'status' => 'cancelled', 'detailsHref' => 'index.php?page=session-details']);
   ?>
-
   <h2 class="ukn-eyebrow mb-3 mt-4">06 — Stat Card (multiple value types)</h2>
   <div class="ukn-grid-4 mb-4">
     <?php
@@ -161,13 +127,11 @@ $pageTitle = '[DEV] Component Preview · University Knowledge Network';
     ukn_stat_card(['label' => 'Pending Requests', 'value' => '3', 'icon' => 'inbox']);
     ?>
   </div>
-
   <h2 class="ukn-eyebrow mb-3 mt-4">07 — Learning Goal Card (progress)</h2>
   <?php
   ukn_goal_card(['title' => 'Learn Python for Data Analysis', 'skill' => 'Python', 'progress' => 65, 'targetDate' => 'December 2026', 'status' => 'in-progress']);
   ukn_goal_card(['title' => 'Build a React portfolio project', 'skill' => 'React', 'progress' => 100, 'targetDate' => 'August 2026', 'status' => 'completed']);
   ?>
-
   <h2 class="ukn-eyebrow mb-3 mt-4">08 — Point Transaction (positive display)</h2>
   <div class="card mb-4"><div class="card-body">
     <?php
@@ -176,12 +140,10 @@ $pageTitle = '[DEV] Component Preview · University Knowledge Network';
     ukn_point_transaction(['amount' => 40, 'type' => 'Learning Points', 'reason' => 'Goal completed', 'date' => 'Sep 5', 'icon' => 'flag']);
     ?>
   </div></div>
-
   <h2 class="ukn-eyebrow mb-3 mt-4">09 — Rating Item (stars/review)</h2>
   <?php
   ukn_rating_item(['reviewer' => 'Sara Khan', 'initials' => 'SK', 'overall' => 5, 'teaching' => 5, 'communication' => 5, 'helpfulness' => 4, 'review' => 'Explained pandas merges so clearly I finally understood the assignment.', 'date' => 'Sep 10', 'skill' => 'Python']);
   ?>
-
   <h2 class="ukn-eyebrow mb-3 mt-4">10 — Notification Item (read / unread)</h2>
   <div class="card mb-4">
     <?php
@@ -189,7 +151,6 @@ $pageTitle = '[DEV] Component Preview · University Knowledge Network';
     ukn_notification_item(['icon' => 'check_circle', 'text' => 'Your JavaScript mentoring session has been completed.', 'time' => 'Yesterday', 'kind' => 'Session', 'unread' => false]);
     ?>
   </div>
-
   <h2 class="ukn-eyebrow mb-3 mt-4">11 — Leaderboard Row (normal + Top 3)</h2>
   <?php
   ukn_leaderboard_row(['rank' => 1, 'name' => 'Rahim Ahmed', 'initials' => 'RA', 'category' => 'Computer Science', 'points' => 520, 'rating' => 4.9, 'sessions' => 127]);
@@ -205,7 +166,6 @@ $pageTitle = '[DEV] Component Preview · University Knowledge Network';
   ukn_search_result_item(['type' => 'learner', 'title' => 'Sara Khan', 'meta' => 'Business Administration', 'href' => 'index.php?page=learner-profile']);
   ukn_search_result_item(['type' => 'post', 'title' => 'Need Help Understanding Database Normalization', 'meta' => 'Nabila Rahman · 96 points · 24 comments', 'href' => 'index.php?page=post-details']);
   ?>
-
   <h2 class="ukn-eyebrow mb-3 mt-4">13-16 — UI States: Loading / Empty / Error / Success</h2>
   <?php ukn_loading_spinner('Loading…'); ?>
   <div class="ukn-grid-2 mt-3">
@@ -216,7 +176,6 @@ $pageTitle = '[DEV] Component Preview · University Knowledge Network';
     ukn_success_state(['message' => 'Session request sent successfully.', 'detail' => 'Rahim usually replies within a day. You will get a notification either way.']);
     ?>
   </div>
-
   <?php include __DIR__ . '/includes/footer.php'; ?>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>

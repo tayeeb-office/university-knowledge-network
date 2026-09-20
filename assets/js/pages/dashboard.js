@@ -1,24 +1,6 @@
-/**
- * Learner / Mentor Dashboard — page-specific frontend behavior only.
- * The only dashboard-specific behavior is Chart.js initialization; stat
- * cards, goal cards, session cards, mentor/learner cards all reuse their
- * existing generic components and JS (vote/save/follow/modals), none of
- * which belongs here.
- *
- * Generic: any <canvas data-chart="line" data-chart-labels="[...]"
- * data-chart-values="[...]" data-chart-label="..."> on the page is
- * initialized the same way — both dashboards use this one code path
- * instead of two hardcoded chart setups.
- *
- * Frontend-only mock data — the values are whatever the page already
- * rendered into the canvas's data attributes; nothing here calculates a
- * real statistic.
- */
 (function () {
   'use strict';
-
   var charts = [];
-
   function chartColors() {
     var styles = getComputedStyle(document.documentElement);
     var read = function (name) {
@@ -32,7 +14,6 @@
       font: read('--ukn-font-serif') || undefined,
     };
   }
-
   function parseJsonAttr(el, name, fallback) {
     var raw = el.getAttribute(name);
     if (!raw) {
@@ -44,17 +25,14 @@
       return fallback;
     }
   }
-
   function initChart(canvas) {
     if (typeof Chart === 'undefined' || canvas.dataset.chartInitialized) {
       return;
     }
-
     var labels = parseJsonAttr(canvas, 'data-chart-labels', []);
     var values = parseJsonAttr(canvas, 'data-chart-values', []);
     var label = canvas.getAttribute('data-chart-label') || 'Value';
     var colors = chartColors();
-
     var chart = new Chart(canvas, {
       type: 'line',
       data: {
@@ -90,11 +68,9 @@
         },
       },
     });
-
     canvas.dataset.chartInitialized = 'true';
     charts.push(chart);
   }
-
   function restyleCharts() {
     if (!charts.length) {
       return;
@@ -113,10 +89,6 @@
       chart.update();
     });
   }
-
   document.querySelectorAll('[data-chart="line"]').forEach(initChart);
-
-  // theme.js dispatches this on every light/dark toggle — reuse it
-  // instead of building a second theme-change mechanism.
   document.addEventListener('ukn:themechange', restyleCharts);
 })();

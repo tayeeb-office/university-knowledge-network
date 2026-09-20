@@ -1,44 +1,12 @@
 <?php
-/**
- * Admin Reports Management — the review queue for reported Posts,
- * Comments and Users. Reuses admin/includes/users-data.php for every
- * reporter/reported-user identity, and mirrors the exact already-
- * established reported/hidden records from admin/posts.php (UKN-P-0013/
- * 0014/0015) and admin/comments.php (UKN-C-0107/0111/0112) rather than
- * inventing new counts that would disagree with those pages' own
- * "Reports" columns. Each report below is one individual report record
- * (not a grouped-by-content row) — a post/comment reported more than
- * once simply appears as more than one row referencing the same target,
- * with the Review panel's own "reports on this content" note surfacing
- * the grouping for context (see $targetCounts below).
- *
- * There is no admin/report-details.php — "Review" opens one reusable
- * detail modal (#reportReviewModal), same convention as Sessions/Posts/
- * Comments. Resolve/Dismiss are decided directly inside that modal (no
- * second confirmation modal stacked on top of it) and only ever change
- * the REPORT's own status. They deliberately never touch the underlying
- * Post/Comment's visibility or the User's account status — that stays on
- * posts.php/comments.php/user-details.php, which this page only links
- * out to (see assets/js/admin/reports.js's own docblock for why this
- * boundary matters).
- *
- * The 4 status summary cards + Post/Comment/User breakdown line reuse
- * the network-wide totals already established on admin/dashboard.php
- * (Pending Reports: 8), while the table below demonstrates a smaller,
- * honestly-labeled sample of 16 individual report records — the same
- * summary-vs-sample resolution admin/posts.php and admin/comments.php
- * already use for their own Total/Visible/Hidden/Reported cards.
- */
 require_once __DIR__ . '/includes/users-data.php';
 require_once __DIR__ . '/../components/empty-state.php';
 require_once __DIR__ . '/../components/stat-card.php';
-
 $adminActiveNav = 'reports';
 $adminPageTitle = 'Reports';
 $adminPageSub = 'Review reported users, posts and comments across the network.';
 $adminPageStyles = ['../assets/css/admin/tables.css', '../assets/css/admin/forms.css', '../assets/css/admin/reports.css'];
 $adminPageScripts = ['../assets/js/admin/reports.js'];
-
 $users = ukn_admin_mock_users();
 $roleLabels = ['learner' => 'Learner', 'mentor' => 'Mentor', 'dual' => 'Dual Role'];
 $userStatusLabels = ['active' => 'Active', 'inactive' => 'Inactive', 'suspended' => 'Suspended'];
@@ -50,15 +18,12 @@ $reasonLabels = [
     'harassment' => 'Harassment / Conduct',
     'other' => 'Other',
 ];
-
 function ukn_admin_report_person(array $users, int $id): array
 {
     $u = $users[$id];
     return ['id' => $id, 'name' => $u['name'], 'department' => $u['department']];
 }
-
 $reports = [
-    // ---- Pending ----
     ['id' => 'UKN-R-0201', 'type' => 'post', 'status' => 'pending', 'reporter' => 1, 'reasonSlug' => 'academic-integrity',
         'description' => 'The post appears to encourage sharing completed assignment work.', 'reportedDisplay' => '22 min ago', 'reportedIso' => '2026-09-14',
         'post' => ['adminId' => 'UKN-P-0014', 'publicId' => 1, 'title' => 'Anyone Want to Exchange Completed Assignment Files?', 'author' => 14, 'status' => 'visible', 'excerpt' => 'Looking to trade completed assignments from last semester to save time.']],
@@ -80,8 +45,6 @@ $reports = [
     ['id' => 'UKN-R-0207', 'type' => 'post', 'status' => 'pending', 'reporter' => 8, 'reasonSlug' => 'off-topic',
         'description' => 'Very similar to another existing post asking the same question.', 'reportedDisplay' => 'Sep 13, 2026', 'reportedIso' => '2026-09-13',
         'post' => ['adminId' => 'UKN-P-0013', 'publicId' => 3, 'title' => 'Best Resources for Learning MySQL Joins?', 'author' => 5, 'status' => 'visible', 'excerpt' => 'Looking for practice problems that go beyond simple INNER JOIN examples.']],
-
-    // ---- Resolved ----
     ['id' => 'UKN-R-0208', 'type' => 'post', 'status' => 'resolved', 'reporter' => 10, 'reasonSlug' => 'spam',
         'description' => 'Promoting a personal side project unrelated to coursework or mentoring.', 'reportedDisplay' => 'Sep 12, 2026', 'reportedIso' => '2026-09-12',
         'decision' => 'Content hidden', 'resolvedDisplay' => 'Sep 12, 2026',
@@ -106,8 +69,6 @@ $reports = [
         'description' => 'Seemed unrelated to a specific skill or mentoring request.', 'reportedDisplay' => 'Sep 13, 2026', 'reportedIso' => '2026-09-13',
         'decision' => 'Manual review completed — a reminder about posting guidelines was shared with the author.', 'resolvedDisplay' => 'Sep 13, 2026',
         'post' => ['adminId' => 'UKN-P-0005', 'publicId' => 5, 'title' => 'How Do You Improve Academic Presentation Skills?', 'author' => 3, 'status' => 'visible', 'excerpt' => 'My seminar presentations feel flat even when the research is solid.']],
-
-    // ---- Dismissed ----
     ['id' => 'UKN-R-0214', 'type' => 'post', 'status' => 'dismissed', 'reporter' => 9, 'reasonSlug' => 'off-topic',
         'description' => 'Seemed unrelated to a specific skill.', 'reportedDisplay' => 'Sep 13, 2026', 'reportedIso' => '2026-09-13',
         'decision' => 'No action required — the post was relevant to the discussion after review.', 'resolvedDisplay' => 'Sep 13, 2026',
@@ -121,7 +82,6 @@ $reports = [
         'decision' => 'Account reviewed — no policy violation found; account appears simply inactive.', 'resolvedDisplay' => 'Sep 13, 2026',
         'user' => ['id' => 13]],
 ];
-
 function ukn_report_target_key(array $r): string
 {
     if ($r['type'] === 'post') {
@@ -132,21 +92,15 @@ function ukn_report_target_key(array $r): string
     }
     return 'user:' . $r['user']['id'];
 }
-
 $targetCounts = [];
 foreach ($reports as $r) {
     $key = ukn_report_target_key($r);
     $targetCounts[$key] = ($targetCounts[$key] ?? 0) + 1;
 }
-
 $statusLabels = ['pending' => 'Pending', 'resolved' => 'Resolved', 'dismissed' => 'Dismissed'];
 $statusClass = ['pending' => 'ukn-status-neutral', 'resolved' => 'ukn-status-accent', 'dismissed' => 'ukn-status-neutral'];
-
-// Platform-wide totals — kept in sync with admin/dashboard.php's own
-// "Pending Reports: 8" card. 8 + 49 + 7 = 64. 31 + 21 + 12 = 64.
 $summary = ['total' => 64, 'pending' => 8, 'resolved' => 49, 'dismissed' => 7];
 $typeSummary = ['post' => 31, 'comment' => 21, 'user' => 12];
-
 require __DIR__ . '/includes/header.php';
 ?>
 <div class="ukn-admin-stat-grid mb-2">
@@ -168,7 +122,6 @@ require __DIR__ . '/includes/header.php';
   <strong><?= $typeSummary['comment'] ?></strong> Comment &middot;
   <strong><?= $typeSummary['user'] ?></strong> User reports
 </p>
-
 <div class="card mb-3">
   <div class="card-body">
     <div class="ukn-admin-filters">
@@ -215,9 +168,7 @@ require __DIR__ . '/includes/header.php';
     </div>
   </div>
 </div>
-
 <p class="ukn-body-sm ukn-text-muted" data-report-result-count role="status"><?= count($reports) ?> reports found</p>
-
 <div class="card">
   <div class="table-responsive">
     <table class="table ukn-admin-table" data-report-table>
@@ -240,12 +191,10 @@ require __DIR__ . '/includes/header.php';
             $contentReports = $targetCounts[ukn_report_target_key($r)];
             $decision = $r['decision'] ?? '';
             $resolvedDisplay = $r['resolvedDisplay'] ?? '';
-
             $entityLabel = '';
             $postId = $postPublicId = $postTitle = $postAuthorId = $postAuthorName = $postStatus = $postExcerpt = '';
             $commentId = $commentText = $commentAuthorId = $commentAuthorName = $commentPostTitle = $commentPostId = $commentStatus = '';
             $userId = $userName = $userRole = $userDepartment = $userStatus = '';
-
             if ($r['type'] === 'post') {
                 $entityLabel = $r['post']['title'];
                 $author = ukn_admin_report_person($users, $r['post']['author']);
@@ -275,7 +224,6 @@ require __DIR__ . '/includes/header.php';
                 $userDepartment = $target['department'];
                 $userStatus = $userStatusLabels[$target['status']];
             }
-
             $searchText = strtolower($r['id'] . ' ' . $reporter['name'] . ' ' . $reasonLabels[$r['reasonSlug']] . ' ' . $entityLabel . ' ' . $r['description']);
         ?>
           <tr
@@ -334,7 +282,6 @@ require __DIR__ . '/includes/header.php';
       </tbody>
     </table>
   </div>
-
   <div class="card-body" hidden data-report-empty>
     <?php ukn_empty_state([
         'icon' => 'flag',
@@ -344,7 +291,6 @@ require __DIR__ . '/includes/header.php';
         'dashed' => true,
     ]); ?>
   </div>
-
   <div class="card-body" hidden data-report-empty-pending>
     <?php ukn_empty_state([
         'icon' => 'task_alt',
@@ -353,13 +299,11 @@ require __DIR__ . '/includes/header.php';
         'dashed' => true,
     ]); ?>
   </div>
-
   <div class="card-body ukn-admin-pagination" data-report-pagination>
     <span class="ukn-body-sm ukn-text-muted" data-report-pagination-summary></span>
     <div class="d-flex gap-1" data-report-pagination-pages></div>
   </div>
 </div>
-
 <div class="modal fade" id="reportReviewModal" tabindex="-1" aria-labelledby="reportReviewModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
     <div class="modal-content">
@@ -375,15 +319,12 @@ require __DIR__ . '/includes/header.php';
           <span class="ukn-status ukn-status-neutral" data-report-detail-status-badge>—</span>
         </div>
         <p class="ukn-body-sm ukn-text-muted mb-3"><span data-report-detail="type">—</span> report &middot; reported <span data-report-detail="reportedDisplay"></span></p>
-
         <div class="ukn-eyebrow mb-1">Reporter</div>
         <div class="ukn-admin-row">
           <span class="ukn-body-sm ukn-text-muted">Reported by</span>
           <span class="ms-auto text-end"><a href="#" data-report-detail-link="reporter">—</a><span class="d-block ukn-body-sm ukn-text-muted" data-report-detail="reporterDepartment"></span></span>
         </div>
-
         <div class="ukn-eyebrow mb-1 mt-3">Reported Content</div>
-
         <div data-report-section="post" hidden>
           <div class="ukn-admin-row"><span class="ukn-body-sm ukn-text-muted">Post</span><span class="fw-bold ms-auto text-end" data-report-detail="postTitle">—</span></div>
           <div class="ukn-admin-row"><span class="ukn-body-sm ukn-text-muted">Author</span><span class="ms-auto text-end"><a href="#" data-report-detail-link="postAuthor">—</a></span></div>
@@ -391,27 +332,22 @@ require __DIR__ . '/includes/header.php';
           <div class="ukn-admin-row"><span class="ukn-body-sm ukn-text-muted">Status</span><span class="ukn-status ms-auto" data-report-detail-post-status-badge>—</span></div>
           <p class="ukn-body-sm mt-2 mb-0" data-report-detail="postExcerpt"></p>
         </div>
-
         <div data-report-section="comment" hidden>
           <p class="ukn-body mb-2" data-report-detail="commentText">—</p>
           <div class="ukn-admin-row"><span class="ukn-body-sm ukn-text-muted">Author</span><span class="ms-auto text-end"><a href="#" data-report-detail-link="commentAuthor">—</a></span></div>
           <div class="ukn-admin-row"><span class="ukn-body-sm ukn-text-muted">Parent Post</span><span class="fw-bold ms-auto text-end" data-report-detail="commentPost">—</span></div>
           <div class="ukn-admin-row"><span class="ukn-body-sm ukn-text-muted">Status</span><span class="ukn-status ms-auto" data-report-detail-comment-status-badge>—</span></div>
         </div>
-
         <div data-report-section="user" hidden>
           <div class="ukn-admin-row"><span class="ukn-body-sm ukn-text-muted">User</span><span class="ms-auto text-end"><a href="#" data-report-detail-link="reportedUser">—</a></span></div>
           <div class="ukn-admin-row"><span class="ukn-body-sm ukn-text-muted">Role</span><span class="fw-bold ms-auto" data-report-detail="userRole">—</span></div>
           <div class="ukn-admin-row"><span class="ukn-body-sm ukn-text-muted">Department</span><span class="fw-bold ms-auto" data-report-detail="userDepartment">—</span></div>
           <div class="ukn-admin-row"><span class="ukn-body-sm ukn-text-muted">Account Status</span><span class="ukn-status ms-auto" data-report-detail-user-status-badge>—</span></div>
         </div>
-
         <p class="ukn-body-sm ukn-text-muted mt-2 mb-0" hidden data-report-detail-multi></p>
-
         <div class="ukn-eyebrow mb-1 mt-3">Reason</div>
         <div class="ukn-admin-row"><span class="ukn-body-sm ukn-text-muted">Reason</span><span class="fw-bold ms-auto text-end" data-report-detail="reason">—</span></div>
         <p class="ukn-body-sm mt-2 mb-0" data-report-detail="description"></p>
-
         <div class="ukn-report-decision" hidden data-report-decision-row>
           <div class="ukn-eyebrow mb-1">Decision</div>
           <p class="ukn-body-sm mb-1" data-report-detail="decision"></p>
@@ -430,5 +366,4 @@ require __DIR__ . '/includes/header.php';
     </div>
   </div>
 </div>
-
 <?php require __DIR__ . '/includes/footer.php'; ?>

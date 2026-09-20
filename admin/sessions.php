@@ -1,50 +1,18 @@
 <?php
-/**
- * Admin Sessions Management — inspection/moderation view over mentoring
- * sessions. Participant ids match admin/includes/users-data.php exactly
- * (Nabila Rahman=1, Rahim Ahmed=2, Imran Chowdhury=3, Hasan Mahmud=4,
- * Ayesha Rahman=5, Sara Khan=6, Farhan Kabir=7, Nusrat Jahan=8, Mahi
- * Noor=9, Tanvir Hossain=10, ...), so every participant link routes to
- * the exact same Admin User Details record Prompt 25 already built.
- *
- * There is no admin/session-details.php — "View" opens one reusable
- * detail modal (#sessionDetailModal) populated from the clicked row's
- * own data-* attributes, the same "read from whichever element
- * triggered it" convention every other shared Admin/user-facing modal in
- * this project already uses. Cancel reuses the one shared
- * modals/delete-confirmation-modal.php exactly like Suspend/Restore
- * (admin/users.php) and Deactivate/Activate (admin/departments.php,
- * skill-categories.php, skills.php) — no second confirmation mechanism.
- *
- * The summary cards intentionally reuse admin/dashboard.php's own
- * already-established network-wide totals (3,482 / 36 / 128 / 3,142 /
- * 176) for cross-page consistency, while the interactive table below
- * demonstrates search/filter/sort/pagination/cancel against a smaller,
- * honestly-labeled mock sample — the same resolution admin/users.php
- * already established for its own summary-vs-table numbers.
- *
- * Allowed mock status transitions are deliberately narrow: Pending or
- * Upcoming -> Cancelled only. Completed/Cancelled/Rejected sessions have
- * no status-changing action at all — no arbitrary status editor, no
- * point/rating mutation, no participant notification of any kind.
- */
 require_once __DIR__ . '/includes/users-data.php';
 require_once __DIR__ . '/../components/empty-state.php';
 require_once __DIR__ . '/../components/stat-card.php';
-
 $adminActiveNav = 'sessions';
 $adminPageTitle = 'Sessions';
 $adminPageSub = 'Monitor mentoring sessions, requests and session status across the network.';
 $adminPageStyles = ['../assets/css/admin/tables.css', '../assets/css/admin/forms.css'];
 $adminPageScripts = ['../assets/js/admin/moderation.js'];
-
 $users = ukn_admin_mock_users();
 function ukn_admin_participant(array $users, int $id): array
 {
     $u = $users[$id];
     return ['id' => $id, 'name' => $u['name'], 'initials' => $u['initials'], 'department' => $u['department']];
 }
-
 $sessions = [
     ['id' => 'UKN-S-1048', 'learner' => 1, 'mentor' => 2, 'skill' => 'Python', 'date' => 'September 18, 2026', 'dateSort' => '2026-09-18', 'time' => '7:00 PM', 'duration' => '60 minutes', 'status' => 'upcoming', 'message' => 'I need help understanding Python data analysis fundamentals and working with pandas.'],
     ['id' => 'UKN-S-1049', 'learner' => 5, 'mentor' => 2, 'skill' => 'Database Design', 'date' => 'September 21, 2026', 'dateSort' => '2026-09-21', 'time' => '8:00 PM', 'duration' => '60 minutes', 'status' => 'pending', 'message' => 'Could we go over normalizing a schema with foreign keys?'],
@@ -63,17 +31,14 @@ $sessions = [
     ['id' => 'UKN-S-1042', 'learner' => 3, 'mentor' => 8, 'skill' => 'Academic Writing', 'date' => 'September 23, 2026', 'dateSort' => '2026-09-23', 'time' => '5:00 PM', 'duration' => '45 minutes', 'status' => 'upcoming', 'message' => null],
     ['id' => 'UKN-S-1060', 'learner' => 15, 'mentor' => 4, 'skill' => 'Arduino', 'date' => 'August 10, 2026', 'dateSort' => '2026-08-10', 'time' => '2:00 PM', 'duration' => '30 minutes', 'status' => 'cancelled', 'message' => 'Cancelled by mentor — unavailable.'],
 ];
-
 $statusLabels = ['pending' => 'Pending', 'upcoming' => 'Upcoming', 'completed' => 'Completed', 'cancelled' => 'Cancelled', 'rejected' => 'Rejected'];
 $statusClass = ['pending' => 'ukn-status-neutral', 'upcoming' => 'ukn-status-accent', 'completed' => 'ukn-status-accent', 'cancelled' => 'ukn-status-neutral', 'rejected' => 'ukn-status-neutral'];
-
 $skillOptions = [];
 foreach ($sessions as $s) {
     $skillOptions[$s['skill']] = true;
 }
 $skillOptions = array_keys($skillOptions);
 sort($skillOptions);
-
 require __DIR__ . '/includes/header.php';
 ?>
 <div class="ukn-admin-stat-grid mb-4" data-session-summary>
@@ -93,7 +58,6 @@ require __DIR__ . '/includes/header.php';
     <?php ukn_stat_card(['label' => 'Cancelled', 'value' => '176', 'icon' => 'cancel']); ?>
   </button>
 </div>
-
 <div class="card mb-3">
   <div class="card-body">
     <div class="ukn-admin-filters">
@@ -135,9 +99,7 @@ require __DIR__ . '/includes/header.php';
     </div>
   </div>
 </div>
-
 <p class="ukn-body-sm ukn-text-muted" data-session-result-count role="status"><?= count($sessions) ?> sessions found</p>
-
 <div class="card">
   <div class="table-responsive">
     <table class="table ukn-admin-table" data-session-table>
@@ -227,7 +189,6 @@ require __DIR__ . '/includes/header.php';
       </tbody>
     </table>
   </div>
-
   <div class="card-body" hidden data-session-empty>
     <?php ukn_empty_state([
         'icon' => 'event_busy',
@@ -237,13 +198,11 @@ require __DIR__ . '/includes/header.php';
         'dashed' => true,
     ]); ?>
   </div>
-
   <div class="card-body ukn-admin-pagination" data-session-pagination>
     <span class="ukn-body-sm ukn-text-muted" data-session-pagination-summary></span>
     <div class="d-flex gap-1" data-session-pagination-pages></div>
   </div>
 </div>
-
 <div class="modal fade" id="sessionDetailModal" tabindex="-1" aria-labelledby="sessionDetailModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
@@ -284,5 +243,4 @@ require __DIR__ . '/includes/header.php';
     </div>
   </div>
 </div>
-
 <?php require __DIR__ . '/includes/footer.php'; ?>

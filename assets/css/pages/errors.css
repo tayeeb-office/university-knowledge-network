@@ -1,10 +1,3 @@
-/* ==========================================================================
-   403 / 404 / 500 — one shared error-page visual language (per docs/ui's
-   r.errors card), reused by all three pages/errors/*.php files rather
-   than three unrelated designs. A large-but-controlled code, a short
-   heading, a short message and a clear primary action — nothing else.
-   ========================================================================== */
-
 .ukn-error-page{
   max-width: 420px;
   margin: var(--ukn-space-7) auto;
@@ -39,7 +32,6 @@
   justify-content: center;
   flex-wrap: wrap;
 }
-
 @media (max-width: 430px){
   .ukn-error-page{
     margin: var(--ukn-space-4) auto;

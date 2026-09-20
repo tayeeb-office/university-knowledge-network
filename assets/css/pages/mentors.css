@@ -1,8 +1,0 @@
-/* ==========================================================================
-   Find Mentors / Recommendations — page-specific composition on top of the
-   shared card/search/status/tag vocabulary in components.css and forms.css.
-   The filter bar reuses .ukn-search (same as the header's global search)
-   plus Bootstrap's own .form-select-sm/.w-auto utilities, the match legend
-   reuses .ukn-status, and components/mentor-card.php (both variants) is
-   already fully themed — nothing on these two pages needed new CSS.
-   ========================================================================== */

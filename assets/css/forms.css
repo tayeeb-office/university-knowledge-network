@@ -1,9 +1,3 @@
-/* ==========================================================================
-   Forms — inputs, selects, textareas, checkboxes, radios, toggles, search
-   Retheme Bootstrap's form controls; no strong grunge texture ever touches
-   this file (brand guide section 16 / 8).
-   ========================================================================== */
-
 .form-control,
 .form-select{
   --bs-body-color: var(--ukn-ink);
@@ -24,15 +18,12 @@ textarea.form-control{
   padding: 10px 11px;
   resize: vertical;
 }
-/* Comfortable writing area for longer content (Create/Edit Post body,
-   Rating's written review). */
 textarea.form-control.ukn-textarea-lg{
   min-height: 160px;
 }
 .form-select{
   background-color: var(--ukn-surface-2);
 }
-
 .form-control:focus,
 .form-select:focus{
   background-color: var(--ukn-surface-2);
@@ -40,7 +31,6 @@ textarea.form-control.ukn-textarea-lg{
   color: var(--ukn-ink);
   box-shadow: 0 0 0 3px var(--ukn-accent-soft);
 }
-
 .form-control:disabled,
 .form-select:disabled,
 .form-control[readonly]{
@@ -48,17 +38,11 @@ textarea.form-control.ukn-textarea-lg{
   color: var(--ukn-ink-muted);
   opacity: .7;
 }
-
-/* Compact variant used in filter bars / table toolbars */
 .form-control-sm,
 .form-select-sm{
   min-height: 31px;
   font-size: .875rem;
 }
-
-/* ---- Validation states ----
-   Color is always paired with an icon + message row (never color alone,
-   brand guide section 27). Use .ukn-field-message alongside these. */
 .form-control.is-invalid,
 .form-select.is-invalid{
   border-color: var(--ukn-danger);
@@ -79,7 +63,6 @@ textarea.form-control.ukn-textarea-lg{
 .ukn-field-message .ms{ font-size: .9375rem; }
 .ukn-field-message.is-invalid{ color: var(--ukn-danger); }
 .ukn-field-message.is-valid{ color: var(--ukn-success); }
-
 .invalid-feedback,
 .valid-feedback{
   font-size: .78125rem;
@@ -87,7 +70,6 @@ textarea.form-control.ukn-textarea-lg{
 .invalid-feedback{ color: var(--ukn-danger); }
 .valid-feedback{ color: var(--ukn-success); }
 
-/* ---- Password field with visibility toggle ---- */
 .ukn-password-field{
   position: relative;
 }
@@ -103,8 +85,6 @@ textarea.form-control.ukn-textarea-lg{
   border: none;
   color: var(--ukn-ink-muted);
 }
-
-/* ---- Search field ---- */
 .ukn-search{
   position: relative;
   flex: 1;
@@ -125,8 +105,6 @@ textarea.form-control.ukn-textarea-lg{
   height: 36px;
   border-radius: var(--ukn-radius-lg);
 }
-
-/* ---- Checkbox & radio ---- */
 .form-check-input{
   border: 1px solid var(--ukn-border-strong);
   width: 15px;
@@ -144,8 +122,6 @@ textarea.form-control.ukn-textarea-lg{
   font-size: .875rem;
   color: var(--ukn-ink-muted);
 }
-
-/* ---- Toggle switch ---- */
 .form-switch .form-check-input{
   width: 38px;
   height: 21px;
@@ -175,8 +151,6 @@ textarea.form-control.ukn-textarea-lg{
   left: 19px;
   background: #fff;
 }
-
-/* Standalone switch markup (when not using Bootstrap's .form-check) */
 .ukn-switch{
   display: inline-flex;
   align-items: center;
@@ -218,8 +192,6 @@ textarea.form-control.ukn-textarea-lg{
   width: 1px;
   height: 1px;
 }
-
-/* ---- Multi-select / tag input (skill pickers) ---- */
 .ukn-tag-input{
   display: flex;
   align-items: center;
@@ -241,8 +213,6 @@ textarea.form-control.ukn-textarea-lg{
 .ukn-tag-input input:focus{
   outline: none;
 }
-
-/* ---- File / image drop zone ---- */
 .ukn-dropzone{
   display: flex;
   align-items: center;
@@ -253,8 +223,6 @@ textarea.form-control.ukn-textarea-lg{
   color: var(--ukn-ink-muted);
   font-size: .875rem;
 }
-
-/* ---- Form group rhythm ---- */
 .ukn-form-group{
   margin-bottom: var(--ukn-space-4);
 }
@@ -263,16 +231,6 @@ textarea.form-control.ukn-textarea-lg{
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--ukn-space-4);
 }
-
-/* Interactive star-rating input (rating-modal.php) — one radio per star,
-   1-5, visually-hidden but still keyboard/screen-reader accessible
-   (.ukn-visually-hidden, not display:none, so Tab/arrow keys and AT
-   still reach it). Radios render 5-4-3-2-1 in the DOM with the group
-   row-reversed, which is what lets a plain CSS general-sibling selector
-   light up "this star and everything before it" on :checked/:hover — the
-   standard accessible CSS-only star-rating technique. The ★ glyph
-   matches .ukn-stars (assets/css/utilities.css) so read-only and
-   interactive stars look identical across the app. */
 .ukn-star-input{
   display: flex;
   flex-direction: row-reverse;

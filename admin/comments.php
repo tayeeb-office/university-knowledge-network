@@ -1,28 +1,12 @@
 <?php
-/**
- * Admin Comments Moderation. Reuses admin/includes/users-data.php for
- * author identity/links; the first three rows reuse the exact
- * already-established comments on pages/community/post-details.php's own
- * mock discussion (same authors/text) rather than inventing new
- * numbers for that same content — the reply (UKN-C-0104) is that post's
- * one real established reply, kept as an actual reply here too (not
- * flattened into a second top-level comment).
- *
- * There is no admin/comment-details.php — "View" opens one reusable
- * detail modal (#commentDetailModal), same convention as Sessions/Posts.
- * Hide/Restore reuse the one shared modals/delete-confirmation-modal.php.
- * No permanent Delete, no cascade to the parent post or its author.
- */
 require_once __DIR__ . '/includes/users-data.php';
 require_once __DIR__ . '/../components/empty-state.php';
 require_once __DIR__ . '/../components/stat-card.php';
-
 $adminActiveNav = 'comments';
 $adminPageTitle = 'Comments';
 $adminPageSub = 'Review community comments, replies and moderation status.';
 $adminPageStyles = ['../assets/css/admin/tables.css', '../assets/css/admin/forms.css'];
 $adminPageScripts = ['../assets/js/admin/moderation.js'];
-
 $users = ukn_admin_mock_users();
 function ukn_admin_comment_author(array $users, int $id): array
 {
@@ -50,14 +34,12 @@ $comments = [
     ['id' => 'UKN-C-0117', 'post' => 'Best Resources for Learning MySQL Joins?', 'postId' => 3, 'author' => 13, 'text' => 'Following, need this too for my capstone.', 'replies' => 0, 'reports' => 0, 'status' => 'visible', 'type' => 'top-level', 'posted' => 'Sep 9, 2026'],
     ['id' => 'UKN-C-0118', 'post' => 'A Simple Way to Start Learning Python for Data Analysis', 'postId' => 2, 'author' => 16, 'text' => 'Bookmarking this for later, thank you!', 'replies' => 0, 'reports' => 0, 'status' => 'visible', 'type' => 'top-level', 'posted' => 'Sep 13, 2026'],
 ];
-
 $statusLabels = ['visible' => 'Visible', 'hidden' => 'Hidden'];
 $statusClass = ['visible' => 'ukn-status-accent', 'hidden' => 'ukn-status-neutral'];
 $commentsById = [];
 foreach ($comments as $c) {
     $commentsById[$c['id']] = $c;
 }
-
 require __DIR__ . '/includes/header.php';
 ?>
 <div class="ukn-admin-stat-grid mb-4">
@@ -74,7 +56,6 @@ require __DIR__ . '/includes/header.php';
     <?php ukn_stat_card(['label' => 'Reported', 'value' => '11', 'icon' => 'flag']); ?>
   </button>
 </div>
-
 <div class="card mb-3">
   <div class="card-body">
     <div class="ukn-admin-filters">
@@ -111,9 +92,7 @@ require __DIR__ . '/includes/header.php';
     </div>
   </div>
 </div>
-
 <p class="ukn-body-sm ukn-text-muted" data-comment-result-count role="status"><?= count($comments) ?> comments found</p>
-
 <div class="card">
   <div class="table-responsive">
     <table class="table ukn-admin-table" data-comment-table>
@@ -213,7 +192,6 @@ require __DIR__ . '/includes/header.php';
       </tbody>
     </table>
   </div>
-
   <div class="card-body" hidden data-comment-empty>
     <?php ukn_empty_state([
         'icon' => 'chat_bubble',
@@ -223,13 +201,11 @@ require __DIR__ . '/includes/header.php';
         'dashed' => true,
     ]); ?>
   </div>
-
   <div class="card-body ukn-admin-pagination" data-comment-pagination>
     <span class="ukn-body-sm ukn-text-muted" data-comment-pagination-summary></span>
     <div class="d-flex gap-1" data-comment-pagination-pages></div>
   </div>
 </div>
-
 <div class="modal fade" id="commentDetailModal" tabindex="-1" aria-labelledby="commentDetailModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
@@ -271,5 +247,4 @@ require __DIR__ . '/includes/header.php';
     </div>
   </div>
 </div>
-
 <?php require __DIR__ . '/includes/footer.php'; ?>

@@ -1,11 +1,3 @@
-/* ==========================================================================
-   Learning Goals / Availability — page-specific composition on top of the
-   shared card/tabs-pill/status/progress/form vocabulary in components.css
-   and forms.css. Learning Goals needed nothing new (goal-card.php, the
-   stat cards and the tabs-pill filter are all already themed); Availability
-   needed a couple of small layout rules for its weekly day rows.
-   ========================================================================== */
-
 .ukn-availability-day{
   padding: var(--ukn-space-3) 0;
   border-bottom: 1px solid var(--ukn-border);
@@ -17,10 +9,6 @@
 .ukn-availability-day__label{
   min-width: 90px;
 }
-
-/* Native <input type="time"> — keep it compact instead of the browser's
-   full-width default, matching the equally-compact date/select controls
-   already used elsewhere (e.g. modals/session-request-modal.php). */
 .ukn-time-input{
   max-width: 140px;
 }

@@ -1,42 +1,22 @@
 <?php
-/**
- * Admin Skills Management — the network's skill catalogue. Reuses the
- * shared admin/includes/taxonomy-data.php mock dataset; the category
- * filter and the Add/Edit form's category <select> both read
- * ukn_admin_mock_categories() directly rather than keeping a second
- * hardcoded category list (see that file's own docblock).
- *
- * Learner/Mentor counts are read-only demo metrics here (no field to
- * type them into) — only Name/Category/Description/Status are editable,
- * per this prompt's explicit "these counts conceptually come from
- * platform activity" instruction. "View in App" safely links to the
- * existing user-facing ?page=skill-details&id=... route, separate from
- * Admin Edit. Deactivate/Activate reuses the shared
- * modals/delete-confirmation-modal.php; permanent deletion of an
- * established, in-use skill is deliberately not implemented at all.
- */
 require_once __DIR__ . '/includes/taxonomy-data.php';
 require_once __DIR__ . '/../components/empty-state.php';
 require_once __DIR__ . '/../components/stat-card.php';
-
 $adminActiveNav = 'skills';
 $adminPageTitle = 'Skills';
 $adminPageSub = 'Manage the skills learners can learn and mentors can teach.';
 $adminPageStyles = ['../assets/css/admin/tables.css', '../assets/css/admin/forms.css'];
 $adminPageScripts = ['../assets/js/admin/skills.js'];
-
 $categories = ukn_admin_mock_categories();
 $skills = ukn_admin_mock_skills();
 $statusLabels = ['active' => 'Active', 'inactive' => 'Inactive'];
 $statusClass = ['active' => 'ukn-status-accent', 'inactive' => 'ukn-status-neutral'];
-
 $mostPopular = null;
 foreach ($skills as $skill) {
     if ($mostPopular === null || $skill['learners'] > $mostPopular['learners']) {
         $mostPopular = $skill;
     }
 }
-
 require __DIR__ . '/includes/header.php';
 ?>
 <div class="d-flex justify-content-end mb-3">
@@ -53,7 +33,6 @@ require __DIR__ . '/includes/header.php';
   ukn_stat_card(['label' => 'Most Popular', 'value' => $mostPopular['name'], 'icon' => 'trending_up', 'helper' => number_format($mostPopular['learners']) . ' learners']);
   ?>
 </div>
-
 <div class="card mb-3">
   <div class="card-body">
     <div class="ukn-admin-filters">
@@ -87,9 +66,7 @@ require __DIR__ . '/includes/header.php';
     </div>
   </div>
 </div>
-
 <p class="ukn-body-sm ukn-text-muted" data-skill-result-count role="status"><?= count($skills) ?> skills found</p>
-
 <div class="card">
   <div class="table-responsive">
     <table class="table ukn-admin-table" data-skill-table>
@@ -173,7 +150,6 @@ require __DIR__ . '/includes/header.php';
       </tbody>
     </table>
   </div>
-
   <div class="card-body" hidden data-skill-empty>
     <?php ukn_empty_state([
         'icon' => 'workspaces',
@@ -183,13 +159,11 @@ require __DIR__ . '/includes/header.php';
         'dashed' => true,
     ]); ?>
   </div>
-
   <div class="card-body ukn-admin-pagination" data-skill-pagination>
     <span class="ukn-body-sm ukn-text-muted" data-skill-pagination-summary></span>
     <div class="d-flex gap-1" data-skill-pagination-pages></div>
   </div>
 </div>
-
 <div class="modal fade" id="skillFormModal" tabindex="-1" aria-labelledby="skillFormModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
@@ -241,5 +215,4 @@ require __DIR__ . '/includes/header.php';
     </div>
   </div>
 </div>
-
 <?php require __DIR__ . '/includes/footer.php'; ?>

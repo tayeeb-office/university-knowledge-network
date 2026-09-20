@@ -1,27 +1,4 @@
 <?php
-/**
- * Shared Admin mock dataset for Departments, Skill Categories and Skills
- * — required by admin/departments.php, admin/skill-categories.php and
- * admin/skills.php so all three agree on the same names/counts (Skills'
- * own category selector reuses ukn_admin_mock_categories() directly
- * rather than keeping a second hardcoded category list, and each
- * category's displayed Skill Count is COUNTED from this same skills
- * array, never a separately hand-typed number).
- *
- * Skill ids/mentor/learner counts are copied verbatim from the already-
- * established pages/skills/skill-details.php (ids 1-10) and
- * pages/network/skill-network.php (JavaScript=11, Presentation Skills=12,
- * Embedded Systems=14 — id 13/Machine Learning is deliberately skipped
- * here: Skill Network treats it as an optional extra node, but this
- * prompt's own 7-category/13-skill breakdown never includes it, so
- * Admin's catalogue simply doesn't have a row for it yet rather than
- * inventing a 14th skill that contradicts the given category counts).
- *
- * Frontend-only mock data. No database, no real taxonomy persistence —
- * Add/Edit/Activate/Deactivate in the three admin pages only ever mutate
- * this same in-memory list for the current page view (assets/js/admin/
- * skills.js), and everything resets on refresh.
- */
 if (!function_exists('ukn_admin_mock_departments')) {
     function ukn_admin_mock_departments(): array
     {
@@ -34,7 +11,6 @@ if (!function_exists('ukn_admin_mock_departments')) {
         ];
     }
 }
-
 if (!function_exists('ukn_admin_mock_categories')) {
     function ukn_admin_mock_categories(): array
     {
@@ -49,7 +25,6 @@ if (!function_exists('ukn_admin_mock_categories')) {
         ];
     }
 }
-
 if (!function_exists('ukn_admin_mock_skills')) {
     function ukn_admin_mock_skills(): array
     {

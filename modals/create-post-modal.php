@@ -1,18 +1,4 @@
 <?php
-/**
- * Create Post modal — opened from includes/header.php's "+ Create"
- * button (data-bs-target="#createPostModal"). Included once from
- * includes/footer.php.
- *
- * Shares its exact form layout/classes with modals/edit-post-modal.php
- * (same fields, same skill-picker, same dropzone) so the two are
- * obviously the same system — only the title, pre-filled values and
- * submit label differ. See that file's docblock for the shared pattern.
- *
- * assets/js/core/validation.js checks the required fields on submit;
- * assets/js/core/modal.js drives the skill-tag picker and the mock
- * "success -> toast -> close" flow. There is no real post creation.
- */
 ?>
 <div class="modal fade" id="createPostModal" tabindex="-1" aria-labelledby="createPostModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
@@ -32,7 +18,6 @@
               <span class="ms" aria-hidden="true">error</span>Please add a title for your post.
             </div>
           </div>
-
           <div class="ukn-form-group">
             <label for="createPostContent" class="form-label">Post Content <span class="ukn-text-danger" aria-hidden="true">*</span></label>
             <textarea class="form-control ukn-textarea-lg" id="createPostContent" name="content" placeholder="What did you learn, or what are you stuck on?" data-validate="required"></textarea>
@@ -40,7 +25,6 @@
               <span class="ms" aria-hidden="true">error</span>Add some content before publishing.
             </div>
           </div>
-
           <div class="ukn-form-group">
             <label for="createPostSkillInput" class="form-label">Related Skills <span class="ukn-text-danger" aria-hidden="true">*</span></label>
             <div class="ukn-tag-input" data-skill-picker>
@@ -59,7 +43,6 @@
               <span class="ms" aria-hidden="true">error</span>Add at least one related skill.
             </div>
           </div>
-
           <div class="ukn-form-group mb-0">
             <label class="form-label">Attachment (optional)</label>
             <div class="ukn-dropzone">

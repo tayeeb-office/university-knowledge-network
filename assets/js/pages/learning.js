@@ -1,40 +1,14 @@
-/**
- * Learning Goals / Availability — page-specific frontend behavior only.
- * Generic behavior (the shared modal engine, the Delete Confirmation
- * modal's own toast+close, global validation, theme/role switching) all
- * already has its own dedicated module and is not duplicated here — this
- * file only handles what's unique to these two pages:
- *   Learning Goals: filter pills, Create/Edit Goal (one page-specific
- *     modal, see pages/learning/learning-goals.php), Mark Complete,
- *     Delete-card removal
- *   Availability: day enable/disable, add/remove time slot, time
- *     validation, dirty-tracking the Save button, Save/Reset
- *
- * All frontend-only mock state, kept in memory / the DOM — nothing here
- * persists anywhere or survives a refresh.
- */
 (function () {
   'use strict';
-
-  /* =====================================================================
-     LEARNING GOALS
-     ===================================================================== */
-
   var goalFiltersBar = document.querySelector('[data-goal-filters]');
   var goalFormModalEl = document.getElementById('goalFormModal');
-
   function formatDateLong(date) {
     return date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
   }
-
   function parseIsoDateLocal(iso) {
-    // 'YYYY-MM-DD' parsed as local midnight, not UTC, so the displayed
-    // day never shifts by a timezone off-by-one.
     var parts = iso.split('-').map(Number);
     return new Date(parts[0], parts[1] - 1, parts[2]);
   }
-
-  /* ---- Filter pills (In Progress / Completed) ---- */
 
   if (goalFiltersBar) {
     goalFiltersBar.addEventListener('click', function (event) {
@@ -43,7 +17,6 @@
         return;
       }
       var target = btn.getAttribute('data-goal-filter');
-
       goalFiltersBar.querySelectorAll('[data-goal-filter]').forEach(function (pill) {
         var isActive = pill === btn;
         pill.classList.toggle('is-active', isActive);
@@ -54,9 +27,6 @@
       });
     });
   }
-
-  /* ---- Create / Edit Goal (one shared page-specific modal) ---- */
-
   if (goalFormModalEl && window.bootstrap) {
     var goalForm = goalFormModalEl.querySelector('[data-goal-form]');
     var goalFormIdInput = goalFormModalEl.querySelector('[data-goal-form-id]');
@@ -65,7 +35,6 @@
     var goalProgressInput = goalFormModalEl.querySelector('[data-goal-progress-input]');
     var goalProgressOutput = goalFormModalEl.querySelector('[data-goal-progress-output]');
     var goalModal = bootstrap.Modal.getOrCreateInstance(goalFormModalEl);
-
     var resetGoalForm = function () {
       goalForm.reset();
       goalFormIdInput.value = '';
@@ -74,7 +43,6 @@
       goalProgressInput.value = '0';
       goalProgressOutput.textContent = '0%';
     };
-
     var openGoalFormForEdit = function (card) {
       goalForm.reset();
       goalFormIdInput.value = card.getAttribute('data-goal-id') || '';
@@ -87,16 +55,14 @@
       goalFormTitleEl.textContent = 'Edit Goal';
       goalFormSubmitBtn.textContent = 'Save Changes';
     };
-
     if (goalProgressInput) {
       goalProgressInput.addEventListener('input', function () {
         goalProgressOutput.textContent = goalProgressInput.value + '%';
       });
     }
-
     document.addEventListener('click', function (event) {
       if (event.target.closest('[data-goal-create]')) {
-        event.preventDefault(); // covers the empty-state's plain '#' link too
+        event.preventDefault();
         resetGoalForm();
         goalModal.show();
         return;
@@ -110,21 +76,17 @@
         }
       }
     });
-
     goalForm.addEventListener('submit', function (event) {
-      event.preventDefault(); // frontend-only mock — never a real save
-
+      event.preventDefault();
       var isValid = !(window.UKN && window.UKN.validateForm) || window.UKN.validateForm(goalForm);
       if (!isValid) {
         return;
       }
-
       var goalId = goalFormIdInput.value;
       var title = goalForm.querySelector('#goalFormTitle').value.trim();
       var skill = goalForm.querySelector('#goalFormSkill').value;
       var dateValue = goalForm.querySelector('#goalFormDate').value;
       var progress = goalProgressInput.value;
-
       if (goalId) {
         var card = document.querySelector('[data-goal-id="' + goalId + '"]');
         if (card) {
@@ -132,7 +94,6 @@
           card.setAttribute('data-goal-skill', skill);
           card.setAttribute('data-goal-target-date', dateValue);
           card.setAttribute('data-goal-progress', progress);
-
           var titleEl = card.querySelector('h3');
           if (titleEl) {
             titleEl.textContent = title;
@@ -160,13 +121,9 @@
       } else if (window.UKN && window.UKN.showToast) {
         window.UKN.showToast('Goal created successfully. Demo mode only.', 'success');
       }
-
       goalModal.hide();
     });
   }
-
-  /* ---- Mark Complete ---- */
-
   document.addEventListener('click', function (event) {
     var btn = event.target.closest('[data-goal-complete]');
     if (!btn) {
@@ -203,13 +160,11 @@
       metaEl.textContent = (skill ? skill + ' · ' : '') + 'Completed ' + today;
     }
     btn.remove();
-
     var activeList = document.querySelector('[data-goal-section="active"] [data-goal-list]');
     var completedList = document.querySelector('[data-goal-section="completed"] [data-goal-list]');
     if (completedList) {
       completedList.appendChild(card);
     }
-
     var activeCountEl = document.querySelector('[data-goal-count="active"]');
     var completedCountEl = document.querySelector('[data-goal-count="completed"]');
     if (activeCountEl) {
@@ -218,7 +173,6 @@
     if (completedCountEl) {
       completedCountEl.textContent = String((parseInt(completedCountEl.textContent, 10) || 0) + 1);
     }
-
     var activeEmpty = document.querySelector('[data-goal-section="active"] [data-goal-list-empty]');
     if (activeList && activeEmpty) {
       activeEmpty.hidden = !!activeList.querySelector('[data-goal-id]');
@@ -227,21 +181,13 @@
     if (completedEmpty) {
       completedEmpty.hidden = true;
     }
-
     if (window.UKN && window.UKN.showToast) {
       window.UKN.showToast((card.getAttribute('data-goal-title') || 'Goal') + ' marked as complete!', 'success');
     }
   });
 
-  /* ---- Delete Goal (shared Delete Confirmation modal) ----
-     Mirrors assets/js/pages/skills.js's [data-remove-skill-card] pattern
-     exactly — a distinct data attribute/pending-reference pair means both
-     can safely listen on the same shared modal without interfering with
-     each other. */
-
   var pendingRemoveGoalCard = null;
   var deleteModal = document.getElementById('deleteConfirmationModal');
-
   if (deleteModal) {
     deleteModal.addEventListener('show.bs.modal', function (event) {
       var trigger = event.relatedTarget;
@@ -250,14 +196,12 @@
         : null;
     });
   }
-
   document.addEventListener('click', function (event) {
     if (!event.target.closest('[data-delete-confirm]') || !pendingRemoveGoalCard) {
       return;
     }
     var card = pendingRemoveGoalCard;
     pendingRemoveGoalCard = null;
-
     var wasCompleted = card.getAttribute('data-goal-status') === 'completed';
     var section = card.closest('[data-goal-section]');
     card.remove();
@@ -266,7 +210,6 @@
     if (countEl) {
       countEl.textContent = String(Math.max(0, (parseInt(countEl.textContent, 10) || 0) - 1));
     }
-
     if (section) {
       var list = section.querySelector('[data-goal-list]');
       var emptyState = section.querySelector('[data-goal-list-empty]');
@@ -276,24 +219,17 @@
     }
   });
 
-  /* =====================================================================
-     AVAILABILITY
-     ===================================================================== */
-
   var availabilityForm = document.querySelector('[data-availability-form]');
   if (!availabilityForm) {
     return;
   }
-
   var saveBtn = availabilityForm.querySelector('[data-availability-save]');
   var MAX_SLOTS_PER_DAY = 4;
-
   var markDirty = function () {
     if (saveBtn) {
       saveBtn.disabled = false;
     }
   };
-
   var updateAddSlotVisibility = function (dayEl) {
     var addBtn = dayEl.querySelector('[data-availability-add-slot]');
     var slotCount = dayEl.querySelectorAll('[data-availability-slot]').length;
@@ -316,7 +252,6 @@
       error.hidden = !invalid;
     }
   };
-
   var setDayEnabled = function (dayEl, enabled) {
     var toggle = dayEl.querySelector('[data-availability-toggle]');
     var slotsWrap = dayEl.querySelector('[data-availability-slots]');
@@ -343,11 +278,9 @@
       updateAddSlotVisibility(dayEl);
     }
   };
-
   var buildSlotRow = function (dayKey, index) {
     var startId = 'avail-' + dayKey + '-start-' + index;
     var endId = 'avail-' + dayKey + '-end-' + index;
-
     var row = document.createElement('div');
     row.className = 'd-flex align-items-start gap-2 flex-wrap mb-2';
     row.setAttribute('data-availability-slot', '');
@@ -363,8 +296,6 @@
       '<span class="ms" aria-hidden="true">error</span>End time must be later than start time.</div>';
     return row;
   };
-
-  /* ---- Day toggle ---- */
 
   availabilityForm.addEventListener('change', function (event) {
     var toggle = event.target.closest('[data-availability-toggle]');
@@ -387,8 +318,6 @@
     }
   });
 
-  /* ---- Add / Remove time slot ---- */
-
   availabilityForm.addEventListener('click', function (event) {
     var addBtn = event.target.closest('[data-availability-add-slot]');
     if (addBtn) {
@@ -401,7 +330,6 @@
       markDirty();
       return;
     }
-
     var removeBtn = event.target.closest('[data-availability-remove-slot]');
     if (removeBtn) {
       var slotEl = removeBtn.closest('[data-availability-slot]');
@@ -415,19 +343,14 @@
       markDirty();
     }
   });
-
-  /* ---- Save / Reset ---- */
-
   availabilityForm.addEventListener('submit', function (event) {
-    event.preventDefault(); // frontend-only mock — never a real save
-
+    event.preventDefault();
     if (availabilityForm.querySelector('.is-invalid')) {
       if (window.UKN && window.UKN.showToast) {
         window.UKN.showToast('Fix the highlighted time slots before saving.', 'danger');
       }
       return;
     }
-
     if (window.UKN && window.UKN.showToast) {
       window.UKN.showToast('Availability updated successfully. Demo mode only.', 'success');
     }
@@ -435,7 +358,6 @@
       saveBtn.disabled = true;
     }
   });
-
   document.addEventListener('click', function (event) {
     if (event.target.closest('[data-availability-reset]')) {
       window.location.reload();

@@ -1,13 +1,3 @@
-/* ==========================================================================
-   Ratings — page-specific composition on top of the shared card/stars/
-   tabs-pill/progress vocabulary in components.css. The overall summary and
-   category breakdown reuse the exact same .ukn-display / .ukn-rating-item__breakdown
-   treatment already established on pages/profile/mentor-profile.php's own
-   Rating Summary, for consistency between the two places a mentor's
-   rating appears — this file only adds the couple of small layout rules
-   the new Star Distribution rows need.
-   ========================================================================== */
-
 .ukn-star-distribution__label{
   width: 4.5em;
 }

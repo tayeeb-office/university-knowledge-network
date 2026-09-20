@@ -1,27 +1,7 @@
 <?php
-/**
- * Rating modal — ONE shared instance opened from any completed session's
- * "Rate Mentor" action (components/session-card.php's 'unrated' state
- * wires data-bs-target="#ratingModal" plus data-rating-mentor/-skill/-date;
- * assets/js/core/modal.js reads those from event.relatedTarget on
- * show.bs.modal and rewrites the summary line below via
- * [data-rating-summary] — same contextual-modal pattern already used for
- * Request Session, see components/mentor-card.php). Rating Session A then
- * closing and rating Session B always shows Session B's own context, never
- * stale data from A, since every open re-reads whichever card triggered it.
- *
- * $ratingSession below is just this file's own hardcoded fallback for the
- * very first paint, before any card has triggered the modal yet. Each
- * category is a keyboard-accessible 1-5 star radio group
- * (.ukn-star-input, assets/css/forms.css) using the same ★ glyph as
- * .ukn-stars (read-only stars elsewhere) so ratings look identical
- * everywhere in the app. Frontend-only: assets/js/core/modal.js drives
- * the mock "Submit Rating" flow; no mentor rating is ever recalculated.
- */
 $ratingSession = $ratingSession ?? [
     'mentor' => 'Rahim Ahmed', 'skill' => 'Python', 'date' => '12 September',
 ];
-
 $ratingCategories = [
     ['name' => 'rating_teaching', 'label' => 'Teaching Quality', 'required' => false],
     ['name' => 'rating_communication', 'label' => 'Communication', 'required' => false],
@@ -41,7 +21,6 @@ $ratingCategories = [
         </div>
         <div class="modal-body">
           <p class="ukn-body-sm mb-4" data-rating-summary><?= htmlspecialchars($ratingSession['skill']) ?> with <?= htmlspecialchars($ratingSession['mentor']) ?> · <?= htmlspecialchars($ratingSession['date']) ?></p>
-
           <?php foreach ($ratingCategories as $category): ?>
             <div class="ukn-form-group">
               <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
@@ -68,7 +47,6 @@ $ratingCategories = [
               <?php endif; ?>
             </div>
           <?php endforeach; ?>
-
           <div class="ukn-form-group mb-0">
             <label for="ratingReview" class="form-label">Written Review</label>
             <textarea class="form-control ukn-textarea-lg" id="ratingReview" name="review" placeholder="Share what was helpful about this session..."></textarea>

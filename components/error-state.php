@@ -1,19 +1,4 @@
 <?php
-/**
- * Error state — reusable "couldn't load this" inline notice.
- * Used by: any area where a (mock) fetch failed — e.g. "Unable to load
- * mentors."
- *
- * Usage:
- *   require_once __DIR__ . '/../components/error-state.php';
- *   ukn_error_state([
- *     'title'   => 'Unable to load mentors',
- *     'message' => 'The feed did not respond. Your draft posts are safe.',
- *     'action'  => ['label' => 'Retry', 'href' => '#'],   // optional
- *   ]);
- *
- * "Retry" has no real retry logic — it's a visual affordance only.
- */
 if (!function_exists('ukn_error_state')) {
     function ukn_error_state(array $state): void
     {

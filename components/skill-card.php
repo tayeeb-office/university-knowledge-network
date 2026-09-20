@@ -1,53 +1,8 @@
 <?php
-/**
- * Skill card — compact, reusable skill summary component.
- * Used by: Skills directory, Skill Details' related-skill grids (both the
- * default 'directory' variant), and My Learning Skills / My Teaching
- * Skills (the 'learning' / 'teaching' progress variants — a genuinely
- * different shape: progress/level + one contextual action + Remove,
- * instead of mentor/learner counts + Explore/Add). One component, one
- * function, picked by $options['variant'] — see components/mentor-card.php
- * for the same variant convention already used elsewhere.
- *
- * Usage:
- *   require_once __DIR__ . '/../components/skill-card.php';
- *   foreach ($skills as $skill) { ukn_skill_card($skill); }               // directory (default)
- *   ukn_skill_card($skill, ['variant' => 'learning']);                    // My Learning Skills
- *   ukn_skill_card($skill, ['variant' => 'teaching']);                    // My Teaching Skills
- *
- * $skill shape (variant 'directory', the default):
- *   [
- *     'name' => 'Python', 'category' => 'Programming',
- *     'mentors' => 124, 'learners' => 340,
- *     'description' => null,                 // optional short blurb
- *     'href' => 'index.php?page=skill-details',
- *     'learningState' => null,               // null hides the button entirely,
- *                                             // 'add' | 'added' shows it
- *     'teachingState' => null,               // same — only pass this on
- *                                             // mentor-facing pages
- *   ]
- *
- * $skill shape (variant 'learning' or 'teaching'):
- *   [
- *     'name' => 'Python', 'href' => 'index.php?page=skill-details',
- *     'level' => 'Learning',                 // status/level pill text
- *     'meta'  => 'Mentor: Rahim Ahmed · 6 sessions completed',
- *     'progress' => 65,                      // 0-100
- *     'primaryAction' => 'Find Mentors', 'primaryActionHref' => 'index.php?page=find-mentors',
- *     'removeLabel' => 'Remove',
- *   ]
- *
- * Add/added and Remove are frontend-only mock state — no backend, no real
- * enrollment/removal. A page decides which variant/state applies (this
- * component never infers the viewer's role itself). Remove reuses the one
- * shared modals/delete-confirmation-modal.php (assets/js/pages/skills.js
- * wires the confirm -> actually hide this card).
- */
 if (!function_exists('ukn_skill_card')) {
     function ukn_skill_card(array $skill, array $options = []): void
     {
         $variant = $options['variant'] ?? 'directory';
-
         if ($variant === 'learning' || $variant === 'teaching') {
             $skill += [
                 'href' => '#', 'level' => '', 'meta' => '', 'progress' => 0,
@@ -92,7 +47,6 @@ if (!function_exists('ukn_skill_card')) {
             <?php
             return;
         }
-
         $skill += [
             'category' => '', 'mentors' => null, 'learners' => null,
             'description' => null, 'href' => '#', 'learningState' => null, 'teachingState' => null,

@@ -1,35 +1,10 @@
-/**
- * Comments / Replies — generic, reusable comment-thread interactions.
- * Used by: Post Details (currently the only page with a comment thread —
- * written generically so any future page with the same markup picks this
- * up automatically, the same reasoning as assets/js/components/voting.js).
- *
- * Comments and replies have NO voting. That is a deliberate product
- * decision, not an omission: a comment's only actions are Reply and
- * Report. Nothing here renders .ukn-vote markup or [data-vote-*]
- * attributes, so assets/js/components/voting.js never matches anything
- * inside a comment.
- *
- * POST voting is untouched and still works exactly as before — it lives
- * on components/post-card.php's own .ukn-vote-rail, which voting.js
- * continues to drive.
- *
- * Frontend-only mock state: Reply/Report only ever change the DOM or show
- * a toast — nothing is persisted or sent anywhere. New comments/replies
- * added during this session disappear on refresh, same as every other
- * mock interaction in this project.
- */
 (function () {
   'use strict';
-
   function escapeHtml(value) {
     var div = document.createElement('div');
     div.textContent = value;
     return div.innerHTML;
   }
-
-  /** A new top-level comment — Reply/Report only, no vote control,
-   * matching a server-rendered comment exactly (see pages/community/post-details.php). */
   function buildCommentCard(data) {
     var wrap = document.createElement('div');
     wrap.setAttribute('data-comment', '');
@@ -64,9 +39,6 @@
       '<div data-replies-list class="mt-2"></div>';
     return wrap;
   }
-
-  /** A reply — compact, indented, no vote/reply controls of its own (one
-   * level of nesting only, per this project's "no unlimited nesting" rule). */
   function buildReplyCard(data) {
     var wrap = document.createElement('div');
     wrap.setAttribute('data-reply', '');
@@ -85,13 +57,9 @@
       '</div>';
     return wrap;
   }
-
   window.UKN = window.UKN || {};
   window.UKN.buildCommentCard = buildCommentCard;
   window.UKN.buildReplyCard = buildReplyCard;
-
-  /* ---- Reply toggle / Cancel / Report ---- */
-
   document.addEventListener('click', function (event) {
     var toggleBtn = event.target.closest('[data-comment-reply-toggle]');
     if (toggleBtn) {
@@ -108,7 +76,6 @@
       }
       return;
     }
-
     var cancelBtn = event.target.closest('[data-reply-cancel]');
     if (cancelBtn) {
       var replyForm = cancelBtn.closest('[data-reply-form]');
@@ -125,26 +92,20 @@
       }
       return;
     }
-
     var reportBtn = event.target.closest('[data-comment-report]');
     if (reportBtn && window.UKN && window.UKN.showToast) {
       window.UKN.showToast('Thanks — this comment has been reported for review.', 'info');
     }
   });
-
-  /* ---- Submit reply ---- */
-
   document.addEventListener('submit', function (event) {
     var form = event.target.closest('[data-reply-form]');
     if (!form) {
       return;
     }
-    event.preventDefault(); // frontend-only mock — never a real reply
-
+    event.preventDefault();
     var textarea = form.querySelector('textarea');
     var errorEl = form.querySelector('[data-reply-error]');
     var text = textarea ? textarea.value.trim() : '';
-
     if (!text) {
       if (errorEl) {
         errorEl.hidden = false;
@@ -154,11 +115,9 @@
     if (errorEl) {
       errorEl.hidden = true;
     }
-
     var comment = form.closest('[data-comment]');
     var repliesList = comment ? comment.querySelector('[data-replies-list]') : null;
     var composer = document.querySelector('[data-comment-composer]');
-
     if (repliesList) {
       repliesList.appendChild(window.UKN.buildReplyCard({
         initials: composer ? composer.getAttribute('data-current-user-initials') : 'NR',
@@ -168,10 +127,8 @@
         text: text,
       }));
     }
-
     textarea.value = '';
     form.hidden = true;
-
     if (window.UKN && window.UKN.showToast) {
       window.UKN.showToast('Reply added.', 'success');
     }

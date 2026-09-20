@@ -1,30 +1,9 @@
-/**
- * Admin Dashboard — Chart.js initialization only. Mirrors the same
- * data-chart-labels/data-chart-values JSON-on-the-canvas convention
- * assets/js/pages/dashboard.js already uses for the user-facing
- * dashboards (see admin/dashboard.php's own docblock) — a separate small
- * implementation rather than sharing that file, since this one lives in
- * the locked assets/js/admin/ directory and initializes a different
- * data-admin-chart attribute (doughnut/bar) instead of that file's
- * line-only convention.
- *
- * Deliberately NOT here: the theme engine itself (this only reads the
- * same --ukn-* custom properties theme.js already keeps up to date and
- * listens for its existing 'ukn:themechange' event), any user/role
- * logic, any moderation logic.
- *
- * Frontend-only mock data — every number charted here is whatever
- * admin/dashboard.php already rendered into the canvas's own data
- * attributes; nothing here calculates a real statistic.
- */
 (function () {
   'use strict';
-
   var canvases = document.querySelectorAll('[data-admin-chart]');
   if (!canvases.length) {
-    return; // not the Admin Dashboard page — nothing to do
+    return;
   }
-
   if (typeof Chart === 'undefined') {
     canvases.forEach(function (canvas) {
       var wrap = canvas.closest('.ukn-admin-chart-wrap');
@@ -34,9 +13,7 @@
     });
     return;
   }
-
   var charts = [];
-
   function themeColors() {
     var styles = getComputedStyle(document.documentElement);
     var read = function (name) {
@@ -51,7 +28,6 @@
       font: read('--ukn-font-serif') || undefined,
     };
   }
-
   function parseJsonAttr(el, name, fallback) {
     var raw = el.getAttribute(name);
     if (!raw) {
@@ -63,14 +39,9 @@
       return fallback;
     }
   }
-
-  // A handful of theme-derived, brand-consistent slice colors for the
-  // doughnut only — the bar/line charts stay single-series accent, same
-  // as every other Chart.js usage in this project.
   function doughnutPalette(colors) {
     return [colors.accent, colors.ink, colors.inkMuted];
   }
-
   function initChart(canvas) {
     if (canvas.dataset.adminChartInitialized) {
       return;
@@ -80,7 +51,6 @@
     var values = parseJsonAttr(canvas, 'data-chart-values', []);
     var datasetLabel = canvas.getAttribute('data-chart-dataset-label') || 'Value';
     var colors = themeColors();
-
     var config;
     if (type === 'doughnut') {
       config = {
@@ -135,14 +105,11 @@
         },
       };
     }
-
     var chart = new Chart(canvas, config);
     canvas.dataset.adminChartInitialized = 'true';
     charts.push({ chart: chart, type: type });
   }
-
   canvases.forEach(initChart);
-
   function restyleCharts() {
     if (!charts.length) {
       return;
@@ -165,9 +132,5 @@
       chart.update();
     });
   }
-
-  // theme.js (loaded on every admin page too) dispatches this on every
-  // light/dark toggle — reuse it instead of a second theme mechanism,
-  // and always restyle the EXISTING chart instances, never recreate them.
   document.addEventListener('ukn:themechange', restyleCharts);
 })();

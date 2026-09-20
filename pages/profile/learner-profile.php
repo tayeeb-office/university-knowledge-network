@@ -1,24 +1,7 @@
 <?php
-/**
- * Learner Profile — main center content only. Public view of ANOTHER
- * learner (never the signed-in mock user — that's pages/profile/my-profile.php).
- * Routed via index.php?page=learner-profile[&id=..] (see index.php's
- * $routes map). The header, left sidebar, contextual right sidebar
- * ($rightSidebarContext = 'profile', set by index.php's
- * $sidebarContextByPage map) and footer come from the shell — not from
- * here.
- *
- * $_GET['id'] only ever indexes into the small $learners lookup below —
- * it is never concatenated into a query or file path, so there is no
- * injection/traversal surface. An unrecognized id falls back to id 1.
- * Frontend-only mock data throughout — no database, no real follow
- * persistence (assets/js/components/follow.js is the same generic mock
- * toggle used by components/learner-card.php).
- */
 require_once __DIR__ . '/../../components/stat-card.php';
 require_once __DIR__ . '/../../components/goal-card.php';
 require_once __DIR__ . '/../../components/post-card.php';
-
 $learners = [
     1 => [
         'name' => 'Imran Chowdhury', 'initials' => 'IC', 'department' => 'English', 'year' => '2nd Year',
@@ -61,7 +44,6 @@ $learners = [
         ],
     ],
 ];
-
 $requestedId = isset($_GET['id']) && is_string($_GET['id']) && isset($learners[(int) $_GET['id']]) ? (int) $_GET['id'] : 1;
 $learner = $learners[$requestedId];
 ?>
@@ -89,13 +71,11 @@ $learner = $learners[$requestedId];
     </div>
   </div>
 </div>
-
 <div class="row g-3 mb-4">
   <?php foreach ($learner['stats'] as $stat): ?>
     <div class="col-6 col-lg-3"><?php ukn_stat_card($stat); ?></div>
   <?php endforeach; ?>
 </div>
-
 <div class="card mb-4">
   <div class="card-body">
     <h2 class="ukn-h4">Learning Skills</h2>
@@ -106,14 +86,12 @@ $learner = $learners[$requestedId];
     </div>
   </div>
 </div>
-
 <?php if ($learner['goals']): ?>
 <div class="mb-4">
   <h2 class="ukn-h4 mb-3">Learning Goals</h2>
   <?php foreach ($learner['goals'] as $goal): $goal['showActions'] = false; ukn_goal_card($goal); endforeach; ?>
 </div>
 <?php endif; ?>
-
 <?php if ($learner['post']): ?>
 <div>
   <h2 class="ukn-h4 mb-3">Recent Posts</h2>

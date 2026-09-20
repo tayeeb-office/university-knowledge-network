@@ -1,29 +1,6 @@
 <?php
-/**
- * Edit Profile — main center content only. Routed via
- * index.php?page=edit-profile (see index.php's $routes map). The header,
- * left sidebar and footer come from the shell — not from here. This page
- * is intentionally NOT in index.php's $sidebarContextByPage map, so it
- * renders full-width with no right sidebar (brand guide section 11: forms
- * don't need a contextual sidebar) — the second column here is the photo
- * panel instead.
- *
- * Frontend-only mock form: assets/js/pages/profile.js drives the bio
- * character count, the photo preview (temporary browser state only, never
- * localStorage, never uploaded anywhere) and the mock "Save Changes" ->
- * validate -> toast flow. The skill tag picker reuses the exact same
- * [data-skill-picker]/[data-skill-input]/[data-skill-tag] markup and
- * global listeners as modals/create-post-modal.php and edit-post-modal.php
- * (assets/js/core/modal.js) — no second tag-picker implementation. This
- * form deliberately does NOT use [data-mock-form]: that generic handler
- * (assets/js/core/modal.js) wipes every skill tag on "submit" so a modal
- * can reset for its next open, which would also erase this page's
- * pre-filled skills the moment Save Changes is clicked. No real
- * persistence happens either way.
- */
 $activeRole = !empty($currentUser['dualRole']) ? ($currentUser['activeRole'] ?? 'learner') : ($currentUser['role'] ?? 'learner');
 $isMentor = $activeRole === 'mentor';
-
 $departments = ['Computer Science', 'Electrical Engineering', 'Business Administration', 'English', 'Economics', 'Civil Engineering', 'Architecture'];
 $years = ['1st Year', '2nd Year', '3rd Year', '4th Year'];
 $currentDepartment = 'Computer Science';
@@ -31,7 +8,6 @@ $currentYear = $isMentor ? '4th Year' : '3rd Year';
 $currentBio = $isMentor
     ? 'Fourth-year CS student. I teach Python and the machine-learning coursework sequence, working through your actual assignment rather than generic examples.'
     : 'Third-year CS student. Learning Python and React, and slowly getting better at explaining what I just learned to other people.';
-
 $skillsLabel = $isMentor ? 'Skills you are teaching' : 'Skills you are learning';
 $currentSkills = $isMentor
     ? ['Python', 'Database Design', 'Data Analysis']
@@ -64,7 +40,6 @@ $skillOptions = ['Python', 'MySQL', 'React', 'UI/UX Design', 'Data Analysis', 'P
               <div class="ukn-body-sm mt-1">Student ID cannot be changed.</div>
             </div>
           </div>
-
           <div class="ukn-form-row">
             <div class="ukn-form-group">
               <label for="editProfileDepartment" class="form-label">Department <span class="ukn-text-danger" aria-hidden="true">*</span></label>
@@ -86,13 +61,11 @@ $skillOptions = ['Python', 'MySQL', 'React', 'UI/UX Design', 'Data Analysis', 'P
               </select>
             </div>
           </div>
-
           <div class="ukn-form-group">
             <label for="editProfileBio" class="form-label">Bio</label>
             <textarea class="form-control" id="editProfileBio" name="bio" maxlength="300" data-bio-char-input><?= htmlspecialchars($currentBio) ?></textarea>
             <div class="ukn-body-sm mt-1"><span data-bio-char-count><?= strlen($currentBio) ?></span> / 300 characters</div>
           </div>
-
           <div class="ukn-form-group">
             <label for="editProfileSkillInput" class="form-label"><?= htmlspecialchars($skillsLabel) ?></label>
             <div class="ukn-tag-input" data-skill-picker>
@@ -110,7 +83,6 @@ $skillOptions = ['Python', 'MySQL', 'React', 'UI/UX Design', 'Data Analysis', 'P
             </datalist>
             <input type="hidden" name="skills" data-skill-value value="<?= htmlspecialchars(implode('|', $currentSkills)) ?>">
           </div>
-
           <?php if ($isMentor): ?>
             <div class="ukn-form-group mb-0">
               <label class="form-label">Availability</label>
@@ -120,7 +92,6 @@ $skillOptions = ['Python', 'MySQL', 'React', 'UI/UX Design', 'Data Analysis', 'P
               </div>
             </div>
           <?php endif; ?>
-
           <div class="d-flex gap-2 mt-4">
             <button type="submit" class="btn btn-primary btn-sm">Save Changes</button>
             <a href="<?= htmlspecialchars(ukn_route_href('my-profile')) ?>" class="btn btn-outline-secondary btn-sm">Cancel</a>
@@ -129,7 +100,6 @@ $skillOptions = ['Python', 'MySQL', 'React', 'UI/UX Design', 'Data Analysis', 'P
       </div>
     </div>
   </div>
-
   <div class="col-lg-4">
     <div class="card">
       <div class="card-body text-center">

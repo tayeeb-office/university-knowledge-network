@@ -1,30 +1,7 @@
 <?php
-/**
- * Home / Community Feed — main center content.
- * Routed via index.php?page=home (see index.php's $routes map).
- *
- * This file holds ONLY page-specific main content — the header, left
- * sidebar, the Home contextual right sidebar (includes/right-sidebar.php,
- * $rightSidebarContext = 'home' set by index.php) and footer come from
- * the shell in index.php / includes/header.php / includes/footer.php,
- * not from here.
- *
- * Frontend-only mock feed: no database, no API, no real post/vote/save
- * persistence. Posts render through the shared components/post-card.php
- * (not duplicated here); Create/Edit/Delete reuse the shared modal
- * system already wired up in includes/footer.php.
- */
 require_once __DIR__ . '/../components/post-card.php';
 require_once __DIR__ . '/../components/empty-state.php';
-
 $viewerName = $currentUser['name'] ?? 'Member';
-
-/**
- * Realistic mock community posts (brand guide section 29 — no Lorem
- * Ipsum). 'following' flags a handful of posts so the Following tab has
- * something to show; 'id' 1 belongs to the current viewer (Nabila Rahman)
- * so it's the only card that renders owner-only Edit/Delete controls.
- */
 $communityPosts = [
     [
         'id' => 1, 'author' => 'Nabila Rahman', 'initials' => 'NR', 'role' => 'Learner', 'department' => 'Computer Science',
@@ -83,14 +60,12 @@ $communityPosts = [
         'tags' => ['MySQL', 'SQL'], 'score' => 37, 'comments' => 11, 'following' => true,
     ],
 ];
-
 foreach ($communityPosts as &$post) {
     $post['href'] = 'index.php?page=post-details&id=' . $post['id'];
     $post['authorHref'] = ukn_route_href($post['role'] === 'Mentor' ? 'mentor-profile' : 'learner-profile') . '&id=' . $post['id'];
     $post['isOwner'] = ($post['author'] === $viewerName);
 }
 unset($post);
-
 $firstBatch = array_slice($communityPosts, 0, 5);
 $remainingBatch = array_slice($communityPosts, 5);
 ?>
@@ -100,7 +75,6 @@ $remainingBatch = array_slice($communityPosts, 5);
     <p class="ukn-page-header__sub">Ask questions, share what you know, and connect with learners and mentors across campus.</p>
   </div>
 </div>
-
 <?php if (empty($communityPosts)): ?>
 
   <?php
@@ -112,9 +86,7 @@ $remainingBatch = array_slice($communityPosts, 5);
       'dashed' => true,
   ]);
   ?>
-
 <?php else: ?>
-
   <div class="card mb-3">
     <div class="card-body ukn-composer__row">
       <span class="ukn-avatar ukn-avatar-sm" aria-hidden="true"><?= htmlspecialchars($currentUser['initials'] ?? '?') ?></span>
@@ -126,7 +98,6 @@ $remainingBatch = array_slice($communityPosts, 5);
       </button>
     </div>
   </div>
-
   <div class="ukn-feed-controls" data-feed>
     <ul class="nav nav-tabs mb-3" aria-label="Sort community feed">
       <li class="nav-item">
@@ -139,7 +110,6 @@ $remainingBatch = array_slice($communityPosts, 5);
         <button type="button" class="nav-link" data-feed-tab="following" aria-pressed="false">Following</button>
       </li>
     </ul>
-
     <div data-feed-list>
       <?php foreach ($firstBatch as $post): ukn_post_card($post); ?>
       <?php endforeach; ?>
@@ -150,7 +120,6 @@ $remainingBatch = array_slice($communityPosts, 5);
         </div>
       <?php endif; ?>
     </div>
-
     <div class="ukn-feed-end">
       <?php if ($remainingBatch): ?>
         <button type="button" class="btn btn-outline-secondary btn-sm" data-load-more>Load More</button>

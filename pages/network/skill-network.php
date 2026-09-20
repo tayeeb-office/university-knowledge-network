@@ -1,55 +1,10 @@
 <?php
-/**
- * Skill Network — main center content only. Routed via
- * index.php?page=skill-network (see index.php's $routes map). The
- * header, left sidebar and footer come from the shell; this route is
- * deliberately absent from index.php's $sidebarContextByPage map (no
- * app-level right sidebar) — docs/ui's own r.skillNetwork block gives the
- * graph a fixed-width "Selected node" panel INSIDE the main content
- * instead of using the app shell's contextual right sidebar, and a
- * network diagram benefits from the extra width anyway.
- *
- * The graph itself (Cytoscape.js — already the project's approved
- * visualization library alongside Chart.js, see
- * docs/ui/.../uploads/UKN-FRONTEND-STRUCTURE.md) is entirely built and
- * driven by assets/js/pages/network.js; this file only serves the mock
- * node/edge data as JSON on data-* attributes (the exact same convention
- * pages/dashboard/*.php already use to feed assets/js/pages/dashboard.js's
- * Chart.js canvases — see data-chart-labels/data-chart-values there).
- *
- * Primary entities are SKILLS ONLY — no Mentor/Learner person-nodes (this
- * is deliberately not a social graph, unlike docs/ui's own rough
- * wireframe legend, which sketched Mentor/Learner dot kinds; this
- * implementation scopes the network to skill-to-skill relationships only,
- * per this prompt's explicit "primary entities are SKILLS" instruction).
- *
- * Node mentor/learner counts and descriptions for the 10 already-
- * established skills are copied verbatim from pages/skills/skill-details.php
- * (same ids 1-10) so this page never contradicts that one. JavaScript,
- * Presentation Skills, Machine Learning and Embedded Systems are network-
- * only additions (ids 11-14) — already-referenced skills elsewhere
- * (mentor-card.php examples, Hasan Mahmud's Arduino/Embedded Systems
- * teaching pair, Rahim Ahmed's Machine Learning) that skill-details.php
- * itself has no dedicated record for; their skill-details links safely
- * fall back to that page's own existing "unrecognized id -> id 1" mock
- * behavior, the same fallback convention used throughout this project.
- *
- * Frontend-only mock data throughout: no database, no backend graph
- * generation, no real similarity/recommendation calculation. Edge
- * "strength" and "reason" text are hand-authored mock content, not an
- * algorithm's output.
- */
 require_once __DIR__ . '/../../components/error-state.php';
-
 $activeRole = !empty($currentUser['dualRole']) ? ($currentUser['activeRole'] ?? 'learner') : ($currentUser['role'] ?? 'learner');
 $isMentor = $activeRole === 'mentor';
-
-// Same mock lists already established in pages/skills/learning-skills.php
-// and pages/skills/teaching-skills.php — not a second skill-state system.
 $learningSkills = ['Python', 'MySQL', 'Data Analysis'];
 $teachingSkills = ['Python', 'Database Design', 'Data Analysis'];
 $currentSkills = $isMentor ? $teachingSkills : $learningSkills;
-
 $nodes = [
     ['id' => 1, 'name' => 'Python', 'category' => 'Programming', 'mentors' => 124, 'learners' => 340, 'sessions' => 1248, 'description' => 'A versatile programming language used for software development, automation, data analysis and machine learning.'],
     ['id' => 2, 'name' => 'MySQL', 'category' => 'Data', 'mentors' => 82, 'learners' => 214, 'sessions' => 640, 'description' => 'A widely used relational database system for storing and querying structured data.'],
@@ -66,7 +21,6 @@ $nodes = [
     ['id' => 13, 'name' => 'Machine Learning', 'category' => 'Data', 'mentors' => 35, 'learners' => 97, 'sessions' => 240, 'description' => 'Using data and Python to build models that recognize patterns and make predictions.'],
     ['id' => 14, 'name' => 'Embedded Systems', 'category' => 'Engineering', 'mentors' => 22, 'learners' => 58, 'sessions' => 150, 'description' => 'Programming the hardware side of microcontroller projects — sensors, timing and low-level control.'],
 ];
-
 $edges = [
     ['source' => 1, 'target' => 5, 'strength' => 'Strong', 'reason' => 'Python is the most common language used for data analysis workflows on the network.'],
     ['source' => 2, 'target' => 7, 'strength' => 'Strong', 'reason' => 'Database Design sessions are usually taught and practiced directly in MySQL.'],
@@ -99,10 +53,8 @@ foreach ($nodes as &$node) {
     $node['isCurrent'] = in_array($node['name'], $currentSkills, true);
 }
 unset($node);
-
 $categories = array_values(array_unique(array_column($nodes, 'category')));
 sort($categories);
-
 $joinWithAnd = static function (array $items): string {
     if (count($items) <= 1) {
         return $items[0] ?? '';
@@ -117,7 +69,6 @@ $joinWithAnd = static function (array $items): string {
     <p class="ukn-page-header__sub">Explore how skills connect and discover related areas to learn or teach.</p>
   </div>
 </div>
-
 <div class="ukn-network-layout">
   <div class="card ukn-network-graph-card">
     <div class="ukn-network-toolbar">
@@ -143,7 +94,6 @@ $joinWithAnd = static function (array $items): string {
     </div>
 
     <p class="ukn-body-sm ukn-text-muted px-3 pt-2 mb-0" data-network-search-feedback role="status" hidden></p>
-
     <div class="ukn-network-graph-wrap">
       <div
         id="skill-network-graph"
@@ -153,14 +103,12 @@ $joinWithAnd = static function (array $items): string {
         role="img"
         aria-label="Interactive diagram of how skills in the network relate to each other. A full text list of the same skills and relationships follows below."
       ></div>
-
       <div class="p-3" data-network-error hidden>
         <?php ukn_error_state([
             'title' => 'Unable to display the skill network',
             'message' => 'The interactive graph could not be loaded. Use the skill list below instead.',
         ]); ?>
       </div>
-
       <div class="ukn-network-legend" aria-hidden="true">
         <div class="ukn-eyebrow mb-1">Legend</div>
         <div><span class="ukn-network-legend__dot"></span> Skill</div>
@@ -170,7 +118,6 @@ $joinWithAnd = static function (array $items): string {
       </div>
     </div>
   </div>
-
   <div class="card ukn-network-panel" data-network-panel>
     <div class="ukn-eyebrow mb-2">Selected Skill</div>
     <div data-network-panel-empty>
@@ -179,7 +126,6 @@ $joinWithAnd = static function (array $items): string {
     <div data-network-panel-content hidden></div>
   </div>
 </div>
-
 <section class="mt-4" aria-labelledby="networkListHeading">
   <h2 id="networkListHeading" class="ukn-h4">Skills in This Network</h2>
   <p class="ukn-body-sm ukn-text-muted">

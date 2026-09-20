@@ -1,12 +1,3 @@
-/* ==========================================================================
-   Learner / Mentor Dashboard — page-specific composition on top of the
-   shared card/stat/grid vocabulary in components.css and Bootstrap's own
-   .row/.col-* grid. No page-only colors — layout/spacing only.
-   ========================================================================== */
-
-/* Chart.js measures its canvas's positioned parent to decide how to
-   resize (responsive:true, maintainAspectRatio:false in dashboard.js) —
-   without a sized wrapper the canvas grows unbounded on every redraw. */
 .ukn-chart-wrap{
   position: relative;
   height: 260px;

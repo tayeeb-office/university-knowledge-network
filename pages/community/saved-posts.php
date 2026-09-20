@@ -1,31 +1,6 @@
 <?php
-/**
- * Saved Posts — main center content only. Routed via
- * index.php?page=saved-posts (see index.php's $routes map). The header,
- * left sidebar, contextual right sidebar and footer come from the shell —
- * not from here.
- *
- * Posts reuse components/post-card.php exactly as Home does (default
- * 'feed' variant), each with 'saved' => true and 'isOwner' => false —
- * these are other people's posts the mock user bookmarked, so no
- * Edit/Delete dropdown renders for any of them (post-card.php's own
- * isOwner gate, unchanged). Unsaving reuses the exact same generic
- * assets/js/components/save-post.js toggle every post-card.php save
- * button already has; assets/js/pages/community.js additionally removes
- * the card from THIS page's list once a post-card.php button here
- * actually becomes unsaved (see that file) — Save/Unsave itself is not
- * reimplemented.
- *
- * These 4 posts are the exact same ones already seeded on pages/home.php
- * (same ids/titles/authors/tags/scores) rather than inventing different
- * mock content for "the same posts" bookmarked from two different pages.
- *
- * Frontend-only mock data throughout — no real save/bookmark persistence,
- * no database, no backend of any kind.
- */
 require_once __DIR__ . '/../../components/post-card.php';
 require_once __DIR__ . '/../../components/empty-state.php';
-
 $savedPosts = [
     [
         'id' => 2, 'author' => 'Rahim Ahmed', 'initials' => 'RA', 'role' => 'Mentor', 'department' => 'Computer Science',
@@ -63,11 +38,9 @@ $savedPosts = [
     <p class="ukn-page-header__sub">Posts you've saved to read or revisit later.</p>
   </div>
 </div>
-
 <div data-post-list="saved">
   <?php foreach ($savedPosts as $post): ukn_post_card($post); endforeach; ?>
 </div>
-
 <div<?= $savedPosts ? ' hidden' : '' ?> data-post-list-empty>
   <?php ukn_empty_state([
       'icon' => 'bookmark_border',

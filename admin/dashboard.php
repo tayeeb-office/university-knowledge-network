@@ -1,32 +1,5 @@
 <?php
-/**
- * Admin Dashboard — the first real Admin Panel page. Reached by opening
- * admin/dashboard.php directly (there is no admin/?page=... router — see
- * admin/includes/header.php's own docblock for why). Frontend-only mock
- * data throughout: no database, no real analytics aggregation, no real
- * moderation actions.
- *
- * Mock figures are kept internally consistent rather than copied blindly:
- *   - Active Learners (986) + Active Mentors (214) - Dual-Role (48) =
- *     1,152 unique Total Users (the Users-by-Role chart uses the
- *     mutually-exclusive breakdown of the same three numbers: 938
- *     Learner-only + 166 Mentor-only + 48 Dual-Role = 1,152).
- *   - Session status breakdown (128 + 3,142 + 176 + 36) sums to exactly
- *     the 3,482 Total Sessions stat card.
- *   - Popular Skills reuses pages/skills/skill-details.php's exact
- *     mentor/learner counts (Python 124/340, MySQL 82/214, Data Analysis
- *     91/256, React 76/196).
- *   - Recent/Upcoming Sessions reuses the exact learner/mentor/skill/date
- *     pairings already established in
- *     pages/sessions/session-details.php (ids 101, 201, 203, 205).
- *   - "Recent Users" deliberately uses new/minor names rather than
- *     Nabila Rahman/Rahim Ahmed/Imran Chowdhury — those three already
- *     have deep established histories (hundreds of sessions, years of
- *     points) elsewhere in this project, so presenting them as having
- *     just registered would directly contradict that.
- */
 require_once __DIR__ . '/../components/stat-card.php';
-
 $adminActiveNav = 'dashboard';
 $adminPageTitle = 'Admin Dashboard';
 $adminPageSub = 'Monitor users, skills, sessions and community activity across the network.';
@@ -35,7 +8,6 @@ $adminPageScripts = [
     'https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js',
     '../assets/js/admin/dashboard.js',
 ];
-
 $stats = [
     ['label' => 'Total Users', 'value' => '1,152', 'icon' => 'group', 'helper' => '986 Learners · 214 Mentors · 48 Dual-Role'],
     ['label' => 'Total Skills', 'value' => '76', 'icon' => 'workspaces', 'trend' => 'Up 4 this month'],
@@ -43,7 +15,6 @@ $stats = [
     ['label' => 'Community Posts', 'value' => '1,126', 'icon' => 'article', 'trend' => 'Up 5.1% this month'],
     ['label' => 'Pending Reports', 'value' => '8', 'icon' => 'flag', 'trend' => '2 new this week'],
 ];
-
 $roleBreakdown = ['labels' => ['Learner only', 'Mentor only', 'Dual-Role'], 'values' => [938, 166, 48]];
 $sessionActivity = ['labels' => ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'], 'values' => [42, 51, 47, 63, 58, 74, 69]];
 $sessionStatus = [
@@ -52,7 +23,6 @@ $sessionStatus = [
     ['label' => 'Cancelled', 'value' => 176],
     ['label' => 'Pending', 'value' => 36],
 ];
-
 $recentUsers = [
     ['name' => 'Tanjim Rahman', 'initials' => 'TR', 'role' => 'Learner', 'department' => 'Business Administration', 'joined' => 'Sep 13, 2026', 'status' => 'Active'],
     ['name' => 'Farhana Islam', 'initials' => 'FI', 'role' => 'Learner', 'department' => 'English', 'joined' => 'Sep 13, 2026', 'status' => 'Active'],
@@ -67,20 +37,17 @@ $recentSessions = [
     ['learner' => 'Nabila Rahman', 'mentor' => 'Rahim Ahmed', 'skill' => 'Python', 'date' => 'Sep 8, 2026', 'status' => 'Completed'],
     ['learner' => 'Nabila Rahman', 'mentor' => 'Hasan Mahmud', 'skill' => 'Arduino', 'date' => 'Aug 28, 2026', 'status' => 'Cancelled'],
 ];
-
 $popularSkills = [
     ['name' => 'Python', 'learners' => 340, 'mentors' => 124],
     ['name' => 'Data Analysis', 'learners' => 256, 'mentors' => 91],
     ['name' => 'MySQL', 'learners' => 214, 'mentors' => 82],
     ['name' => 'React', 'learners' => 196, 'mentors' => 76],
 ];
-
 $pendingReports = [
     ['type' => 'Post', 'reason' => 'Off-topic / spam', 'content' => 'Looking for paid assignment help', 'time' => '22 min ago'],
     ['type' => 'Comment', 'reason' => 'Inappropriate language', 'content' => 'Comment on "Best Resources for Learning MySQL Joins?"', 'time' => '1 hr ago'],
     ['type' => 'User Conduct', 'reason' => 'Repeated late cancellations', 'content' => 'Reported user: Sara Khan', 'time' => '3 hr ago'],
 ];
-
 $recentActivity = [
     ['icon' => 'person_add', 'text' => 'Tanjim Rahman registered as a new Learner.', 'time' => '18 min ago'],
     ['icon' => 'event_available', 'text' => 'Rahim Ahmed completed a Python mentoring session.', 'time' => '35 min ago'],
@@ -88,7 +55,6 @@ $recentActivity = [
     ['icon' => 'category', 'text' => 'New skill category added: Business.', 'time' => '2 hr ago'],
     ['icon' => 'star', 'text' => 'Sara Khan received a 5-star mentoring rating.', 'time' => '4 hr ago'],
 ];
-
 $statusClass = [
     'Active' => 'ukn-status-accent',
     'Upcoming' => 'ukn-status-accent',
@@ -96,13 +62,11 @@ $statusClass = [
     'Completed' => 'ukn-status-accent',
     'Cancelled' => 'ukn-status-neutral',
 ];
-
 require __DIR__ . '/includes/header.php';
 ?>
 <div class="ukn-admin-stat-grid mb-4">
   <?php foreach ($stats as $stat): ukn_stat_card($stat); endforeach; ?>
 </div>
-
 <div class="row g-3 mb-4">
   <div class="col-lg-5">
     <div class="card h-100">
@@ -144,7 +108,6 @@ require __DIR__ . '/includes/header.php';
     </div>
   </div>
 </div>
-
 <div class="card mb-4">
   <div class="card-header d-flex align-items-center justify-content-between">
     <h2 class="ukn-h4 mb-0">Recent Users</h2>
@@ -175,7 +138,6 @@ require __DIR__ . '/includes/header.php';
     </table>
   </div>
 </div>
-
 <div class="row g-3 mb-4">
   <div class="col-lg-7">
     <div class="card h-100">
@@ -203,7 +165,6 @@ require __DIR__ . '/includes/header.php';
       </div>
     </div>
   </div>
-
   <div class="col-lg-5">
     <div class="card h-100">
       <div class="card-header d-flex align-items-center justify-content-between">
@@ -222,7 +183,6 @@ require __DIR__ . '/includes/header.php';
     </div>
   </div>
 </div>
-
 <div class="row g-3 mb-4">
   <div class="col-lg-6">
     <div class="card h-100">
@@ -263,7 +223,6 @@ require __DIR__ . '/includes/header.php';
     </div>
   </div>
 </div>
-
 <div class="card">
   <div class="card-header"><h2 class="ukn-h4 mb-0">Quick Actions</h2></div>
   <div class="card-body d-flex flex-wrap gap-2">
@@ -273,5 +232,4 @@ require __DIR__ . '/includes/header.php';
     <a href="sessions.php" class="btn btn-outline-secondary btn-sm"><span class="ms" aria-hidden="true">event</span> View Sessions</a>
   </div>
 </div>
-
 <?php require __DIR__ . '/includes/footer.php'; ?>

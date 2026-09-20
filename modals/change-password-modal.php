@@ -1,23 +1,4 @@
 <?php
-/**
- * Change Password modal — one shared modal, opened from
- * pages/settings/settings.php's Account section. Frontend-only: there is
- * no real current-password check, no hashing, no storage anywhere
- * (localStorage/sessionStorage/mock data). assets/js/pages/settings.js
- * validates required fields (via the same window.UKN.validateForm as
- * every other modal) plus a New/Confirm password match check — the exact
- * same pattern pages/auth/register.php already uses for its own Confirm
- * Password field, just re-implemented for this form's own field names
- * since that page's listener is scoped to [data-mock-auth-form] only.
- *
- * On mock success: a toast, an immediate form.reset() (clearing every
- * password field from the DOM right away) and the modal closes — nothing
- * is ever read back out of these fields after that.
- *
- * Show/Hide Password re-uses the existing generic [data-toggle-password]
- * behavior (assets/js/pages/auth.js) as-is — that listener already
- * applies to "any" such control, not just the auth pages.
- */
 ?>
 <div class="modal fade" id="changePasswordModal" tabindex="-1" aria-labelledby="changePasswordModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered">
@@ -31,7 +12,6 @@
       <form data-change-password-form novalidate>
         <div class="modal-body">
           <p class="ukn-body-sm ukn-text-muted">Frontend demo only — no account password is actually changed.</p>
-
           <div class="ukn-form-group">
             <label for="currentPasswordInput" class="form-label">Current Password</label>
             <div class="ukn-password-field">
@@ -51,7 +31,6 @@
               <span class="ms" aria-hidden="true">error</span>Please enter your current password.
             </div>
           </div>
-
           <div class="ukn-form-group">
             <label for="newPasswordInput" class="form-label">New Password</label>
             <div class="ukn-password-field">
@@ -71,7 +50,6 @@
               <span class="ms" aria-hidden="true">error</span>Please create a new password.
             </div>
           </div>
-
           <div class="ukn-form-group">
             <label for="confirmNewPasswordInput" class="form-label">Confirm New Password</label>
             <div class="ukn-password-field">

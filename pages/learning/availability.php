@@ -1,28 +1,6 @@
 <?php
-/**
- * Availability — main center content only. Routed via
- * index.php?page=availability (see index.php's $routes map). The header,
- * left sidebar and footer come from the shell — not from here. This
- * route isn't in index.php's $sidebarContextByPage map, so it renders
- * full-width with no app-level right sidebar (matching docs/ui/'s own
- * layout, which gives this screen its own internal two-column grid —
- * weekly schedule + a compact "current availability" summary panel —
- * rather than using the app shell's contextual sidebar for that).
- *
- * Mentor-oriented, but frontend-only: opening this route in Learner mode
- * does not corrupt role state or break the shell (no real authorization
- * exists yet) — it just shows the same mentor-facing content regardless
- * of the currently active role.
- *
- * Weekly availability is plain mock PHP data (day/enabled/slots), matching
- * this prompt's own suggested "backend-ready" shape. All interactivity —
- * day toggle, add/remove slot, time validation, dirty-tracking the Save
- * button, Save/Reset — lives in assets/js/pages/learning.js. No real
- * persistence, booking-conflict detection or scheduling logic anywhere.
- */
 require_once __DIR__ . '/../../components/stat-card.php';
 require_once __DIR__ . '/../../components/session-card.php';
-
 $week = [
     ['day' => 'Monday', 'key' => 'mon', 'enabled' => false, 'slots' => []],
     ['day' => 'Tuesday', 'key' => 'tue', 'enabled' => true, 'slots' => [['start' => '18:00', 'end' => '20:00']]],
@@ -32,9 +10,7 @@ $week = [
     ['day' => 'Saturday', 'key' => 'sat', 'enabled' => true, 'slots' => [['start' => '16:00', 'end' => '20:00']]],
     ['day' => 'Sunday', 'key' => 'sun', 'enabled' => true, 'slots' => [['start' => '17:00', 'end' => '20:00']]],
 ];
-
 $toMinutes = static fn (string $t): int => (int) (explode(':', $t)[0]) * 60 + (int) (explode(':', $t)[1]);
-
 $enabledDayCount = 0;
 $totalMinutes = 0;
 foreach ($week as $day) {
@@ -46,10 +22,9 @@ foreach ($week as $day) {
     }
 }
 $totalHours = (int) round($totalMinutes / 60);
-$bookedHours = 8; // mock — no real session-booking model backs this
+$bookedHours = 8;
 $openHours = max(0, $totalHours - $bookedHours);
 $pendingRequestCount = 5;
-
 $upcomingSessions = [
     ['counterparty' => 'Tanvir Hossain', 'counterpartyInitials' => 'TH', 'skill' => 'Python', 'day' => '19', 'month' => 'Sep', 'time' => 'Sat 6:00pm', 'duration' => '60 min', 'status' => 'upcoming', 'detailsHref' => ukn_route_href('session-details')],
     ['counterparty' => 'Sara Khan', 'counterpartyInitials' => 'SK', 'skill' => 'Database Design', 'day' => '23', 'month' => 'Sep', 'time' => 'Wed 7:00pm', 'duration' => '45 min', 'status' => 'upcoming', 'detailsHref' => ukn_route_href('session-details')],
@@ -61,7 +36,6 @@ $upcomingSessions = [
     <p class="ukn-page-header__sub">Set the days and times when you're available for mentoring sessions.</p>
   </div>
 </div>
-
 <form data-availability-form novalidate>
   <div class="row g-3 mb-4">
     <div class="col-lg-8">
@@ -90,7 +64,6 @@ $upcomingSessions = [
                   <span class="ms" aria-hidden="true">add</span>Add Time Slot
                 </button>
               </div>
-
               <div data-availability-slots<?= $day['enabled'] ? '' : ' hidden' ?>>
                 <?php foreach ($day['slots'] as $i => $slot): $startId = "avail-{$day['key']}-start-{$i}"; $endId = "avail-{$day['key']}-end-{$i}"; ?>
                   <div class="d-flex align-items-start gap-2 flex-wrap mb-2" data-availability-slot>
@@ -112,14 +85,12 @@ $upcomingSessions = [
                   </div>
                 <?php endforeach; ?>
               </div>
-
               <p class="ukn-body-sm mb-0" data-availability-unavailable-label<?= $day['enabled'] ? ' hidden' : '' ?>>Unavailable</p>
             </div>
           <?php endforeach; ?>
         </div>
       </div>
     </div>
-
     <div class="col-lg-4">
       <div class="card h-100">
         <div class="card-body">
@@ -142,13 +113,11 @@ $upcomingSessions = [
       </div>
     </div>
   </div>
-
   <div class="d-flex gap-2 mb-4">
     <button type="submit" class="btn btn-primary btn-sm" data-availability-save disabled>Save Availability</button>
     <button type="button" class="btn btn-outline-secondary btn-sm" data-availability-reset>Reset Changes</button>
   </div>
 </form>
-
 <div>
   <div class="d-flex align-items-center justify-content-between mb-3">
     <h2 class="ukn-h4 mb-0">Upcoming Sessions</h2>

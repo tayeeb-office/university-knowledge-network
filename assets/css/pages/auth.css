@@ -1,12 +1,3 @@
-/* ==========================================================================
-   Login / Register — page-specific composition on top of the shared
-   card/form vocabulary in components.css / forms.css. No page-only
-   colors or theme rules — everything here is layout/spacing only.
-   ========================================================================== */
-
-/* ---- Centered auth card — reuses .ukn-container-narrow (layout.css,
-   max-width 430px) for the ~420-520px target width; no new width rule
-   needed here. ---- */
 .ukn-auth-card .card-body{
   padding: var(--ukn-space-6) var(--ukn-space-5);
 }
@@ -20,9 +11,6 @@
   font-size: .875rem;
   color: var(--ukn-ink-muted);
 }
-
-/* Remember Me + Forgot Password share one row on wide enough screens,
-   wrap cleanly on narrow ones — no horizontal overflow at 320px. */
 .ukn-auth-row{
   display: flex;
   align-items: center;
@@ -34,9 +22,6 @@
 .ukn-auth-row .form-check{
   margin-bottom: 0;
 }
-
-/* ---- Password strength meter (Register only) — frontend guidance only,
-   not a real security signal (brand guide / prompt section 18). ---- */
 .ukn-strength{
   display: flex;
   align-items: center;

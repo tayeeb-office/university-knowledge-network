@@ -1,19 +1,4 @@
 <?php
-/**
- * Success state — reusable positive-confirmation notice.
- * Used by: any inline confirmation — e.g. "Session request sent
- * successfully." A page-level toast uses the same visual language
- * (assets/css/components.css .toast), just in a fixed position instead
- * of inline.
- *
- * Usage:
- *   require_once __DIR__ . '/../components/success-state.php';
- *   ukn_success_state([
- *     'message' => 'Session request sent successfully.',
- *     'detail'  => 'Rahim usually replies within a day. You will get a notification either way.',
- *     'action'  => ['label' => 'View request', 'href' => '#'],   // optional
- *   ]);
- */
 if (!function_exists('ukn_success_state')) {
     function ukn_success_state(array $state): void
     {

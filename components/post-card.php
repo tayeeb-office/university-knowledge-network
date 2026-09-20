@@ -1,59 +1,4 @@
 <?php
-/**
- * Post card — reusable community-feed post component.
- * Used by: Home feed, My Posts, Saved Posts, and Post Details (via the
- * 'detail' variant — full content instead of a clamped excerpt, a plain
- * heading instead of a self-link, and a comments anchor instead of a
- * comments link, since Post Details already IS that post's own page).
- *
- * Usage:
- *   require_once __DIR__ . '/../components/post-card.php';
- *   foreach ($posts as $post) { ukn_post_card($post); }        // feed (default)
- *   ukn_post_card($post, ['variant' => 'detail']);              // Post Details
- *
- * $post shape (all keys optional except 'id'/'title'):
- *   [
- *     'id'         => 1,
- *     'href'       => 'index.php?page=post-details',
- *     'author'     => 'Nabila Rahman',
- *     'authorHref' => 'index.php?page=learner-profile',  // optional — omit for plain (non-link) name
- *     'initials'   => 'NR',
- *     'role'       => 'Learner',
- *     'department' => 'Computer Science',
- *     'time'       => '5 hours ago',
- *     'title'      => 'Need Help Understanding Database Normalization',
- *     'excerpt'    => 'I get 1NF and 2NF but 3NF stops making sense...',
- *                     // 'detail' variant: paragraphs separated by a
- *                     // blank line ("\n\n") each render as their own <p>
- *     'tags'       => ['MySQL', 'Database', '3NF'],       // rendered as clickable skill links
- *     'score'      => 96,
- *     'voteState'  => 0,       // -1 downvoted, 0 none, 1 upvoted (mock only)
- *     'comments'   => 24,
- *     'saved'      => false,
- *     'following'  => false,   // mock only — read by a feed's "Following" filter, see data-following
- *     'isOwner'    => true,    // default true (preserves prior behavior) — set false to hide Edit/Delete
- *   ]
- * $options: ['variant' => 'feed' (default) | 'detail']
- *
- * Voting/saving are frontend-only mock state, wired up by
- * assets/js/components/voting.js and assets/js/components/save-post.js
- * (generic, delegated — no backend, no persistence beyond the DOM).
- *
- * "More actions" opens Edit/Delete via the shared modal system
- * (modals/edit-post-modal.php, modals/delete-confirmation-modal.php —
- * both included once from includes/footer.php) rather than a bespoke
- * menu — no real update or deletion happens. Only shown when
- * $post['isOwner'] is true (a feed passing other people's posts sets
- * this false so non-owners never see owner-only controls). Edit carries
- * this post's own title/content/skills as data-edit-post-* attributes,
- * and Delete's confirmation title names this post specifically — both
- * read by assets/js/core/modal.js's contextual-modal handling (same
- * pattern as Request Session / Rating), so editing/deleting Post A then
- * Post B never shows stale data from A. assets/js/pages/community.js
- * additionally removes the card itself once a delete is confirmed (via
- * data-remove-post-card, same convention as skill/goal/session removal
- * elsewhere in this project).
- */
 if (!function_exists('ukn_post_card')) {
     function ukn_post_card(array $post, array $options = []): void
     {
@@ -66,26 +11,10 @@ if (!function_exists('ukn_post_card')) {
         $isDetail = ($options['variant'] ?? 'feed') === 'detail';
         $upClass = $post['voteState'] === 1 ? ' is-active' : '';
         $downClass = $post['voteState'] === -1 ? ' is-active' : '';
-
-        /** Known catalog skills (pages/skills/skills.php) so a post's tags
-         * link to the SAME skill id skill-details.php actually reads —
-         * previously this only ever passed a name, which skill-details.php
-         * has no way to look up, silently falling back to Python for
-         * every tag. A tag outside this small catalog still falls back
-         * that same safe way, same as every other unmapped-id case in
-         * this project. */
         $skillIds = [
             'python' => 1, 'mysql' => 2, 'react' => 3, 'ui/ux design' => 4, 'data analysis' => 5,
             'public speaking' => 6, 'database design' => 7, 'arduino' => 8, 'academic writing' => 9, 'digital marketing' => 10,
         ];
-
-        /** Derived, not caller-supplied — assets/js/pages/community.js's My
-         * Posts / Saved Posts search+skill filter reads these directly off
-         * this same <article> (never a wrapper div around it, which would
-         * desync the moment JS also needs to .remove() this exact element —
-         * see that file's docblock). Harmless, inert data on every other
-         * page that renders this component without filtering (Home, Post
-         * Details). */
         $searchText = strtolower($post['title'] . ' ' . $post['author'] . ' ' . implode(' ', $post['tags']));
         $skillsAttr = strtolower(implode('|', $post['tags']));
         ?>

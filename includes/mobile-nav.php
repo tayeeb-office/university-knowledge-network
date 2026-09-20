@@ -1,18 +1,4 @@
 <?php
-/**
- * Mobile navigation — Bootstrap 5 Offcanvas, opened by the hamburger
- * button in includes/header.php (data-bs-target="#uknMobileNav").
- *
- * Mirrors the same role-aware navigation as includes/left-sidebar.php
- * (via ukn_nav_groups_for_role() / ukn_route_href(), defined there) so
- * the desktop sidebar and the mobile menu never drift apart. This file is
- * always included after left-sidebar.php within the same request (see
- * includes/header.php and includes/footer.php), so those helpers already
- * exist by the time this runs.
- *
- * There is no permanent right sidebar on mobile — contextual content
- * moves into the page itself where a page needs it (brand guide section 12).
- */
 $currentUser = $currentUser ?? [
     'loggedIn'   => true,
     'role'       => 'learner',
@@ -23,18 +9,10 @@ $currentUser = $currentUser ?? [
     'meta'       => 'Learner · Computer Science',
 ];
 $activeNav = $activeNav ?? 'home';
-
 $navRole = $currentUser['loggedIn']
     ? ($currentUser['dualRole'] ? $currentUser['activeRole'] : $currentUser['role'])
     : 'visitor';
 $otherRole = $currentUser['activeRole'] === 'mentor' ? 'Learner' : 'Mentor';
-
-/**
- * Mirrors includes/left-sidebar.php exactly: dual-role users get both
- * role's navigation pre-rendered in [data-role] blocks, toggled by the
- * same assets/js/core/role-switch.js that drives the desktop sidebar —
- * one shared role state, not two independent ones.
- */
 $isDualRoleUser = $currentUser['loggedIn'] && $currentUser['dualRole'];
 $rolesToRender = $isDualRoleUser ? ['learner', 'mentor'] : [$navRole];
 ?>
@@ -80,7 +58,6 @@ $rolesToRender = $isDualRoleUser ? ['learner', 'mentor'] : [$navRole];
         <?php endforeach; ?>
       </div>
     <?php endforeach; ?>
-
     <?php if ($isDualRoleUser): ?>
       <button
         type="button"

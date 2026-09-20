@@ -1,34 +1,13 @@
 <?php
-/**
- * Mentor Dashboard — main center content only. Routed via
- * index.php?page=mentor-dashboard (see index.php's $routes map). The
- * header, left sidebar, contextual right sidebar ($rightSidebarContext =
- * 'dashboard-mentor', set by index.php's $sidebarContextByPage map) and
- * footer come from the shell — not from here.
- *
- * The right sidebar already covers the compact Mentor Overview stats
- * (Mentor points / Rating / Pending / Upcoming) and a 2-line Recent
- * Learners list, so this file doesn't repeat a Mentor Point Activity
- * list here — that would just be the same points total shown twice.
- * What it adds instead is what the sidebar can't fit: full pending-
- * request/session cards, a fuller rating breakdown, fuller learner
- * cards, teaching skills and availability.
- *
- * Frontend-only mock data throughout — no real stats calculation, no
- * database, no backend of any kind. Accept/Reject/View Details are
- * visual-only, same as everywhere else session-card.php is used.
- */
 require_once __DIR__ . '/../../components/stat-card.php';
 require_once __DIR__ . '/../../components/session-card.php';
 require_once __DIR__ . '/../../components/learner-card.php';
-
 $mentorStats = [
     ['label' => 'Mentor Points', 'value' => '520', 'icon' => 'military_tech', 'trend' => '+20 this month'],
     ['label' => 'Average Rating', 'value' => '4.8', 'icon' => 'star'],
     ['label' => 'Pending Requests', 'value' => '5', 'icon' => 'inbox'],
     ['label' => 'Completed Sessions', 'value' => '27', 'icon' => 'event_available'],
 ];
-
 $pendingRequests = [
     [
         'counterparty' => 'Nabila Rahman', 'counterpartyInitials' => 'NR', 'skill' => 'Python',
@@ -41,7 +20,6 @@ $pendingRequests = [
         'status' => 'pending', 'message' => 'Looking for help debugging a Flask project before submission.',
     ],
 ];
-
 $mentorSessions = [
     [
         'counterparty' => 'Imran Chowdhury', 'counterpartyInitials' => 'IC', 'skill' => 'Python',
@@ -49,7 +27,6 @@ $mentorSessions = [
         'status' => 'upcoming', 'detailsHref' => ukn_route_href('session-details'),
     ],
 ];
-
 $recentLearners = [
     [
         'name' => 'Nabila Rahman', 'initials' => 'NR', 'department' => 'Computer Science',
@@ -60,26 +37,22 @@ $recentLearners = [
         'skills' => ['Presentation Skills'], 'points' => 318, 'sessions' => 2, 'profileHref' => ukn_route_href('learner-profile'),
     ],
 ];
-
 $teachingSkills = [
     ['name' => 'Python', 'sessions' => 27],
     ['name' => 'Database Design', 'sessions' => 18],
     ['name' => 'Data Analysis', 'sessions' => 12],
 ];
-
 $availability = [
     ['day' => 'Wednesday', 'time' => '7:00 PM – 9:00 PM'],
     ['day' => 'Saturday', 'time' => '6:00 PM – 9:00 PM'],
     ['day' => 'Sunday', 'time' => '5:00 PM – 8:00 PM'],
 ];
-
 $ratingSummary = ['overall' => 4.8, 'total' => 42];
 $ratingBreakdown = ['Teaching Quality' => 4.9, 'Communication' => 4.7, 'Helpfulness' => 4.8];
 $stars = static function (float $value): string {
     $rounded = (int) round($value);
     return str_repeat('★', max(0, min(5, $rounded))) . str_repeat('☆', 5 - max(0, min(5, $rounded)));
 };
-
 $sessionsChartLabels = ['Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep'];
 $sessionsChartValues = [5, 7, 6, 9, 11, 12];
 ?>
@@ -89,13 +62,11 @@ $sessionsChartValues = [5, 7, 6, 9, 11, 12];
     <p class="ukn-page-header__sub">Manage learner requests, sessions and your mentoring progress.</p>
   </div>
 </div>
-
 <div class="row g-3 mb-4">
   <?php foreach ($mentorStats as $stat): ?>
     <div class="col-6 col-lg-3"><?php ukn_stat_card($stat); ?></div>
   <?php endforeach; ?>
 </div>
-
 <div class="row g-3 mb-4">
   <div class="col-lg-8">
     <div class="card h-100">
@@ -138,7 +109,6 @@ $sessionsChartValues = [5, 7, 6, 9, 11, 12];
     </div>
   </div>
 </div>
-
 <div class="mb-4">
   <div class="d-flex align-items-center justify-content-between mb-3">
     <h2 class="ukn-h4 mb-0">Pending Learner Requests</h2>
@@ -146,7 +116,6 @@ $sessionsChartValues = [5, 7, 6, 9, 11, 12];
   </div>
   <?php foreach ($pendingRequests as $session): ukn_session_card($session); endforeach; ?>
 </div>
-
 <div class="mb-4">
   <div class="d-flex align-items-center justify-content-between mb-3">
     <h2 class="ukn-h4 mb-0">Upcoming Sessions</h2>
@@ -154,7 +123,6 @@ $sessionsChartValues = [5, 7, 6, 9, 11, 12];
   </div>
   <?php foreach ($mentorSessions as $session): ukn_session_card($session); endforeach; ?>
 </div>
-
 <div class="mb-4">
   <h2 class="ukn-h4 mb-3">Recent Learners</h2>
   <div class="row g-3">
@@ -163,7 +131,6 @@ $sessionsChartValues = [5, 7, 6, 9, 11, 12];
     <?php endforeach; ?>
   </div>
 </div>
-
 <div class="row g-3">
   <div class="col-md-6">
     <div class="card h-100">

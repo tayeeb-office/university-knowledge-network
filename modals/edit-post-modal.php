@@ -1,17 +1,4 @@
 <?php
-/**
- * Edit Post modal — same form as modals/create-post-modal.php (identical
- * fields, classes and skill-picker), pre-filled with mock existing-post
- * values. A page opens this from a post's "Edit" action
- * (components/post-card.php's more-actions menu) instead of a separate
- * edit page.
- *
- * $editPost below is mock data standing in for "the post currently being
- * edited" — a real integration would set it from the clicked post before
- * this file renders instead of hardcoding one example. Frontend-only:
- * assets/js/core/modal.js drives the mock "Save Changes" flow, no real
- * post update happens.
- */
 $editPost = $editPost ?? [
     'title' => 'Need Help Understanding Database Normalization',
     'content' => "I get 1NF and 2NF but 3NF stops making sense the moment a table has two candidate keys. Anyone mentoring on this before Thursday?",
@@ -36,7 +23,6 @@ $editPost = $editPost ?? [
               <span class="ms" aria-hidden="true">error</span>Please add a title for your post.
             </div>
           </div>
-
           <div class="ukn-form-group">
             <label for="editPostContent" class="form-label">Post Content <span class="ukn-text-danger" aria-hidden="true">*</span></label>
             <textarea class="form-control ukn-textarea-lg" id="editPostContent" name="content" data-validate="required"><?= htmlspecialchars($editPost['content']) ?></textarea>
@@ -44,7 +30,6 @@ $editPost = $editPost ?? [
               <span class="ms" aria-hidden="true">error</span>Add some content before saving.
             </div>
           </div>
-
           <div class="ukn-form-group">
             <label for="editPostSkillInput" class="form-label">Related Skills <span class="ukn-text-danger" aria-hidden="true">*</span></label>
             <div class="ukn-tag-input" data-skill-picker>
@@ -68,7 +53,6 @@ $editPost = $editPost ?? [
               <span class="ms" aria-hidden="true">error</span>Add at least one related skill.
             </div>
           </div>
-
           <div class="ukn-form-group mb-0">
             <label class="form-label">Attachment (optional)</label>
             <div class="ukn-dropzone">

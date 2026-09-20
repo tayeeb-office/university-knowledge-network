@@ -1,30 +1,6 @@
 <?php
-/**
- * My Posts — main center content only. Routed via index.php?page=my-posts
- * (see index.php's $routes map). The header, left sidebar, contextual
- * right sidebar and footer come from the shell — not from here.
- *
- * Posts reuse components/post-card.php exactly as the Home feed does
- * (default 'feed' variant, isOwner:true so each card's Edit/Delete
- * dropdown renders) — no second post markup. "Create Post" opens the
- * exact same shared modals/create-post-modal.php the header's own
- * "+ Create" button and Home's composer already use; Edit/Delete reuse
- * modals/edit-post-modal.php / modals/delete-confirmation-modal.php via
- * the same contextual assets/js/core/modal.js population every post-card.php
- * usage now relies on (see that file) — editing/deleting Post A then Post
- * B never shows stale data from A.
- *
- * The search + skill filter row matches the approved design's own
- * (docs/ui/'s r.postLists screen); assets/js/pages/community.js drives it
- * client-side against this list's own [data-post-search]/[data-post-skills]
- * attributes — entirely separate from includes/header.php's global search.
- *
- * Frontend-only mock data throughout — no real post persistence, no
- * database, no backend of any kind.
- */
 require_once __DIR__ . '/../../components/post-card.php';
 require_once __DIR__ . '/../../components/empty-state.php';
-
 $myPosts = [
     [
         'id' => 1, 'author' => 'Nabila Rahman', 'initials' => 'NR', 'role' => 'Learner', 'department' => 'Computer Science',
@@ -62,7 +38,6 @@ $myPosts = [
         'tags' => ['MySQL', 'DBMS'], 'score' => 9, 'comments' => 3, 'isOwner' => true,
     ],
 ];
-
 $skillOptions = [];
 foreach ($myPosts as $post) {
     foreach ($post['tags'] as $tag) {
@@ -81,7 +56,6 @@ sort($skillOptions);
     <span class="ms" aria-hidden="true">add</span>Create Post
   </button>
 </div>
-
 <div class="d-flex flex-wrap gap-2 mb-3" data-post-filters="my">
   <div class="ukn-search">
     <span class="ms" aria-hidden="true">search</span>
@@ -95,11 +69,9 @@ sort($skillOptions);
     <?php endforeach; ?>
   </select>
 </div>
-
 <div data-post-list="my">
   <?php foreach ($myPosts as $post): ukn_post_card($post); endforeach; ?>
 </div>
-
 <div<?= $myPosts ? ' hidden' : '' ?> data-post-list-empty>
   <?php ukn_empty_state([
       'icon' => 'forum',

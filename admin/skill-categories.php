@@ -1,42 +1,22 @@
 <?php
-/**
- * Admin Skill Categories Management. Reuses the shared
- * admin/includes/taxonomy-data.php mock dataset — each category's
- * displayed Skill Count is COUNTED from ukn_admin_mock_skills() at
- * render time (never a separately hand-typed number), so it can never
- * drift from what admin/skills.php actually shows for that category.
- *
- * Add/Edit uses one reusable modal (#categoryFormModal); Deactivate/
- * Activate reuses the shared modals/delete-confirmation-modal.php.
- * Deleting a category is deliberately not implemented at all — a
- * category with assigned skills is protected by saying so plainly in
- * the Deactivate confirmation message instead (deactivation is
- * reversible and mock-only; this project does not implement a
- * destructive category Delete per this prompt's own guidance to prefer
- * deactivation).
- */
 require_once __DIR__ . '/includes/taxonomy-data.php';
 require_once __DIR__ . '/../components/empty-state.php';
 require_once __DIR__ . '/../components/stat-card.php';
-
 $adminActiveNav = 'skill-categories';
 $adminPageTitle = 'Skill Categories';
 $adminPageSub = 'Organize skills into clear categories for learners and mentors.';
 $adminPageStyles = ['../assets/css/admin/tables.css', '../assets/css/admin/forms.css'];
 $adminPageScripts = ['../assets/js/admin/skills.js'];
-
 $categories = ukn_admin_mock_categories();
 $skills = ukn_admin_mock_skills();
 $statusLabels = ['active' => 'Active', 'inactive' => 'Inactive'];
 $statusClass = ['active' => 'ukn-status-accent', 'inactive' => 'ukn-status-neutral'];
-
 $skillCounts = array_fill_keys(array_keys($categories), 0);
 foreach ($skills as $skill) {
     if (isset($skillCounts[$skill['categoryId']])) {
         $skillCounts[$skill['categoryId']]++;
     }
 }
-
 require __DIR__ . '/includes/header.php';
 ?>
 <div class="d-flex justify-content-end mb-3">
@@ -52,7 +32,6 @@ require __DIR__ . '/includes/header.php';
   ukn_stat_card(['label' => 'Total Skills', 'value' => (string) count($skills), 'icon' => 'workspaces']);
   ?>
 </div>
-
 <div class="card mb-3">
   <div class="card-body">
     <div class="ukn-admin-filters">
@@ -71,9 +50,7 @@ require __DIR__ . '/includes/header.php';
     </div>
   </div>
 </div>
-
 <p class="ukn-body-sm ukn-text-muted" data-category-result-count role="status"><?= count($categories) ?> categories found</p>
-
 <div class="card">
   <div class="table-responsive">
     <table class="table ukn-admin-table" data-category-table>
@@ -146,7 +123,6 @@ require __DIR__ . '/includes/header.php';
       </tbody>
     </table>
   </div>
-
   <div class="card-body" hidden data-category-empty>
     <?php ukn_empty_state([
         'icon' => 'category',
@@ -157,7 +133,6 @@ require __DIR__ . '/includes/header.php';
     ]); ?>
   </div>
 </div>
-
 <div class="modal fade" id="categoryFormModal" tabindex="-1" aria-labelledby="categoryFormModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
@@ -200,5 +175,4 @@ require __DIR__ . '/includes/header.php';
     </div>
   </div>
 </div>
-
 <?php require __DIR__ . '/includes/footer.php'; ?>

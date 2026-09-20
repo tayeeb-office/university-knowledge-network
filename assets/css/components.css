@@ -1,19 +1,3 @@
-/* ==========================================================================
-   Components — shared UI vocabulary
-   Retheme Bootstrap 5's own components (.btn, .card, .badge, .nav-tabs,
-   .dropdown-menu, .table, .toast, .alert, .spinner-border, .progress) to
-   match the brand, and add the small set of custom pieces Bootstrap has no
-   equivalent for (avatars, vote control, skill/status tags, skeletons).
-   These are generic building blocks — page-specific compositions (the
-   exact Post Card / Mentor Card layouts) are assembled from these in
-   components/*.php, not defined here. The "Reusable card content" section
-   near the end of this file holds the small amount of layout CSS those
-   specific card compositions need beyond what's generic here.
-   ========================================================================== */
-
-/* ---------------------------------------------------------------------
-   Buttons
-   --------------------------------------------------------------------- */
 .btn{
   --bs-btn-border-radius: var(--ukn-radius-md);
   --bs-btn-font-size: .875rem;
@@ -25,9 +9,6 @@
   outline: 2px solid var(--ukn-accent);
   outline-offset: 2px;
 }
-
-/* Orange -> deep orange on hover/active — never inverts to ink (which is
-   white in dark theme, producing an incorrect white hover background). */
 .btn-primary{
   --bs-btn-bg: var(--ukn-accent);
   --bs-btn-border-color: var(--ukn-accent);
@@ -38,7 +19,6 @@
   --bs-btn-active-bg: var(--ukn-accent-strong);
   --bs-btn-active-border-color: var(--ukn-accent-strong);
 }
-
 .btn-secondary{
   --bs-btn-bg: transparent;
   --bs-btn-border-color: var(--ukn-border-strong);
@@ -47,7 +27,6 @@
   --bs-btn-hover-border-color: var(--ukn-ink);
   --bs-btn-hover-color: var(--ukn-bg);
 }
-
 .btn-outline-primary{
   --bs-btn-color: var(--ukn-accent);
   --bs-btn-border-color: var(--ukn-accent);
@@ -55,7 +34,6 @@
   --bs-btn-hover-border-color: var(--ukn-accent);
   --bs-btn-hover-color: var(--ukn-accent-ink);
 }
-
 .btn-outline-secondary{
   --bs-btn-color: var(--ukn-ink);
   --bs-btn-border-color: var(--ukn-border);
@@ -63,9 +41,6 @@
   --bs-btn-hover-border-color: var(--ukn-border-strong);
   --bs-btn-hover-color: var(--ukn-ink);
 }
-
-/* Text-only button that reads as an inline link (Forgot Password?, etc.) —
-   used instead of an <a href="#"> when there is no real destination yet. */
 .btn-link{
   --bs-btn-color: var(--ukn-ink-muted);
   --bs-btn-hover-color: var(--ukn-accent);
@@ -77,7 +52,6 @@
 .btn-link:focus-visible{
   text-decoration: underline;
 }
-
 .btn-danger,
 .btn-outline-danger{
   --bs-btn-color: var(--ukn-danger);
@@ -87,9 +61,6 @@
   --bs-btn-hover-border-color: var(--ukn-danger);
   --bs-btn-hover-color: #fff;
 }
-
-/* Ghost button — icon-only or low-emphasis inline actions (comment,
-   share, more) that only reveal a border on hover/focus. */
 .btn-ghost{
   display: inline-flex;
   align-items: center;
@@ -110,8 +81,6 @@
   background: var(--ukn-accent-soft);
   color: var(--ukn-accent);
 }
-
-/* Square icon-only button (notifications, close, edit, delete...) */
 .btn-icon{
   position: relative;
   display: inline-grid;
@@ -131,15 +100,11 @@
   width: 29px;
   height: 29px;
 }
-
-/* Corner-pinned count pill for an icon button (header notification bell) */
 .ukn-count-pill--corner{
   position: absolute;
   top: -6px;
   right: -6px;
 }
-
-/* Header account/profile trigger — avatar + chevron, auto width */
 .ukn-profile-trigger{
   display: inline-flex;
   align-items: center;
@@ -159,20 +124,15 @@
   font-size: 1rem;
   color: var(--ukn-ink-muted);
 }
-
-/* Uppercase tracked treatment for primary form-submit CTAs */
 .btn-cta{
   letter-spacing: .06em;
   text-transform: uppercase;
 }
-
 .btn.disabled,
 .btn:disabled{
   opacity: .5;
   box-shadow: none;
 }
-
-/* Loading state — pair with a .ukn-spinner and keep the label for context */
 .btn-loading{
   position: relative;
   color: transparent !important;
@@ -195,10 +155,6 @@
   border-color: var(--ukn-border);
   border-top-color: var(--ukn-ink);
 }
-
-/* ---------------------------------------------------------------------
-   Cards
-   --------------------------------------------------------------------- */
 .card{
   --bs-card-bg: var(--ukn-surface);
   --bs-card-border-color: var(--ukn-border);
@@ -214,27 +170,18 @@
 .card-footer{
   border-color: var(--ukn-border) !important;
 }
-
-/* Interactive card (post row, mentor card, skill card...) gets a stronger
-   border on hover instead of a shadow/lift — brand guide section 25. */
 .ukn-card-interactive{
   transition: border-color var(--ukn-transition-fast);
 }
 .ukn-card-interactive:hover{
   border-color: var(--ukn-border-strong) !important;
 }
-
-/* Card with a colored top or left accent mark (stat cards, goal cards) */
 .ukn-card-marked-top{
   border-top: 3px solid var(--ukn-accent);
 }
 .ukn-card-marked-left{
   border-left: 3px solid var(--ukn-accent);
 }
-
-/* ---------------------------------------------------------------------
-   Avatars
-   --------------------------------------------------------------------- */
 .ukn-avatar{
   display: inline-grid;
   place-items: center;
@@ -258,23 +205,15 @@
 .ukn-avatar-sm{ width: 26px; height: 26px; font-size: .6875rem; }
 .ukn-avatar-lg{ width: 44px; height: 44px; font-size: 1rem; }
 .ukn-avatar-xl{ width: 52px; height: 52px; font-size: 1.1875rem; }
-
-/* Muted/outlined variant used in dense list rows */
 .ukn-avatar-muted{
   background: var(--ukn-surface-2);
   color: var(--ukn-ink);
   border: 1px solid var(--ukn-border);
 }
-
-/* ---------------------------------------------------------------------
-   Badges, skill tags & status tags
-   --------------------------------------------------------------------- */
 .badge{
   --bs-badge-border-radius: var(--ukn-radius-sm);
   font-weight: 400;
 }
-
-/* Skill tag — filled accent-soft chip (Python, React, UI/UX Design...) */
 .ukn-tag-skill{
   display: inline-flex;
   align-items: center;
@@ -288,9 +227,7 @@
   line-height: 1.6;
 }
 .ukn-tag-skill .ms{ font-size: .875rem; cursor: pointer; }
-/* Interactive variant — tags rendered as <a> (e.g. post-card.php linking
-   to skill-details) fill solid on hover/focus instead of the default
-   underlined link treatment, so a chip never looks like inline text. */
+
 a.ukn-tag-skill:hover,
 a.ukn-tag-skill:focus-visible{
   background: var(--ukn-accent);
@@ -301,8 +238,6 @@ a.ukn-tag-skill:focus-visible{
   outline: 2px solid var(--ukn-accent);
   outline-offset: 2px;
 }
-
-/* Neutral tag — used for already-applied/removable filters, related tags */
 .ukn-tag-neutral{
   display: inline-flex;
   align-items: center;
@@ -313,9 +248,6 @@ a.ukn-tag-skill:focus-visible{
   border: 1px solid var(--ukn-border);
   border-radius: var(--ukn-radius-sm);
 }
-
-/* Status tag — outlined, color communicates state but is always paired
-   with a text label (never color alone, per brand guide section 5 / 27) */
 .ukn-status{
   display: inline-flex;
   align-items: center;
@@ -334,8 +266,6 @@ a.ukn-tag-skill:focus-visible{
 .ukn-status-danger{ color: var(--ukn-danger); }
 .ukn-status-warning{ color: var(--ukn-warning); }
 .ukn-status-info{ color: var(--ukn-info); }
-
-/* Role chip (Learner / Mentor / Admin) shown next to author names */
 .ukn-role-chip{
   padding: 1px 6px;
   border: 1px solid var(--ukn-border-strong);
@@ -344,8 +274,6 @@ a.ukn-tag-skill:focus-visible{
   letter-spacing: .08em;
   text-transform: uppercase;
 }
-
-/* Notification count pill on icons/nav items */
 .ukn-count-pill{
   display: inline-flex;
   align-items: center;
@@ -360,9 +288,6 @@ a.ukn-tag-skill:focus-visible{
   line-height: 17px;
 }
 
-/* ---------------------------------------------------------------------
-   Vote control (upvote / score / downvote)
-   --------------------------------------------------------------------- */
 .ukn-vote-btn{
   display: grid;
   place-items: center;
@@ -383,8 +308,6 @@ a.ukn-tag-skill:focus-visible{
   min-width: 1.5em;
   text-align: center;
 }
-
-/* Vertical rail variant (feed post left gutter) */
 .ukn-vote-rail{
   display: flex;
   flex-direction: column;
@@ -394,12 +317,6 @@ a.ukn-tag-skill:focus-visible{
   background: var(--ukn-surface-2);
   border-right: 1px solid var(--ukn-border);
 }
-
-/* ---------------------------------------------------------------------
-   Tabs
-   --------------------------------------------------------------------- */
-
-/* Underline tabs — Bootstrap .nav-tabs retheme (Sessions, Search results) */
 .nav-tabs{
   --bs-nav-tabs-border-color: var(--ukn-border-strong);
   --bs-nav-tabs-link-active-bg: var(--ukn-surface);
@@ -419,8 +336,6 @@ a.ukn-tag-skill:focus-visible{
   border-color: var(--ukn-border);
   isolation: isolate;
 }
-
-/* Pill tabs — sort/filter chips (Hot / New / Top, notification filters) */
 .ukn-tabs-pill{
   display: flex;
   align-items: center;
@@ -449,9 +364,6 @@ a.ukn-tag-skill:focus-visible{
   color: var(--ukn-ink);
 }
 
-/* ---------------------------------------------------------------------
-   Dropdowns
-   --------------------------------------------------------------------- */
 .dropdown-menu{
   --bs-dropdown-bg: var(--ukn-surface);
   --bs-dropdown-border-color: var(--ukn-border-strong);
@@ -491,14 +403,9 @@ a.ukn-tag-skill:focus-visible{
 .ukn-dropdown-panel__item:hover{
   background: var(--ukn-surface-2);
 }
-/* Non-scrolling info row inside a panel (e.g. profile dropdown's "Current
-   role" line) that should sit flush against the header/menu above it. */
 .ukn-dropdown-panel__item.ukn-row-between{
   align-items: center;
 }
-
-/* Notification list — capped height so a longer mock list can never grow
-   the dropdown past the viewport (brand guide: dropdown must not overflow). */
 .ukn-dropdown-panel__list{
   max-height: 360px;
   overflow-y: auto;
@@ -512,8 +419,6 @@ a.ukn-tag-skill:focus-visible{
   font-size: .9375rem;
   line-height: 1.35;
 }
-/* Unread state — background tint AND bolder text AND a dot, never color
-   alone (brand guide section 27). */
 .ukn-dropdown-panel__item.is-unread{
   background: var(--ukn-accent-soft);
 }
@@ -528,13 +433,6 @@ a.ukn-tag-skill:focus-visible{
   border-radius: 50%;
   background: var(--ukn-accent);
 }
-
-/* Actionable dropdown-menu rows everywhere in the app (header's View
-   Profile / Dashboard / Switch Role / Theme / Settings / Log out, and
-   any plain Bootstrap dropdown like a post card's Edit/Delete menu) —
-   Bootstrap's own .dropdown-item, retheme via the --bs-dropdown-link-*
-   vars set on .dropdown-menu above, given one consistent icon+label row
-   layout instead of each dropdown reinventing it. */
 .dropdown-item{
   display: flex;
   align-items: center;
@@ -546,16 +444,12 @@ a.ukn-tag-skill:focus-visible{
   font-size: 1.125rem;
   color: var(--ukn-ink-muted);
 }
-/* .ukn-dropdown-panel (header's notification/profile menus) additionally
-   separates rows with a border, since that panel doesn't otherwise use
-   Bootstrap's .dropdown-divider between items. */
 .ukn-dropdown-panel .dropdown-item{
   border-bottom: 1px solid var(--ukn-border);
 }
 .ukn-dropdown-panel .dropdown-item:last-child{
   border-bottom: none;
 }
-
 .ukn-dropdown-panel__footer{
   display: block;
   width: 100%;
@@ -570,9 +464,6 @@ a.ukn-tag-skill:focus-visible{
   text-align: center;
 }
 
-/* ---------------------------------------------------------------------
-   Tables
-   --------------------------------------------------------------------- */
 .table{
   --bs-table-bg: var(--ukn-surface);
   --bs-table-color: var(--ukn-ink);
@@ -600,10 +491,6 @@ a.ukn-tag-skill:focus-visible{
   text-align: right;
   font-variant-numeric: tabular-nums;
 }
-
-/* ---------------------------------------------------------------------
-   Alerts (inline error/success/info panels — distinct from full toasts)
-   --------------------------------------------------------------------- */
 .alert{
   --bs-alert-border-radius: var(--ukn-radius-lg);
   --bs-alert-padding-x: 15px;
@@ -614,38 +501,30 @@ a.ukn-tag-skill:focus-visible{
   align-items: flex-start;
 }
 .alert .ms{ font-size: 1.375rem; margin-top: 1px; }
-
 .alert-success{
   --bs-alert-bg: var(--ukn-surface);
   --bs-alert-border-color: var(--ukn-border) var(--ukn-border) var(--ukn-border) var(--ukn-success);
   --bs-alert-color: var(--ukn-ink);
 }
 .alert-success .ms{ color: var(--ukn-success); }
-
 .alert-danger{
   --bs-alert-bg: var(--ukn-surface);
   --bs-alert-border-color: var(--ukn-border) var(--ukn-border) var(--ukn-border) var(--ukn-danger);
   --bs-alert-color: var(--ukn-ink);
 }
 .alert-danger .ms{ color: var(--ukn-danger); }
-
 .alert-warning{
   --bs-alert-bg: var(--ukn-surface);
   --bs-alert-border-color: var(--ukn-border) var(--ukn-border) var(--ukn-border) var(--ukn-warning);
   --bs-alert-color: var(--ukn-ink);
 }
 .alert-warning .ms{ color: var(--ukn-warning); }
-
 .alert-info{
   --bs-alert-bg: var(--ukn-surface);
   --bs-alert-border-color: var(--ukn-border) var(--ukn-border) var(--ukn-border) var(--ukn-info);
   --bs-alert-color: var(--ukn-ink);
 }
 .alert-info .ms{ color: var(--ukn-info); }
-
-/* ---------------------------------------------------------------------
-   Toasts
-   --------------------------------------------------------------------- */
 .toast{
   --bs-toast-bg: var(--ukn-surface);
   --bs-toast-color: var(--ukn-ink);
@@ -667,10 +546,6 @@ a.ukn-tag-skill:focus-visible{
 .toast.ukn-toast-info{ border-left-color: var(--ukn-info); }
 .toast.ukn-toast-info .ms{ color: var(--ukn-info); }
 .toast-container{ z-index: var(--ukn-z-toast); }
-
-/* ---------------------------------------------------------------------
-   Progress bars & meters
-   --------------------------------------------------------------------- */
 .progress{
   --bs-progress-height: 7px;
   --bs-progress-bg: var(--ukn-surface-2);
@@ -679,9 +554,6 @@ a.ukn-tag-skill:focus-visible{
   border: 1px solid var(--ukn-border);
 }
 
-/* ---------------------------------------------------------------------
-   Loading states — skeletons & spinner
-   --------------------------------------------------------------------- */
 .ukn-skeleton-line{
   height: 11px;
   background: var(--ukn-surface-2);
@@ -704,7 +576,6 @@ a.ukn-tag-skill:focus-visible{
 .ukn-skeleton-line--lead{ height: 11px; width: 34%; }
 .ukn-skeleton-line--wide{ width: 94%; }
 .ukn-skeleton-line--medium{ width: 78%; }
-
 .ukn-spinner{
   display: inline-block;
   width: 14px;
@@ -722,7 +593,6 @@ a.ukn-tag-skill:focus-visible{
   font-size: .8125rem;
   color: var(--ukn-ink-muted);
 }
-
 .spinner-border{
   --bs-spinner-border-width: 2px;
 }
@@ -737,10 +607,6 @@ a.ukn-tag-skill:focus-visible{
 @keyframes ukn-shimmer{
   100%{ transform: translateX(100%); }
 }
-
-/* ---------------------------------------------------------------------
-   Empty / error / success states
-   --------------------------------------------------------------------- */
 .ukn-state{
   text-align: center;
   padding: var(--ukn-space-7) var(--ukn-space-5);
@@ -759,13 +625,10 @@ a.ukn-tag-skill:focus-visible{
   margin: 0 0 var(--ukn-space-3);
 }
 
-/* Dashed variant for "nothing saved yet" style empty states */
 .ukn-state--dashed{
   border: 1px dashed var(--ukn-border-strong);
   border-radius: var(--ukn-radius-lg);
 }
-
-/* Inline error state — left accent border, icon + message + retry */
 .ukn-state-inline{
   display: flex;
   gap: var(--ukn-space-3);
@@ -780,12 +643,6 @@ a.ukn-tag-skill:focus-visible{
 .ukn-state-inline .ms{ font-size: 1.375rem; }
 .ukn-state-inline.is-success .ms{ color: var(--ukn-success); }
 .ukn-state-inline:not(.is-success) .ms{ color: var(--ukn-danger); }
-
-/* ---------------------------------------------------------------------
-   Sidebar module — right sidebar's contextual blocks (Top Skills, Top
-   Mentors, Trending Discussions...). Also doubles as the compact card used
-   when these modules reflow under the feed on tablet widths.
-   --------------------------------------------------------------------- */
 .ukn-shell-module{
   background: var(--ukn-surface);
   border: 1px solid var(--ukn-border);
@@ -831,10 +688,6 @@ a.ukn-tag-skill:focus-visible{
   text-transform: uppercase;
   text-align: left;
 }
-
-/* link-list module rows (includes/right-sidebar.php) — the whole row is a
-   real <a>, so reset the default link color/underline and give it the
-   same subtle hover the rest of the app's rows use. */
 a.ukn-shell-module__item{
   color: inherit;
   text-decoration: none;
@@ -843,8 +696,6 @@ a.ukn-shell-module__item:hover{
   background: var(--ukn-surface-2);
   color: var(--ukn-accent);
 }
-
-/* mini-session module's compact date badge (includes/right-sidebar.php) */
 .ukn-shell-module__session-date{
   flex: none;
   width: 40px;
@@ -852,10 +703,6 @@ a.ukn-shell-module__item:hover{
   padding-right: var(--ukn-space-2);
   border-right: 1px solid var(--ukn-border);
 }
-
-/* ---------------------------------------------------------------------
-   Tooltip-style label (lightweight, non-Bootstrap-JS inline hint chip)
-   --------------------------------------------------------------------- */
 .ukn-chip-label{
   display: inline-block;
   font-size: .78125rem;
@@ -864,31 +711,17 @@ a.ukn-shell-module__item:hover{
   color: var(--ukn-bg);
   border-radius: var(--ukn-radius-md);
 }
-
-/* ---------------------------------------------------------------------
-   Offcanvas — mobile navigation shell (includes/mobile-nav.php)
-   --------------------------------------------------------------------- */
 .offcanvas{
   --bs-offcanvas-width: 300px;
   --bs-offcanvas-bg: var(--ukn-bg);
   --bs-offcanvas-color: var(--ukn-ink);
   --bs-offcanvas-border-color: var(--ukn-border);
 }
-/* gap guarantees a minimum ~16px between the user-info block and the
-   close button — Bootstrap's own justify-content:space-between on
-   .offcanvas-header only distributes *leftover* space, which shrank to
-   almost nothing once the name/role text got long enough, letting the
-   close button crowd right up against it. */
 .ukn-mobile-nav .offcanvas-header{
   padding: var(--ukn-space-4);
   border-bottom: 1px solid var(--ukn-border);
   gap: var(--ukn-space-4);
 }
-
-/* User avatar + name/role block is the side that yields: it grows to
-   fill the header but can also shrink/truncate below its content width,
-   so the close button never gets squeezed no matter how long the name
-   or role text is. */
 .ukn-mobile-nav .offcanvas-header .ukn-cluster{
   flex: 1 1 auto;
   min-width: 0;
@@ -902,21 +735,12 @@ a.ukn-shell-module__item:hover{
   white-space: nowrap;
 }
 
-/* Close button keeps its full 34px size (flex-shrink defaults to 1 on
-   every flex item, which would otherwise let it get compressed) and
-   stays pinned to the header's right edge. */
 .ukn-mobile-nav .offcanvas-header .btn-icon{
   flex: 0 0 auto;
 }
-
 .ukn-mobile-nav .offcanvas-body{
   padding: var(--ukn-space-4) var(--ukn-space-3);
 }
-
-/* ---------------------------------------------------------------------
-   Modals — retheme Bootstrap's .modal so it follows light/dark instead
-   of always rendering a hardcoded white surface (modals/*.php).
-   --------------------------------------------------------------------- */
 .modal{
   --bs-modal-bg: var(--ukn-surface);
   --bs-modal-color: var(--ukn-ink);
@@ -925,12 +749,6 @@ a.ukn-shell-module__item:hover{
   --bs-modal-header-border-color: var(--ukn-border);
   --bs-modal-footer-border-color: var(--ukn-border);
 }
-/* Shared modal header standard (every modals/*.php file) — Bootstrap's
-   default .modal-header is already flex + justify-content: space-between,
-   but that only distributes *leftover* space; it guarantees no minimum
-   gap between the title and the close button. Originally fixed just for
-   #roleSwitchModal, now generalized as the one standard every modal
-   uses, so a new modal never has to rediscover this. */
 .modal-header{
   display: flex;
   align-items: center;
@@ -946,10 +764,6 @@ a.ukn-shell-module__item:hover{
   flex: 0 0 auto;
 }
 
-/* Role-switch modal's two choice cards (modals/role-switch-modal.php) —
-   picking one applies immediately (assets/js/core/role-switch.js), so
-   these act as the modal's "confirm" step rather than opening onto a
-   separate confirm button. */
 .ukn-role-choice-grid{
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -987,17 +801,6 @@ a.ukn-shell-module__item:hover{
   color: var(--ukn-ink-muted);
   line-height: 1.4;
 }
-
-/* ---------------------------------------------------------------------
-   Reusable card content — layout CSS for components/*.php.
-   Each component composes these on top of the generic pieces above
-   (.card, .ukn-avatar, .ukn-tag-skill, .ukn-status, .ukn-vote-rail, .btn,
-   .progress, .ukn-stars, .ukn-dot) rather than duplicating them.
-   --------------------------------------------------------------------- */
-
-/* Post card (components/post-card.php) — vote rail flush left, body
-   flex:1. .card defaults to a column flex already; this variant turns it
-   into a row without touching the shared .card rule other cards rely on. */
 .ukn-post-card{
   display: flex;
   flex-direction: row;
@@ -1030,9 +833,6 @@ a.ukn-shell-module__item:hover{
 .ukn-post-card__title a:hover{
   color: var(--ukn-accent);
 }
-
-/* Person summary card — shared shape for mentor-card.php and
-   learner-card.php (avatar + name/role row + a 3-up stat strip). */
 .ukn-person-card__name{
   margin: 0;
   font-size: 1.0625rem;
@@ -1053,13 +853,9 @@ a.ukn-shell-module__item:hover{
   border-bottom: 1px solid var(--ukn-border);
   margin: var(--ukn-space-3) 0;
 }
-/* Learner card only shows two stats (Points, Sessions) — no match/rating
-   column, so it uses a 2-up strip instead of the mentor card's 3-up one. */
 .ukn-person-card__stats--2up{
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
-
-/* Skill card (components/skill-card.php) */
 .ukn-skill-card{
   display: block;
   width: 100%;
@@ -1083,10 +879,6 @@ a.ukn-shell-module__item:hover{
   font-size: .84375rem;
   color: var(--ukn-ink-muted);
 }
-
-/* Session card (components/session-card.php) — compact date badge,
-   sized for a full-width card rather than the smaller sidebar version
-   (.ukn-shell-module__session-date). */
 .ukn-session-card{
   display: flex;
   align-items: center;
@@ -1121,8 +913,6 @@ a.ukn-shell-module__item:hover{
   flex-wrap: wrap;
   flex: none;
 }
-
-/* Point transaction row (components/point-transaction.php) */
 .ukn-transaction-row{
   display: flex;
   align-items: center;
@@ -1138,8 +928,6 @@ a.ukn-shell-module__item:hover{
   font-weight: 700;
   font-size: .9375rem;
 }
-
-/* Rating item (components/rating-item.php) */
 .ukn-rating-item__breakdown{
   display: flex;
   align-items: center;
@@ -1149,8 +937,6 @@ a.ukn-shell-module__item:hover{
   color: var(--ukn-ink-muted);
   margin-bottom: 4px;
 }
-
-/* Leaderboard row (components/leaderboard-row.php) */
 .ukn-leaderboard-row{
   display: flex;
   align-items: center;
@@ -1169,23 +955,14 @@ a.ukn-shell-module__item:hover{
   font-size: 1rem;
   color: var(--ukn-ink-muted);
 }
-/* Top 3 get a stronger border + colored rank, not a redesign — same
-   card, just a visual weight bump (brand guide: restrained, not flashy). */
 .ukn-leaderboard-row--top1{ border-color: var(--ukn-accent); border-width: 2px; }
 .ukn-leaderboard-row--top1 .ukn-leaderboard-row__rank{ color: var(--ukn-accent); }
 .ukn-leaderboard-row--top2{ border-color: var(--ukn-ink-muted); border-width: 2px; }
 .ukn-leaderboard-row--top2 .ukn-leaderboard-row__rank{ color: var(--ukn-ink); }
 .ukn-leaderboard-row--top3{ border-color: var(--ukn-warning); border-width: 2px; }
 .ukn-leaderboard-row--top3 .ukn-leaderboard-row__rank{ color: var(--ukn-warning); }
-/* Current-user row — a subtle tint only (same idea as .is-unread's
-   accent-soft background elsewhere); the "You" status pill next to the
-   name is the real, text-based cue, this is just a visual assist. */
 .ukn-leaderboard-row--you{ background: var(--ukn-accent-soft); }
 
-/* Leaderboard row's 'podium' variant — same component/function, a
-   vertical centered card instead of a horizontal row, for the Top 3
-   section (components/leaderboard-row.php). Reuses the same
-   --top1/--top2/--top3/--you modifier classes as the row variant. */
 .ukn-leaderboard-podium-card{
   background: var(--ukn-surface);
   border: 1px solid var(--ukn-border);
@@ -1199,12 +976,6 @@ a.ukn-shell-module__item:hover{
 .ukn-leaderboard-podium-card.ukn-leaderboard-row--you{ background: var(--ukn-accent-soft); }
 .ukn-leaderboard-podium-card__place{ margin-bottom: var(--ukn-space-2); }
 .ukn-leaderboard-podium-card__points{ font-size: 1.5rem; font-weight: 700; }
-
-/* Search result item (components/search-result-item.php) — the row itself
-   is a plain div (its title is the only real link) since a Search result
-   can also carry its own interactive action button (Request Session / Add
-   to Learning-Teaching / Follow), and a <button> nested inside an <a> is
-   invalid, ambiguous-click markup. */
 .ukn-search-result-item{
   display: flex;
   align-items: center;
@@ -1227,11 +998,6 @@ a.ukn-shell-module__item:hover{
   flex: 1;
   min-width: 0;
 }
-
-/* Delete Confirmation modal's warning icon (modals/delete-confirmation-modal.php)
-   — moderately larger than the default .ms (20px) to read as a genuine
-   destructive-action confirmation without being an oversized warning
-   design. */
 .ukn-delete-icon{
   font-size: 1.75rem;
 }

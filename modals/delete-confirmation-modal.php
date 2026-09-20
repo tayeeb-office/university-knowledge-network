@@ -1,27 +1,4 @@
 <?php
-/**
- * Delete Confirmation modal — ONE reusable modal for every destructive
- * confirmation (Delete Post, Delete Comment, Remove Learning Goal,
- * Cancel a session, ...), rather than a separate modal per entity type.
- * Included once from includes/footer.php.
- *
- * Any trigger button opens it the normal Bootstrap way and customizes it
- * with data attributes — assets/js/core/modal.js reads these on
- * `show.bs.modal` and fills in the placeholders below:
- *
- *   <button type="button" data-bs-toggle="modal" data-bs-target="#deleteConfirmationModal"
- *           data-delete-title="Delete Post?"
- *           data-delete-message="This action cannot be undone."
- *           data-delete-confirm-label="Delete"
- *           data-success-message="Post deleted.">
- *     Delete
- *   </button>
- *
- * All attributes except data-bs-target are optional — the defaults below
- * ("Delete item?" / "This action cannot be undone.") are shown if a
- * trigger doesn't set them. Frontend-only mock action — clicking the
- * confirm button just shows a toast and closes; nothing is deleted.
- */
 ?>
 <div class="modal fade" id="deleteConfirmationModal" tabindex="-1" aria-labelledby="deleteConfirmationModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered">

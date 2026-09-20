@@ -1,15 +1,3 @@
-/* ==========================================================================
-   Skill Network — page-specific composition. The toolbar search reuses
-   .ukn-search as-is (same icon+input pattern as the Header Search); tabs/
-   buttons reuse .btn-icon/.btn-icon-sm and plain Bootstrap controls. The
-   graph canvas itself has no CSS here — Cytoscape draws directly onto its
-   own <canvas>, styled from assets/js/pages/network.js reading these same
-   CSS custom properties, not from rules in this file.
-   ========================================================================== */
-
-/* Graph (flexible) + Selected Skill panel (fixed width) side by side on
-   desktop, matching docs/ui's r.skillNetwork grid — stacks on narrow
-   screens instead of ever squeezing the graph down to nothing. */
 .ukn-network-layout{
   display: grid;
   grid-template-columns: minmax(0, 1fr) 300px;
@@ -21,12 +9,10 @@
     grid-template-columns: 1fr;
   }
 }
-
 .ukn-network-graph-card{
   padding: 0;
   overflow: hidden;
 }
-
 .ukn-network-toolbar{
   display: flex;
   align-items: center;
@@ -39,9 +25,6 @@
   flex: 1 1 200px;
   min-width: 160px;
 }
-
-/* Graph container — controlled, non-zero, non-absurd height (never
-   collapses to 0, never a multi-screen-tall fixed box). */
 .ukn-network-graph-wrap{
   position: relative;
 }
@@ -60,7 +43,6 @@
     height: 360px;
   }
 }
-
 .ukn-network-legend{
   position: absolute;
   left: var(--ukn-space-3);
@@ -73,10 +55,6 @@
   line-height: 1.9;
   pointer-events: none;
 }
-/* At very small heights the legend overlay would cover too much of an
-   already-shrunk graph; the same legend meaning (skill/current-skill/
-   link strength) is still available via the always-visible semantic
-   skill list below, so hiding it here loses nothing. */
 @media (max-width: 575.98px){
   .ukn-network-legend{
     display: none;
@@ -111,9 +89,6 @@
   border-top-width: 1px;
   border-style: dashed;
 }
-
-/* Selected Skill panel — plain .card otherwise (padded directly since its
-   content sits straight inside the .card, no separate .card-body here). */
 .ukn-network-panel{
   padding: var(--ukn-space-4) var(--ukn-space-3);
 }

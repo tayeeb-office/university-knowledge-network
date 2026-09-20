@@ -1,42 +1,5 @@
 <?php
-/**
- * Post Details — main center content only. Routed via
- * index.php?page=post-details[&id=..] (see index.php's $routes map). The
- * header, left sidebar, contextual right sidebar ($rightSidebarContext =
- * 'post', set by index.php's $sidebarContextByPage map — About Author /
- * Related Skills / Related Discussions, see includes/right-sidebar.php,
- * already built around this exact mock post) and footer come from the
- * shell — not from here.
- *
- * The full post reuses components/post-card.php's 'detail' variant
- * (full, unclamped content; a plain heading instead of a self-link; a
- * same-page #comments anchor instead of a link to this page) — no second
- * "full post" markup. Voting/Save/Edit/Delete are all the exact same
- * generic mechanisms every other post-card.php usage already relies on
- * (assets/js/components/voting.js, save-post.js, assets/js/core/modal.js's
- * contextual Edit/Delete population) — nothing here duplicates them.
- *
- * Comments/replies are plain PHP-rendered markup (there's no dedicated
- * comment component in this project, and comments only ever appear on
- * this one page, so one wouldn't earn its keep) using the exact same
- * structural convention assets/js/components/comments.js's JS-built
- * comments/replies use, so new and server-rendered comments behave
- * identically. Comments deliberately have NO voting of their own — only
- * Reply and Report. Post voting is unaffected and still lives on
- * components/post-card.php's own .ukn-vote-rail.
- *
- * $_GET['id'] only ever indexes into the small $posts lookup below — it
- * is never concatenated into a query or file path, so there is no
- * injection/traversal surface. An unrecognized id falls back to id 1 —
- * the one post includes/right-sidebar.php's 'post' context is itself
- * already built around, so that fallback keeps center content and
- * sidebar in agreement.
- *
- * Frontend-only mock data throughout — no real comment/reply/vote/save
- * persistence, no database, no backend of any kind.
- */
 require_once __DIR__ . '/../../components/post-card.php';
-
 $posts = [
     1 => [
         'id' => 1, 'author' => 'Nabila Rahman', 'initials' => 'NR', 'role' => 'Learner', 'department' => 'Computer Science',
@@ -48,7 +11,6 @@ $posts = [
 ];
 $requestedId = isset($_GET['id']) && is_string($_GET['id']) && isset($posts[(int) $_GET['id']]) ? (int) $_GET['id'] : 1;
 $post = $posts[$requestedId];
-
 $comments = [
     [
         'author' => 'Rahim Ahmed', 'initials' => 'RA', 'role' => 'Mentor', 'authorHref' => ukn_route_href('mentor-profile') . '&id=2',
@@ -73,13 +35,10 @@ $comments = [
   <a href="<?= htmlspecialchars(ukn_route_href('home')) ?>" class="ukn-body-sm d-inline-flex align-items-center gap-1 mb-3">
     <span class="ms" aria-hidden="true">arrow_back</span>Back to Community
   </a>
-
   <?php ukn_post_card($post, ['variant' => 'detail']); ?>
-
   <div class="card mb-3" id="comments">
     <div class="card-body">
       <h2 class="ukn-h4 mb-3"><span data-comments-heading-count><?= (int) $post['comments'] ?></span> Comments</h2>
-
       <form data-comment-form novalidate>
         <div class="ukn-cluster align-items-start" data-comment-composer data-current-user-name="<?= htmlspecialchars($currentUser['name'] ?? 'Nabila Rahman') ?>" data-current-user-initials="<?= htmlspecialchars($currentUser['initials'] ?? 'NR') ?>">
           <span class="ukn-avatar flex-shrink-0" aria-hidden="true"><?= htmlspecialchars($currentUser['initials'] ?? 'NR') ?></span>
@@ -97,7 +56,6 @@ $comments = [
       </form>
     </div>
   </div>
-
   <div data-comments-list>
     <?php foreach ($comments as $comment): ?>
       <div data-comment class="mb-2">
@@ -116,7 +74,6 @@ $comments = [
               <button type="button" class="btn-ghost" data-comment-reply-toggle>Reply</button>
               <button type="button" class="btn-ghost" data-comment-report>Report</button>
             </div>
-
             <form data-reply-form hidden class="mt-3" novalidate>
               <label class="ukn-visually-hidden">Reply to <?= htmlspecialchars($comment['author']) ?></label>
               <textarea class="form-control form-control-sm" placeholder="Write a reply..."></textarea>
@@ -130,7 +87,6 @@ $comments = [
             </form>
           </div>
         </div>
-
         <div data-replies-list class="mt-2">
           <?php foreach ($comment['replies'] as $reply): ?>
             <div class="card mt-2 ms-2 ms-md-4" data-reply>

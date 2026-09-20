@@ -1,54 +1,22 @@
-/**
- * Admin moderation — Sessions (Prompt 27), Posts and Comments (Prompt 28),
- * each in its own nested IIFE inside one outer module so a page missing
- * one page's table never touches that section's code at all (page
- * detection), and so none of the three sections' identically-named local
- * variables (table/tbody/searchInput/...) can collide with each other.
- *
- * Hide/Restore/Cancel all reuse the ONE shared
- * modals/delete-confirmation-modal.php + its existing generic
- * [data-delete-confirm] toast/close behavior (assets/js/core/modal.js) —
- * this file only adds the "which row triggered it" pending-reference
- * step, the same pattern admin/users.js (Suspend/Restore) and
- * admin/skills.js (Deactivate/Activate) already use independently on
- * that same shared modal. Each section's own distinct marker attributes
- * (data-session-cancel, data-post-hide/-restore, data-comment-hide/
- * -restore) mean none of these listeners ever interfere with each other,
- * and in practice only one of the three sections' code ever runs per
- * page anyway (each Admin page loads this one shared file, but only the
- * table matching that page actually exists in the DOM).
- */
 (function () {
   'use strict';
-
   function escapeHtml(value) {
     var div = document.createElement('div');
     div.textContent = value == null ? '' : String(value);
     return div.innerHTML;
   }
-
-  /* =====================================================================
-     Sessions (admin/sessions.php) — unchanged from Prompt 27, just moved
-     into its own nested scope so Posts/Comments below can coexist in the
-     same file without an early `return` in one section skipping another.
-     ===================================================================== */
   (function () {
     var table = document.querySelector('[data-session-table]');
     if (!table) {
       return;
     }
-
     var tbody = table.querySelector('tbody');
-
     function sessionRows() {
       return Array.prototype.slice.call(tbody.querySelectorAll('tr[data-session-row]'));
     }
 
-    /* ---- Cancel (shared delete-confirmation modal) ---- */
-
     var deleteModal = document.getElementById('deleteConfirmationModal');
     var pendingCancelRow = null;
-
     if (deleteModal) {
       deleteModal.addEventListener('show.bs.modal', function (event) {
         var trigger = event.relatedTarget;
@@ -57,14 +25,12 @@
           : null;
       });
     }
-
     document.addEventListener('click', function (event) {
       if (!event.target.closest('[data-delete-confirm]') || !pendingCancelRow) {
         return;
       }
       var row = pendingCancelRow;
       pendingCancelRow = null;
-
       row.dataset.sessionStatus = 'cancelled';
       var badge = row.querySelector('[data-session-status-badge]');
       if (badge) {
@@ -85,7 +51,6 @@
           menu.appendChild(note);
         }
       }
-
       var detailModalEl = document.getElementById('sessionDetailModal');
       if (detailModalEl && detailModalEl.dataset.currentSessionId === row.getAttribute('data-session-id')) {
         var statusEl = detailModalEl.querySelector('[data-session-detail="status"]');
@@ -93,14 +58,10 @@
           statusEl.textContent = 'Cancelled';
         }
       }
-
       if (typeof applySessionsView === 'function') {
         applySessionsView();
       }
     });
-
-    /* ---- Session Details modal (no admin/session-details.php page) ---- */
-
     var detailModal = document.getElementById('sessionDetailModal');
     if (detailModal) {
       detailModal.addEventListener('show.bs.modal', function (event) {
@@ -109,9 +70,7 @@
         if (!row) {
           return;
         }
-
         detailModal.dataset.currentSessionId = row.getAttribute('data-session-id');
-
         var setText = function (key, value) {
           var el = detailModal.querySelector('[data-session-detail="' + key + '"]');
           if (el) {
@@ -126,7 +85,6 @@
         setText('duration', row.getAttribute('data-session-duration'));
         setText('learnerDepartment', row.getAttribute('data-session-learner-department'));
         setText('mentorDepartment', row.getAttribute('data-session-mentor-department'));
-
         var learnerLink = detailModal.querySelector('[data-session-detail-link="learner"]');
         if (learnerLink) {
           learnerLink.textContent = row.getAttribute('data-session-learner-name');
@@ -139,7 +97,6 @@
           mentorLink.href = 'user-details.php?id=' + row.getAttribute('data-session-mentor-id');
           mentorLink.setAttribute('aria-label', 'View ' + row.getAttribute('data-session-mentor-name') + ' in Admin');
         }
-
         var rating = row.getAttribute('data-session-rating');
         var ratingRow = detailModal.querySelector('[data-session-detail-rating-row]');
         if (ratingRow) {
@@ -148,7 +105,6 @@
             setText('rating', rating + ' / 5');
           }
         }
-
         var message = row.getAttribute('data-session-message');
         var messageRow = detailModal.querySelector('[data-session-detail-message-row]');
         if (messageRow) {
@@ -159,9 +115,6 @@
         }
       });
     }
-
-    /* ---- Search / filter / sort / pagination ---- */
-
     var searchInput = document.querySelector('[data-session-search]');
     var statusFilter = document.querySelector('[data-session-filter="status"]');
     var skillFilter = document.querySelector('[data-session-filter="skill"]');
@@ -175,7 +128,6 @@
     var PAGE_SIZE = 10;
     var currentPage = 1;
     var todayIso = new Date().toISOString().slice(0, 10);
-
     function sortRows() {
       var key = sortSelect ? sortSelect.value : 'newest';
       var rows = sessionRows();
@@ -258,18 +210,15 @@
       }
       paginationEl.hidden = total === 0;
     }
-
     window.applySessionsView = function applySessionsView() {
       sortRows();
       var rows = sessionRows();
       var matched = rows.filter(matchesFilters);
       var pageStart = (currentPage - 1) * PAGE_SIZE;
       var visibleSet = new Set(matched.slice(pageStart, pageStart + PAGE_SIZE));
-
       rows.forEach(function (row) {
         row.hidden = !visibleSet.has(row);
       });
-
       if (resultCountEl) {
         resultCountEl.textContent = matched.length + (matched.length === 1 ? ' session found' : ' sessions found');
       }
@@ -279,17 +228,14 @@
       table.closest('.card').querySelector('.table-responsive').hidden = matched.length === 0;
       renderPagination(matched.length);
     };
-
     function resetToFirstPage() {
       currentPage = 1;
       applySessionsView();
     }
-
     if (searchInput) { searchInput.addEventListener('input', resetToFirstPage); }
     [statusFilter, skillFilter, dateFilter, sortSelect].forEach(function (control) {
       if (control) { control.addEventListener('change', resetToFirstPage); }
     });
-
     document.addEventListener('click', function (event) {
       if (event.target.closest('[data-session-clear-filters]')) {
         event.preventDefault();
@@ -310,27 +256,17 @@
 
     applySessionsView();
   })();
-
-  /* =====================================================================
-     Posts (admin/posts.php)
-     ===================================================================== */
   (function () {
     var table = document.querySelector('[data-post-table]');
     if (!table) {
       return;
     }
-
     var tbody = table.querySelector('tbody');
-
     function postRows() {
       return Array.prototype.slice.call(tbody.querySelectorAll('tr[data-post-row]'));
     }
-
-    /* ---- Hide / Restore (shared delete-confirmation modal) ---- */
-
     var deleteModal = document.getElementById('deleteConfirmationModal');
-    var pendingAction = null; // { action: 'hide'|'restore', row }
-
+    var pendingAction = null;
     if (deleteModal) {
       deleteModal.addEventListener('show.bs.modal', function (event) {
         var trigger = event.relatedTarget;
@@ -345,7 +281,6 @@
         }
       });
     }
-
     function setPostStatus(row, status) {
       row.dataset.postStatus = status;
       var badge = row.querySelector('[data-post-status-badge]');
@@ -358,7 +293,6 @@
       var restoreBtn = row.querySelector('[data-post-restore]');
       if (hideBtn) { hideBtn.hidden = status !== 'visible'; }
       if (restoreBtn) { restoreBtn.hidden = status === 'visible'; }
-
       var detailModalEl = document.getElementById('postDetailModal');
       if (detailModalEl && detailModalEl.dataset.currentPostId === row.getAttribute('data-post-id')) {
         var statusEl = detailModalEl.querySelector('[data-post-detail="status"]');
@@ -367,7 +301,6 @@
         }
       }
     }
-
     document.addEventListener('click', function (event) {
       if (!event.target.closest('[data-delete-confirm]') || !pendingAction) {
         return;
@@ -379,9 +312,6 @@
         applyPostsView();
       }
     });
-
-    /* ---- Post Details modal (no admin/post-details.php Admin page) ---- */
-
     var detailModal = document.getElementById('postDetailModal');
     if (detailModal) {
       detailModal.addEventListener('show.bs.modal', function (event) {
@@ -390,7 +320,6 @@
         if (!row) {
           return;
         }
-
         detailModal.dataset.currentPostId = row.getAttribute('data-post-id');
 
         var setText = function (key, value) {
@@ -408,7 +337,6 @@
         setText('comments', row.getAttribute('data-post-comments'));
         var reports = row.getAttribute('data-post-reports') || '0';
         setText('reports', reports === '0' ? '0' : reports + ' reports');
-
         var authorLink = detailModal.querySelector('[data-post-detail-link="author"]');
         if (authorLink) {
           authorLink.textContent = row.getAttribute('data-post-author-name');
@@ -419,7 +347,6 @@
         if (appLink) {
           appLink.href = '../index.php?page=post-details&id=' + row.getAttribute('data-post-public-id');
         }
-
         var tagsWrap = detailModal.querySelector('[data-post-detail-tags]');
         if (tagsWrap) {
           var tags = (row.getAttribute('data-post-tags') || '').split('|').filter(Boolean);
@@ -427,7 +354,6 @@
             return '<span class="ukn-tag-neutral">' + escapeHtml(tag) + '</span>';
           }).join('');
         }
-
         var reasons = (row.getAttribute('data-post-report-reasons') || '').split('|').filter(Boolean);
         var reportsRow = detailModal.querySelector('[data-post-detail-reports-row]');
         if (reportsRow) {
@@ -438,9 +364,6 @@
         }
       });
     }
-
-    /* ---- Search / filter / sort / pagination ---- */
-
     var searchInput = document.querySelector('[data-post-search]');
     var statusFilter = document.querySelector('[data-post-filter="status"]');
     var reportedFilter = document.querySelector('[data-post-filter="reported"]');
@@ -453,7 +376,6 @@
     var paginationPagesEl = document.querySelector('[data-post-pagination-pages]');
     var PAGE_SIZE = 10;
     var currentPage = 1;
-
     function sortRows() {
       var key = sortSelect ? sortSelect.value : 'newest';
       var rows = postRows();
@@ -472,7 +394,6 @@
       });
       sorted.forEach(function (row) { tbody.appendChild(row); });
     }
-
     function matchesFilters(row) {
       var query = searchInput ? searchInput.value.trim().toLowerCase() : '';
       if (query && row.getAttribute('data-post-search').indexOf(query) === -1) {
@@ -492,7 +413,6 @@
       }
       return true;
     }
-
     function renderPagination(total) {
       if (!paginationEl) {
         return;
@@ -529,18 +449,15 @@
       }
       paginationEl.hidden = total === 0;
     }
-
     window.applyPostsView = function applyPostsView() {
       sortRows();
       var rows = postRows();
       var matched = rows.filter(matchesFilters);
       var pageStart = (currentPage - 1) * PAGE_SIZE;
       var visibleSet = new Set(matched.slice(pageStart, pageStart + PAGE_SIZE));
-
       rows.forEach(function (row) {
         row.hidden = !visibleSet.has(row);
       });
-
       if (resultCountEl) {
         resultCountEl.textContent = matched.length + (matched.length === 1 ? ' post found' : ' posts found');
       }
@@ -550,17 +467,14 @@
       table.closest('.card').querySelector('.table-responsive').hidden = matched.length === 0;
       renderPagination(matched.length);
     };
-
     function resetToFirstPage() {
       currentPage = 1;
       applyPostsView();
     }
-
     if (searchInput) { searchInput.addEventListener('input', resetToFirstPage); }
     [statusFilter, reportedFilter, skillFilter, sortSelect].forEach(function (control) {
       if (control) { control.addEventListener('change', resetToFirstPage); }
     });
-
     document.addEventListener('click', function (event) {
       if (event.target.closest('[data-post-clear-filters]')) {
         event.preventDefault();
@@ -582,30 +496,20 @@
         resetToFirstPage();
       }
     });
-
     applyPostsView();
   })();
 
-  /* =====================================================================
-     Comments (admin/comments.php)
-     ===================================================================== */
   (function () {
     var table = document.querySelector('[data-comment-table]');
     if (!table) {
       return;
     }
-
     var tbody = table.querySelector('tbody');
-
     function commentRows() {
       return Array.prototype.slice.call(tbody.querySelectorAll('tr[data-comment-row]'));
     }
-
-    /* ---- Hide / Restore (shared delete-confirmation modal) ---- */
-
     var deleteModal = document.getElementById('deleteConfirmationModal');
     var pendingAction = null;
-
     if (deleteModal) {
       deleteModal.addEventListener('show.bs.modal', function (event) {
         var trigger = event.relatedTarget;
@@ -620,7 +524,6 @@
         }
       });
     }
-
     function setCommentStatus(row, status) {
       row.dataset.commentStatus = status;
       var badge = row.querySelector('[data-comment-status-badge]');
@@ -633,7 +536,6 @@
       var restoreBtn = row.querySelector('[data-comment-restore]');
       if (hideBtn) { hideBtn.hidden = status !== 'visible'; }
       if (restoreBtn) { restoreBtn.hidden = status === 'visible'; }
-
       var detailModalEl = document.getElementById('commentDetailModal');
       if (detailModalEl && detailModalEl.dataset.currentCommentId === row.getAttribute('data-comment-id')) {
         var statusEl = detailModalEl.querySelector('[data-comment-detail="status"]');
@@ -642,7 +544,6 @@
         }
       }
     }
-
     document.addEventListener('click', function (event) {
       if (!event.target.closest('[data-delete-confirm]') || !pendingAction) {
         return;
@@ -654,9 +555,6 @@
         applyCommentsView();
       }
     });
-
-    /* ---- Comment Details modal (no admin/comment-details.php page) ---- */
-
     var detailModal = document.getElementById('commentDetailModal');
     if (detailModal) {
       detailModal.addEventListener('show.bs.modal', function (event) {
@@ -665,9 +563,7 @@
         if (!row) {
           return;
         }
-
         detailModal.dataset.currentCommentId = row.getAttribute('data-comment-id');
-
         var setText = function (key, value) {
           var el = detailModal.querySelector('[data-comment-detail="' + key + '"]');
           if (el) {
@@ -682,7 +578,6 @@
         setText('replies', row.getAttribute('data-comment-replies'));
         var reports = row.getAttribute('data-comment-reports') || '0';
         setText('reports', reports === '0' ? '0' : reports + ' reports');
-
         var authorLink = detailModal.querySelector('[data-comment-detail-link="author"]');
         if (authorLink) {
           authorLink.textContent = row.getAttribute('data-comment-author-name');
@@ -693,7 +588,6 @@
         if (appLink) {
           appLink.href = '../index.php?page=post-details&id=' + row.getAttribute('data-comment-post-id');
         }
-
         var parentId = row.getAttribute('data-comment-parent-id');
         var parentRow = detailModal.querySelector('[data-comment-detail-parent-row]');
         if (parentRow) {
@@ -703,7 +597,6 @@
             setText('parentText', row.getAttribute('data-comment-parent-text'));
           }
         }
-
         var reasons = (row.getAttribute('data-comment-report-reasons') || '').split('|').filter(Boolean);
         var reportsRow = detailModal.querySelector('[data-comment-detail-reports-row]');
         if (reportsRow) {
@@ -714,9 +607,6 @@
         }
       });
     }
-
-    /* ---- Search / filter / sort / pagination ---- */
-
     var searchInput = document.querySelector('[data-comment-search]');
     var statusFilter = document.querySelector('[data-comment-filter="status"]');
     var reportedFilter = document.querySelector('[data-comment-filter="reported"]');
@@ -729,7 +619,6 @@
     var paginationPagesEl = document.querySelector('[data-comment-pagination-pages]');
     var PAGE_SIZE = 10;
     var currentPage = 1;
-
     function sortRows() {
       var key = sortSelect ? sortSelect.value : 'newest';
       var rows = commentRows();
@@ -746,7 +635,6 @@
       });
       sorted.forEach(function (row) { tbody.appendChild(row); });
     }
-
     function matchesFilters(row) {
       var query = searchInput ? searchInput.value.trim().toLowerCase() : '';
       if (query && row.getAttribute('data-comment-search').indexOf(query) === -1) {
@@ -763,7 +651,6 @@
       }
       return true;
     }
-
     function renderPagination(total) {
       if (!paginationEl) {
         return;
@@ -800,18 +687,15 @@
       }
       paginationEl.hidden = total === 0;
     }
-
     window.applyCommentsView = function applyCommentsView() {
       sortRows();
       var rows = commentRows();
       var matched = rows.filter(matchesFilters);
       var pageStart = (currentPage - 1) * PAGE_SIZE;
       var visibleSet = new Set(matched.slice(pageStart, pageStart + PAGE_SIZE));
-
       rows.forEach(function (row) {
         row.hidden = !visibleSet.has(row);
       });
-
       if (resultCountEl) {
         resultCountEl.textContent = matched.length + (matched.length === 1 ? ' comment found' : ' comments found');
       }
@@ -821,17 +705,14 @@
       table.closest('.card').querySelector('.table-responsive').hidden = matched.length === 0;
       renderPagination(matched.length);
     };
-
     function resetToFirstPage() {
       currentPage = 1;
       applyCommentsView();
     }
-
     if (searchInput) { searchInput.addEventListener('input', resetToFirstPage); }
     [statusFilter, reportedFilter, typeFilter, sortSelect].forEach(function (control) {
       if (control) { control.addEventListener('change', resetToFirstPage); }
     });
-
     document.addEventListener('click', function (event) {
       if (event.target.closest('[data-comment-clear-filters]')) {
         event.preventDefault();

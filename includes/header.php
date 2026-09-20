@@ -1,45 +1,13 @@
 <?php
-/**
- * Global application shell — top header + shell opener.
- *
- * Renders the sticky top header, then opens the 3-column
- * ".ukn-shell" grid, includes the role-aware left sidebar, and opens
- * <main class="ukn-main"> for the page's own content. The shell and
- * <main> are closed by includes/footer.php, which also renders the
- * contextual right sidebar — this keeps the full shell out of every
- * individual page file.
- *
- * Usage (from any pages/**\/*.php file):
- *   <?php
- *   $activeNav = 'find-mentors';   // highlights the matching nav item
- *   $showRightSidebar = true;      // false on Settings/Notifications/etc.
- *   include __DIR__ . '/../../includes/header.php';
- *   ?>
- *   ...page-specific main content...
- *   <?php include __DIR__ . '/../../includes/footer.php'; ?>
- *
- * $currentUser / $notificationCount are mock frontend state — replace with
- * real session data once authentication exists. Leave them unset to get
- * the logged-in learner defaults below, or set $currentUser['loggedIn'] to
- * false to preview the visitor header (Log in / Register only).
- */
 $currentUser = $currentUser ?? [
     'loggedIn'   => true,
-    'role'       => 'learner',   // 'visitor' | 'learner' | 'mentor'
+    'role'       => 'learner',
     'dualRole'   => true,
     'activeRole' => 'learner',
     'name'       => 'Nabila Rahman',
     'initials'   => 'NR',
     'meta'       => 'Learner · Computer Science',
 ];
-
-/**
- * Mock notifications — the single source of truth for both the bell badge
- * count below and includes/notification-dropdown.php (included further
- * down, so it already sees this same $notifications variable). A page can
- * still override just $notificationCount, or supply its own $notifications
- * array, before including this file.
- */
 $notifications = $notifications ?? [
     ['icon' => 'event_available', 'text' => 'Rahim Ahmed accepted your Python session request.', 'time' => '2 min ago', 'kind' => 'Session', 'unread' => true],
     ['icon' => 'chat_bubble', 'text' => 'Sara Khan replied to your discussion.', 'time' => '10 min ago', 'kind' => 'Community', 'unread' => true],
@@ -60,14 +28,12 @@ $showRightSidebar = $showRightSidebar ?? true;
   >
     <span class="ms" aria-hidden="true">menu</span>
   </button>
-
   <a href="index.php?page=home" class="ukn-header__brand">
     <span class="ukn-header__title">
       <strong>University</strong>
       <span>Knowledge Network</span>
     </span>
   </a>
-
   <form class="ukn-header__search ukn-search ukn-search--header" role="search" action="index.php" method="get">
     <input type="hidden" name="page" value="search">
     <span class="ms" aria-hidden="true">search</span>
@@ -81,7 +47,6 @@ $showRightSidebar = $showRightSidebar ?? true;
       value="<?= ($page ?? '') === 'search' ? htmlspecialchars(trim((string) ($_GET['q'] ?? ''))) : '' ?>"
     >
   </form>
-
   <div class="ukn-header__actions">
     <?php if (!$currentUser['loggedIn']): ?>
       <a href="index.php?page=login" class="btn btn-outline-secondary btn-sm">Log in</a>
@@ -95,7 +60,6 @@ $showRightSidebar = $showRightSidebar ?? true;
       >
         <span class="ms" aria-hidden="true">add</span><span class="d-none d-sm-inline">Create</span>
       </button>
-
       <div class="dropdown">
         <button
           type="button"
@@ -115,7 +79,6 @@ $showRightSidebar = $showRightSidebar ?? true;
           <?php include __DIR__ . '/notification-dropdown.php'; ?>
         </div>
       </div>
-
       <div class="dropdown">
         <button
           type="button"
@@ -136,8 +99,6 @@ $showRightSidebar = $showRightSidebar ?? true;
     <?php endif; ?>
   </div>
 </header>
-
 <div class="ukn-shell<?= $showRightSidebar ? '' : ' ukn-shell--no-right-sidebar' ?>">
   <?php include __DIR__ . '/left-sidebar.php'; ?>
-
-  <main class="ukn-main"><!-- closed in includes/footer.php -->
+  <main class="ukn-main">

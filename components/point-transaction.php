@@ -1,24 +1,4 @@
 <?php
-/**
- * Point transaction row — reusable points-history line item.
- * Used by: Points (transaction history list), Profile summaries.
- *
- * Usage:
- *   require_once __DIR__ . '/../components/point-transaction.php';
- *   foreach ($transactions as $tx) { ukn_point_transaction($tx); }
- *
- * $transaction shape:
- *   [
- *     'amount'  => 10,                       // signed int; negative renders in danger color
- *     'type'    => 'Learning Points',
- *     'reason'  => 'Completed Python Session',
- *     'session' => null,                     // optional related-session label, e.g. 'S-1039'
- *     'date'    => 'Sep 12',
- *     'icon'    => 'event_available',
- *   ]
- *
- * Display only — points are never calculated or persisted here.
- */
 if (!function_exists('ukn_point_transaction')) {
     function ukn_point_transaction(array $transaction): void
     {

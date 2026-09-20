@@ -1,17 +1,3 @@
-/* ==========================================================================
-   Admin tables — shared by every admin page that lists records (Dashboard's
-   Recent Users/Sessions now; Users/Departments/Skill Categories/Skills/
-   Sessions/Posts/Comments/Reports later). Real semantic <table>/<thead>/
-   <tbody>/<th> markup throughout (screen readers get real table semantics
-   at every width) — below 768px it visually reflows into stacked rows
-   using each cell's own data-label, rather than hiding columns.
-
-   EXCEPTION: a table marked .ukn-admin-table--scroll opts OUT of that
-   reflow and keeps real columns at every width, scrolling sideways inside
-   its own .table-responsive wrapper instead. See the opt-out block at the
-   end of the mobile media query below for which tables use it and why.
-   ========================================================================== */
-
 .ukn-admin-table{
   --bs-table-bg: transparent;
   margin-bottom: 0;
@@ -30,7 +16,6 @@
   border-bottom-color: var(--ukn-border);
   vertical-align: middle;
 }
-
 @media (max-width: 767.98px){
   .ukn-admin-table thead{
     position: absolute;
@@ -69,33 +54,9 @@
     color: var(--ukn-ink-muted);
     text-align: left;
   }
-  /* The Actions cell's own controls (View button + kebab menu) already
-     read fine as a right-aligned pair without a redundant "Actions"
-     label repeated on every single row. */
   .ukn-admin-table td[data-label="Actions"]::before{
     display: none;
   }
-
-  /* ---- OPT-OUT: keep real columns, scroll sideways instead ----------------
-     Used by the Admin Dashboard's "Recent Users" and "Recent & Upcoming
-     Sessions" tables (admin/dashboard.php). The stacked reflow above pushed
-     every value hard to the right, clipped the longer ones, and made those
-     two cards extremely tall. They keep their columns and scroll inside the
-     .table-responsive wrapper they already had.
-
-     Opt-IN by design: this needs the extra modifier class, so Admin Users /
-     Skills / Sessions / Posts / Comments / Reports are untouched and keep
-     the stacked behaviour they already have.
-
-     Each selector below reverses exactly one rule from the block above, at
-     one class higher specificity (.ukn-admin-table.ukn-admin-table--scroll)
-     so it wins regardless of source order.
-
-     min-width is measured, not guessed: at max-content these tables need
-     652px (Recent Users, 6 columns) and 522px (Recent Sessions, 5 columns).
-     560px is a floor below that; `white-space: nowrap` on the cells is what
-     lets each table size itself to exactly the width its own columns need,
-     so neither is made wider than it has to be. */
   .ukn-admin-table.ukn-admin-table--scroll{
     display: table;
     width: 100%;
@@ -126,20 +87,13 @@
     white-space: nowrap;
     border-bottom: 1px solid var(--ukn-border);
   }
-  /* the stacked layout's "LABEL  value" pseudo-element has no place here */
   .ukn-admin-table.ukn-admin-table--scroll td::before{
     content: none;
   }
 }
-
-/* Momentum scrolling for the opt-out tables' wrapper on touch devices.
-   Bootstrap 5's .table-responsive supplies overflow-x: auto; this only adds
-   the legacy iOS momentum hint alongside it. */
 .ukn-admin-scroller{
   -webkit-overflow-scrolling: touch;
 }
-
-/* Client-side pagination footer under a paginated admin table/list. */
 .ukn-admin-pagination{
   display: flex;
   align-items: center;

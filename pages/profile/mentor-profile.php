@@ -1,33 +1,6 @@
 <?php
-/**
- * Mentor Profile — main center content only. Public view of a mentor,
- * where session requests originate. Routed via
- * index.php?page=mentor-profile[&id=..] (see index.php's $routes map).
- * The header, left sidebar, contextual right sidebar
- * ($rightSidebarContext = 'profile', set by index.php's
- * $sidebarContextByPage map) and footer come from the shell — not from
- * here.
- *
- * $_GET['id'] only ever indexes into the small $mentors lookup below — it
- * is never concatenated into a query or file path, so there is no
- * injection/traversal surface. An unrecognized id falls back to id 2
- * (Rahim Ahmed), matching the demo URL used elsewhere in this project's
- * routing examples.
- *
- * "Request Session" reuses the one shared modals/session-request-modal.php
- * (included once from includes/footer.php) instead of a second request
- * form: setting $requestMentor here — a plain page-scope variable, still
- * in scope when index.php includes footer.php right after this file —
- * is exactly the hook that modal's own docblock describes for this. No
- * real booking or rating calculation happens anywhere on this page.
- * (No Follow button here — Request Session is this page's one primary
- * action; a second solid-accent button would fight it once
- * assets/js/components/follow.js's shared toggle flips a follow to
- * "Following", per brand guide section 15.)
- */
 require_once __DIR__ . '/../../components/stat-card.php';
 require_once __DIR__ . '/../../components/rating-item.php';
-
 $mentors = [
     2 => [
         'name' => 'Rahim Ahmed', 'initials' => 'RA', 'department' => 'Computer Science', 'year' => '4th Year',
@@ -77,19 +50,12 @@ $mentors = [
         ],
     ],
 ];
-
 $requestedId = isset($_GET['id']) && is_string($_GET['id']) && isset($mentors[(int) $_GET['id']]) ? (int) $_GET['id'] : 2;
 $mentor = $mentors[$requestedId];
-
 $stars = static function (float $value): string {
     $rounded = (int) round($value);
     return str_repeat('★', max(0, min(5, $rounded))) . str_repeat('☆', 5 - max(0, min(5, $rounded)));
 };
-
-/**
- * Sets the shared Session Request modal's context to THIS mentor — see
- * this file's docblock and modals/session-request-modal.php's own.
- */
 $requestMentor = [
     'name' => $mentor['name'], 'initials' => $mentor['initials'], 'department' => $mentor['department'],
     'skill' => $mentor['skills'][0]['name'] ?? '', 'rating' => $mentor['rating'], 'skillOptions' => $mentor['skillOptions'],
@@ -118,7 +84,6 @@ $requestMentor = [
     </div>
   </div>
 </div>
-
 <div class="row g-3 mb-4">
   <?php
   $mentorStats = [
@@ -131,7 +96,6 @@ $requestMentor = [
     <div class="col-6 col-lg-3"><?php ukn_stat_card($stat); ?></div>
   <?php endforeach; ?>
 </div>
-
 <div class="row g-3 mb-4">
   <div class="col-lg-6">
     <div class="card h-100">
@@ -167,7 +131,6 @@ $requestMentor = [
     </div>
   </div>
 </div>
-
 <div class="card mb-4">
   <div class="card-body">
     <div class="d-flex align-items-center justify-content-between mb-3">
@@ -186,7 +149,6 @@ $requestMentor = [
     <?php endforeach; ?>
   </div>
 </div>
-
 <div>
   <div class="d-flex align-items-center justify-content-between mb-3">
     <h2 class="ukn-h4 mb-0">Recent Reviews</h2>

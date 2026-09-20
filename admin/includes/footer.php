@@ -1,19 +1,7 @@
 <?php
-/**
- * Admin shell closer — always paired with admin/includes/header.php.
- * Closes <main>/.ukn-shell, renders the mobile offcanvas nav (reusing
- * the exact #uknMobileNav id and .ukn-nav-link markup convention the
- * user-facing app's includes/mobile-nav.php + assets/js/core/mobile-nav.js
- * already use, so that same close-on-link-click behavior works here with
- * no new JS), the one shared Delete/Confirm modal (reused as-is for every
- * mock destructive-ish Admin confirmation — Suspend/Restore User now,
- * future Admin pages later — instead of a second confirmation framework),
- * and shared + page-specific scripts.
- */
 ?>
-    </main><!-- /.ukn-main -->
-  </div><!-- /.ukn-shell -->
-
+    </main>
+  </div>
   <div class="offcanvas offcanvas-start ukn-mobile-nav" tabindex="-1" id="uknMobileNav" aria-labelledby="uknMobileNavLabel">
     <div class="offcanvas-header">
       <span class="ukn-header__title" id="uknMobileNavLabel">
@@ -41,9 +29,7 @@
       </a>
     </div>
   </div>
-
   <?php include __DIR__ . '/../../modals/delete-confirmation-modal.php'; ?>
-
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <script src="../assets/js/app.js"></script>
   <script src="../assets/js/core/theme.js"></script>

@@ -1,44 +1,22 @@
 <?php
-/**
- * Admin Users Management — the first real content on the Users nav item
- * (admin/dashboard.php's "Manage Users" / "View All Users" already link
- * here). Reuses the shared admin/includes/users-data.php mock dataset so
- * this page and admin/user-details.php can never show two different
- * records for the same id.
- *
- * The 16-row mock table below is a demo sample, NOT the same figure as
- * the summary cards — those intentionally reuse admin/dashboard.php's
- * already-established network-wide totals (1,152 users / 986 Learners /
- * 214 Mentors / 48 Dual-Role) for cross-page consistency, while the
- * interactive table demonstrates search/filter/sort/pagination/suspend-
- * restore against a smaller, honestly-labeled sample. Search, filtering,
- * sorting, pagination and the Suspend/Restore mock state change are all
- * handled client-side by assets/js/admin/users.js against this
- * server-rendered table — no backend search, no real account mutation.
- */
 require_once __DIR__ . '/includes/users-data.php';
 require_once __DIR__ . '/../components/empty-state.php';
 require_once __DIR__ . '/../components/stat-card.php';
-
 $adminActiveNav = 'users';
 $adminPageTitle = 'Users';
 $adminPageSub = 'Manage learners, mentors and account status across the network.';
 $adminPageStyles = ['../assets/css/admin/tables.css', '../assets/css/admin/forms.css'];
 $adminPageScripts = ['../assets/js/admin/users.js'];
-
 $users = ukn_admin_mock_users();
-
 $roleLabels = ['learner' => 'Learner', 'mentor' => 'Mentor', 'dual' => 'Dual Role'];
 $statusLabels = ['active' => 'Active', 'inactive' => 'Inactive', 'suspended' => 'Suspended'];
 $statusClass = ['active' => 'ukn-status-accent', 'inactive' => 'ukn-status-neutral', 'suspended' => 'ukn-status-neutral'];
-
 $departments = [];
 foreach ($users as $u) {
     $departments[$u['department']] = true;
 }
 $departments = array_keys($departments);
 sort($departments);
-
 require __DIR__ . '/includes/header.php';
 ?>
 <div class="ukn-admin-stat-grid mb-4">
@@ -51,7 +29,6 @@ require __DIR__ . '/includes/header.php';
   ukn_stat_card(['label' => 'Suspended', 'value' => '12', 'icon' => 'block']);
   ?>
 </div>
-
 <div class="card mb-3">
   <div class="card-body">
     <div class="ukn-admin-filters">
@@ -60,7 +37,6 @@ require __DIR__ . '/includes/header.php';
         <label for="userSearchInput" class="ukn-visually-hidden">Search users by name, email or university ID</label>
         <input type="search" id="userSearchInput" class="form-control" placeholder="Search users by name, email or university ID…" data-user-search autocomplete="off">
       </div>
-
       <label class="ukn-visually-hidden" for="userRoleFilter">Filter by role</label>
       <select id="userRoleFilter" class="form-select form-select-sm" data-user-filter="role">
         <option value="">All Roles</option>
@@ -68,7 +44,6 @@ require __DIR__ . '/includes/header.php';
         <option value="mentor">Mentor</option>
         <option value="dual">Dual Role</option>
       </select>
-
       <label class="ukn-visually-hidden" for="userDepartmentFilter">Filter by department</label>
       <select id="userDepartmentFilter" class="form-select form-select-sm" data-user-filter="department">
         <option value="">All Departments</option>
@@ -93,12 +68,10 @@ require __DIR__ . '/includes/header.php';
         <option value="name-desc">Name Z–A</option>
         <option value="active">Most Active</option>
       </select>
-
       <button type="button" class="btn btn-outline-secondary btn-sm" data-user-clear-filters>Clear Filters</button>
     </div>
   </div>
 </div>
-
 <p class="ukn-body-sm ukn-text-muted" data-user-result-count role="status"><?= count($users) ?> users found</p>
 
 <div class="card">
@@ -195,7 +168,6 @@ require __DIR__ . '/includes/header.php';
       </tbody>
     </table>
   </div>
-
   <div class="card-body" hidden data-user-empty>
     <?php ukn_empty_state([
         'icon' => 'person_search',
@@ -205,7 +177,6 @@ require __DIR__ . '/includes/header.php';
         'dashed' => true,
     ]); ?>
   </div>
-
   <div class="card-body ukn-admin-pagination" data-user-pagination>
     <span class="ukn-body-sm ukn-text-muted" data-user-pagination-summary></span>
     <div class="d-flex gap-1" data-user-pagination-pages></div>

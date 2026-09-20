@@ -1,27 +1,4 @@
 <?php
-/**
- * Shared Admin mock user dataset — required by BOTH admin/users.php and
- * admin/user-details.php so the two pages can never drift into two
- * different records for the same id (see admin/user-details.php's own
- * docblock for why that matters — the same reasoning that put this
- * behind one function instead of two copy-pasted arrays).
- *
- * Frontend-only mock data. Ids match the convention already established
- * across the user-facing app (Nabila Rahman = 1, Rahim Ahmed = 2).
- * Known characters' points/rating/sessions/department are copied from
- * their already-established pages rather than the numbers this prompt's
- * own examples suggested where those conflicted:
- *   - Imran Chowdhury: 318 Learning Points (learner-profile.php,
- *     already reused by Search/Notifications/Leaderboard), not the 378
- *     this prompt's own text suggested.
- *   - Hasan Mahmud: 365 Mentor Points / 4.7 rating / 52 sessions
- *     (mentor-profile.php, already reused by Leaderboard), not the
- *     445/4.8 this prompt's own text suggested.
- * Ayesha Rahman's Dual-Role split keeps her already-established Mentor
- * side (React, 368 pts/4.7/71 sessions, find-mentors.php) and adds a
- * plausible Learner side (UI/UX Design) that isn't established
- * anywhere else, since no earlier prompt ever gave her one.
- */
 if (!function_exists('ukn_admin_mock_users')) {
     function ukn_admin_mock_users(): array
     {

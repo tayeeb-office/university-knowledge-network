@@ -1,21 +1,4 @@
 <?php
-/**
- * Role-switch confirmation modal — matches the approved design's flow:
- * two role-choice cards with a short description, and picking one performs
- * the switch immediately (no separate "Confirm" button beyond that choice).
- *
- * Opened from includes/profile-dropdown.php and includes/mobile-nav.php
- * via data-bs-target="#roleSwitchModal". Included once, from includes/footer.php,
- * so it only exists in the DOM a single time regardless of how many
- * triggers point at it.
- *
- * assets/js/core/role-switch.js listens for clicks on [data-role-choice]
- * inside this modal: it applies the chosen role (toggling the pre-rendered
- * [data-role] navigation blocks in includes/left-sidebar.php and
- * includes/mobile-nav.php, and the profile dropdown's role text/links),
- * persists it to localStorage, and closes this modal. Frontend-only mock
- * state — no backend authorization.
- */
 ?>
 <div class="modal fade" id="roleSwitchModal" tabindex="-1" aria-labelledby="roleSwitchModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered">

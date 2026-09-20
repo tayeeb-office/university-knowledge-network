@@ -1,53 +1,4 @@
 <?php
-/**
- * Session card — one reusable component for every session/request status.
- * Used by: Sessions, Learner Requests (pending/accepted/rejected), the
- * dashboards' "Upcoming Sessions" lists, Availability's compact preview.
- *
- * Usage:
- *   require_once __DIR__ . '/../components/session-card.php';
- *   foreach ($sessions as $session) { ukn_session_card($session); }
- *
- * $session shape:
- *   [
- *     'id'       => 101,                     // optional — powers data-session-id
- *                                             // and the other data-session-*
- *                                             // reads assets/js/pages/sessions.js
- *                                             // uses to accept/reject/cancel
- *                                             // THIS exact card in place
- *     'counterparty'     => 'Rahim Ahmed',   // the OTHER person (mentor, if viewer is a learner; learner, if viewer is a mentor)
- *     'counterpartyInitials' => 'RA',
- *     'counterpartyHref' => null,             // optional — links the counterparty's
- *                                             // name to their public profile
- *     'skill'    => 'Python',
- *     'day'      => '17', 'month' => 'Sep',
- *     'time'     => 'Wed 6:00pm', 'duration' => '60 min',
- *     'status'   => 'pending' | 'accepted' | 'upcoming' | 'completed' | 'rejected' | 'cancelled',
- *     'message'  => null,                    // request message (pending) OR
- *                                             // cancellation reason (cancelled) —
- *                                             // one generic note field, same as
- *                                             // the approved design
- *     'detailsHref' => 'index.php?page=session-details',
- *     'ratingStatus' => null,                // completed only: null (no rating
- *                                             // UI — e.g. this is the viewer's
- *                                             // own mentor-side session) |
- *                                             // 'unrated' (show Rate Mentor) |
- *                                             // 'rated' (show the given ratingValue)
- *     'ratingValue'  => null,                // e.g. 5.0, shown when ratingStatus is 'rated'
- *   ]
- *
- * Accept/Reject/Cancel/Rate are frontend-only mock actions — no backend,
- * no real session state change. Accept fires immediately
- * (assets/js/pages/sessions.js listens for [data-session-accept]); Reject
- * and Cancel reuse the one shared modals/delete-confirmation-modal.php
- * (assets/js/core/modal.js already populates its title/message from the
- * data-delete-* attributes below — unchanged — while sessions.js reads the
- * data-reject-session / data-cancel-session marker to know which state
- * transition to actually apply once confirmed); Rate Mentor reuses the one
- * shared modals/rating-modal.php via the same data-rating-* +
- * assets/js/core/modal.js contextual-modal pattern already used for
- * Request Session (see components/mentor-card.php).
- */
 if (!function_exists('ukn_session_card')) {
     function ukn_session_card(array $session): void
     {
@@ -57,7 +8,6 @@ if (!function_exists('ukn_session_card')) {
             'status' => 'upcoming', 'message' => null, 'detailsHref' => '#',
             'ratingStatus' => null, 'ratingValue' => null,
         ];
-
         $statusMeta = [
             'pending'   => ['label' => 'Pending',   'class' => 'ukn-status-accent'],
             'accepted'  => ['label' => 'Accepted',  'class' => 'ukn-status-success'],

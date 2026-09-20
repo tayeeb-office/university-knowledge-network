@@ -1,36 +1,9 @@
 <?php
-/**
- * Admin Settings — the final Admin page. Entirely frontend/demo
- * configuration: nothing here reads or writes a database, a config file,
- * or any real system setting. Every field's initial value is just a PHP
- * literal below; Save only updates assets/js/admin/settings.js's own
- * in-memory "last saved" snapshot for that page load (see that file's own
- * docblock) — refreshing the page always returns to the values below.
- * The ONE exception is Appearance, which intentionally does NOT go
- * through Save/Reset at all: it reads/writes the existing global
- * window.UKN.theme singleton (assets/js/core/theme.js) directly and
- * applies immediately, exactly like pages/settings/settings.php's own
- * Appearance section — no second "admin_theme" key, no duplicate theme
- * engine.
- *
- * Local section navigation is plain Bootstrap .nav-tabs/.tab-pane
- * (already retheme'd for Light/Dark in assets/css/components.css and
- * already proven responsive on pages/sessions/sessions.php) driven
- * entirely by bootstrap.bundle.min.js's own data-bs-toggle="tab" — no
- * custom JS needed for switching sections, so this file adds none.
- *
- * Change Password reuses the exact shared modals/change-password-modal.php
- * already built for pages/settings/settings.php — same markup, same "no
- * password value is ever stored anywhere" guarantee — this page just
- * pairs it with its own small submit-validation block, the same way that
- * modal's own docblock already anticipates a second page reusing it.
- */
 $adminActiveNav = 'settings';
 $adminPageTitle = 'Admin Settings';
 $adminPageSub = 'Configure frontend administration preferences for the University Knowledge Network.';
 $adminPageStyles = ['../assets/css/admin/forms.css'];
 $adminPageScripts = ['../assets/js/admin/settings.js'];
-
 function ukn_admin_settings_switch(string $id, string $label, string $help, bool $checked): void
 {
     ?>
@@ -46,7 +19,6 @@ function ukn_admin_settings_switch(string $id, string $label, string $help, bool
     </div>
     <?php
 }
-
 function ukn_admin_settings_display_row(string $label, string $value, string $help = ''): void
 {
     ?>
@@ -59,7 +31,6 @@ function ukn_admin_settings_display_row(string $label, string $value, string $he
     </div>
     <?php
 }
-
 require __DIR__ . '/includes/header.php';
 ?>
 <div class="nav nav-tabs mb-3" role="tablist">
@@ -70,10 +41,8 @@ require __DIR__ . '/includes/header.php';
   <button class="nav-link" id="tabAppearance" data-bs-toggle="tab" data-bs-target="#paneAppearance" type="button" role="tab" aria-controls="paneAppearance" aria-selected="false">Appearance</button>
   <button class="nav-link" id="tabProfile" data-bs-toggle="tab" data-bs-target="#paneProfile" type="button" role="tab" aria-controls="paneProfile" aria-selected="false">Admin Profile</button>
 </div>
-
 <form data-admin-settings-form novalidate>
   <div class="tab-content">
-
     <div class="tab-pane fade show active" id="paneGeneral" role="tabpanel" aria-labelledby="tabGeneral">
       <div class="card mb-3">
         <div class="card-header"><h2 class="ukn-h4 mb-0">General</h2></div>
@@ -101,20 +70,17 @@ require __DIR__ . '/includes/header.php';
           </div>
         </div>
       </div>
-
       <div class="card mb-3">
         <div class="card-body">
           <?php ukn_admin_settings_display_row('Default Language', 'English', 'Interface language for this demo — not yet configurable.'); ?>
         </div>
       </div>
-
       <div class="card">
         <div class="card-body">
           <?php ukn_admin_settings_switch('maintenanceMode', 'Maintenance Mode', 'Demo preference only — does not block access to the application.', false); ?>
         </div>
       </div>
     </div>
-
     <div class="tab-pane fade" id="panePlatform" role="tabpanel" aria-labelledby="tabPlatform">
       <div class="card mb-3">
         <div class="card-header"><h2 class="ukn-h4 mb-0">Feature Availability</h2></div>
@@ -128,7 +94,6 @@ require __DIR__ . '/includes/header.php';
           ?>
         </div>
       </div>
-
       <div class="card">
         <div class="card-header"><h2 class="ukn-h4 mb-0">User Policy</h2></div>
         <div class="card-body">
@@ -149,7 +114,6 @@ require __DIR__ . '/includes/header.php';
         </div>
       </div>
     </div>
-
     <div class="tab-pane fade" id="paneSessions" role="tabpanel" aria-labelledby="tabSessions">
       <div class="card mb-3">
         <div class="card-header"><h2 class="ukn-h4 mb-0">Session Defaults</h2></div>
@@ -190,7 +154,6 @@ require __DIR__ . '/includes/header.php';
           </div>
         </div>
       </div>
-
       <div class="card">
         <div class="card-header"><h2 class="ukn-h4 mb-0">Point Rules</h2></div>
         <div class="card-body">
@@ -203,7 +166,6 @@ require __DIR__ . '/includes/header.php';
         </div>
       </div>
     </div>
-
     <div class="tab-pane fade" id="paneCommunity" role="tabpanel" aria-labelledby="tabCommunity">
       <div class="card mb-3">
         <div class="card-header"><h2 class="ukn-h4 mb-0">Community</h2></div>
@@ -217,7 +179,6 @@ require __DIR__ . '/includes/header.php';
           ?>
         </div>
       </div>
-
       <div class="card">
         <div class="card-header"><h2 class="ukn-h4 mb-0">Moderation</h2></div>
         <div class="card-body">
@@ -235,7 +196,6 @@ require __DIR__ . '/includes/header.php';
         </div>
       </div>
     </div>
-
     <div class="tab-pane fade" id="paneAppearance" role="tabpanel" aria-labelledby="tabAppearance">
       <div class="card">
         <div class="card-header"><h2 class="ukn-h4 mb-0">Appearance</h2></div>
@@ -259,7 +219,6 @@ require __DIR__ . '/includes/header.php';
         </div>
       </div>
     </div>
-
     <div class="tab-pane fade" id="paneProfile" role="tabpanel" aria-labelledby="tabProfile">
       <div class="card mb-3">
         <div class="card-body d-flex align-items-center gap-3 flex-wrap">
@@ -271,7 +230,6 @@ require __DIR__ . '/includes/header.php';
           <button type="button" class="btn btn-outline-secondary btn-sm flex-shrink-0" data-bs-toggle="modal" data-bs-target="#changePasswordModal">Change Password</button>
         </div>
       </div>
-
       <div class="card">
         <div class="card-header"><h2 class="ukn-h4 mb-0">Profile Details</h2></div>
         <div class="card-body">
@@ -295,15 +253,11 @@ require __DIR__ . '/includes/header.php';
         </div>
       </div>
     </div>
-
   </div>
-
   <div class="d-flex gap-2 flex-wrap mt-3" data-admin-settings-save-bar>
     <button type="submit" class="btn btn-primary btn-sm" data-admin-settings-save disabled>Save Changes</button>
     <button type="button" class="btn btn-outline-secondary btn-sm" data-admin-settings-reset disabled>Reset Changes</button>
   </div>
 </form>
-
 <?php require __DIR__ . '/../modals/change-password-modal.php'; ?>
-
 <?php require __DIR__ . '/includes/footer.php'; ?>

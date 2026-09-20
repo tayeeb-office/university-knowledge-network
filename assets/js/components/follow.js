@@ -1,13 +1,5 @@
-/**
- * Generic follow/following toggle for [data-follow-toggle] buttons
- * (components/learner-card.php, and any future mentor-card follow
- * state). Frontend-only mock state — toggles the label and swaps
- * between the primary/outline button treatment; nothing is persisted
- * or sent anywhere, there is no real follow relationship.
- */
 (function () {
   'use strict';
-
   document.addEventListener('click', function (event) {
     var btn = event.target.closest('[data-follow-toggle]');
     if (!btn) {

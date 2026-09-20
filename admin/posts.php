@@ -1,36 +1,18 @@
 <?php
-/**
- * Admin Posts Moderation. Reuses admin/includes/users-data.php for
- * author identity/links, and mirrors the exact already-established
- * public Community mock posts (pages/home.php ids 1-8, pages/community/
- * my-posts.php ids 402-405 — same titles/tags/votes/comments) rather
- * than inventing new numbers for the same content, plus a few
- * genuinely-new records (Ayesha's MySQL-joins post already seeded in
- * pages/search/search-results.php, a reported post, a hidden post).
- *
- * There is no admin/post-details.php — "View" opens one reusable detail
- * modal (#postDetailModal) populated from the clicked row's own data-*
- * attributes, same convention as admin/sessions.php's Session Details
- * modal. Hide/Restore reuse the one shared
- * modals/delete-confirmation-modal.php. No permanent Delete exists.
- */
 require_once __DIR__ . '/includes/users-data.php';
 require_once __DIR__ . '/../components/empty-state.php';
 require_once __DIR__ . '/../components/stat-card.php';
-
 $adminActiveNav = 'posts';
 $adminPageTitle = 'Posts';
 $adminPageSub = 'Review community posts, reported content and visibility status.';
 $adminPageStyles = ['../assets/css/admin/tables.css', '../assets/css/admin/forms.css'];
 $adminPageScripts = ['../assets/js/admin/moderation.js'];
-
 $users = ukn_admin_mock_users();
 function ukn_admin_author(array $users, int $id): array
 {
     $u = $users[$id];
     return ['id' => $id, 'name' => $u['name'], 'department' => $u['department']];
 }
-
 $posts = [
     ['id' => 'UKN-P-0001', 'publicId' => 1, 'title' => 'Need Help Understanding Database Normalization', 'author' => 1, 'tags' => ['DBMS', 'MySQL', 'Database Design'], 'excerpt' => 'I understand 1NF, but I am still confused about the practical difference between 2NF and 3NF.', 'votes' => 24, 'comments' => 8, 'reports' => 0, 'status' => 'visible', 'posted' => 'Sep 13, 2026'],
     ['id' => 'UKN-P-0002', 'publicId' => 2, 'title' => 'A Simple Way to Start Learning Python for Data Analysis', 'author' => 2, 'tags' => ['Python', 'Data Analysis'], 'excerpt' => 'Skip the theory-heavy courses at first. Start with pandas on a dataset you actually care about.', 'votes' => 48, 'comments' => 12, 'reports' => 0, 'status' => 'visible', 'posted' => 'Sep 13, 2026'],
@@ -48,10 +30,8 @@ $posts = [
     ['id' => 'UKN-P-0014', 'publicId' => 1, 'title' => 'Anyone Want to Exchange Completed Assignment Files?', 'author' => 14, 'tags' => ['Academic'], 'excerpt' => 'Looking to trade completed assignments from last semester to save time.', 'votes' => 3, 'comments' => 2, 'reports' => 3, 'reportReasons' => ['Off-topic', 'Academic integrity concern'], 'status' => 'visible', 'posted' => 'Sep 13, 2026'],
     ['id' => 'UKN-P-0015', 'publicId' => 1, 'title' => 'Check Out My New Side Project Website!', 'author' => 15, 'tags' => ['Digital Marketing'], 'excerpt' => 'Promoting a personal side project unrelated to coursework or mentoring.', 'votes' => 2, 'comments' => 0, 'reports' => 2, 'reportReasons' => ['Spam', 'Repeated promotional content'], 'status' => 'hidden', 'posted' => 'Sep 12, 2026'],
 ];
-
 $statusLabels = ['visible' => 'Visible', 'hidden' => 'Hidden'];
 $statusClass = ['visible' => 'ukn-status-accent', 'hidden' => 'ukn-status-neutral'];
-
 $skillOptions = [];
 foreach ($posts as $p) {
     foreach ($p['tags'] as $tag) {
@@ -60,7 +40,6 @@ foreach ($posts as $p) {
 }
 $skillOptions = array_keys($skillOptions);
 sort($skillOptions);
-
 require __DIR__ . '/includes/header.php';
 ?>
 <div class="ukn-admin-stat-grid mb-4">
@@ -77,7 +56,6 @@ require __DIR__ . '/includes/header.php';
     <?php ukn_stat_card(['label' => 'Reported', 'value' => '8', 'icon' => 'flag']); ?>
   </button>
 </div>
-
 <div class="card mb-3">
   <div class="card-body">
     <div class="ukn-admin-filters">
@@ -116,9 +94,7 @@ require __DIR__ . '/includes/header.php';
     </div>
   </div>
 </div>
-
 <p class="ukn-body-sm ukn-text-muted" data-post-result-count role="status"><?= count($posts) ?> posts found</p>
-
 <div class="card">
   <div class="table-responsive">
     <table class="table ukn-admin-table" data-post-table>
@@ -222,7 +198,6 @@ require __DIR__ . '/includes/header.php';
       </tbody>
     </table>
   </div>
-
   <div class="card-body" hidden data-post-empty>
     <?php ukn_empty_state([
         'icon' => 'article',
@@ -232,13 +207,11 @@ require __DIR__ . '/includes/header.php';
         'dashed' => true,
     ]); ?>
   </div>
-
   <div class="card-body ukn-admin-pagination" data-post-pagination>
     <span class="ukn-body-sm ukn-text-muted" data-post-pagination-summary></span>
     <div class="d-flex gap-1" data-post-pagination-pages></div>
   </div>
 </div>
-
 <div class="modal fade" id="postDetailModal" tabindex="-1" aria-labelledby="postDetailModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
@@ -278,5 +251,4 @@ require __DIR__ . '/includes/header.php';
     </div>
   </div>
 </div>
-
 <?php require __DIR__ . '/includes/footer.php'; ?>

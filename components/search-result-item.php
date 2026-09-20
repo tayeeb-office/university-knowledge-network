@@ -1,49 +1,4 @@
 <?php
-/**
- * Search result item — one reusable row supporting multiple result types.
- * Used by: Search Results (pages/search/search-results.php) — the ONLY
- * result row type that page renders, for Posts/Skills/Mentors/Learners
- * alike, rather than mixing in the fuller post-card.php/mentor-card.php/
- * learner-card.php/skill-card.php cards (matching docs/ui's flat compact
- * result-row list for this screen).
- *
- * Usage:
- *   require_once __DIR__ . '/../components/search-result-item.php';
- *   foreach ($results as $result) { ukn_search_result_item($result); }
- *
- * $result shape:
- *   [
- *     'type'  => 'skill' | 'mentor' | 'learner' | 'post',
- *     'title' => 'Python',                        // or 'Rahim Ahmed', or a post title
- *     'meta'  => '124 mentors · 340 learners',     // type-appropriate secondary line
- *     'href'  => 'index.php?page=skill-details',
- *
- *     // optional, type-specific secondary action — omit whichever doesn't
- *     // apply and no action button renders for that row (title stays the
- *     // only, always-present click-through). Field names intentionally
- *     // match the same-purpose fields on the richer card components so
- *     // callers can lift values straight from that same mock data:
- *
- *     // type 'mentor' — renders "Request Session" via the ONE shared
- *     // modals/session-request-modal.php, exactly like mentor-card.php:
- *     'initials' => 'RA', 'department' => 'Computer Science', 'skill' => 'Python', 'rating' => 4.9,
- *
- *     // type 'skill' — renders "Add to Learning"/"Add to Teaching" via the
- *     // same [data-skill-toggle] behavior as skill-card.php's directory
- *     // variant (assets/js/pages/skills.js, already document-wide):
- *     'learningState' => null, 'teachingState' => null,   // null | 'add' | 'added'
- *
- *     // type 'learner' — renders "Follow"/"Following" via the same
- *     // [data-follow-toggle] behavior as learner-card.php
- *     // (assets/js/components/follow.js, already document-wide):
- *     'following' => null,                                 // null | true | false
- *   ]
- *
- * The type indicator is an icon + an uppercase text label together —
- * never the icon alone — so the result type is never conveyed by shape/
- * color alone. No backend for any of the above — same frontend-only mock
- * state rules as the components these actions were lifted from.
- */
 if (!function_exists('ukn_search_result_item')) {
     function ukn_search_result_item(array $result): void
     {
@@ -71,7 +26,6 @@ if (!function_exists('ukn_search_result_item')) {
               <span class="ukn-body-sm d-block ukn-truncate"><?= htmlspecialchars($result['meta']) ?></span>
             <?php endif; ?>
           </span>
-
           <?php if ($result['type'] === 'mentor' && $result['department'] && $result['skill']): ?>
             <button
               type="button"

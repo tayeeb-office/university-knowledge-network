@@ -1,27 +1,9 @@
 <?php
-/**
- * My Profile — main center content only. Routed via
- * index.php?page=my-profile (see index.php's $routes map). The header,
- * left sidebar, contextual right sidebar ($rightSidebarContext = 'profile',
- * set by index.php's $sidebarContextByPage map — already role-aware, see
- * includes/right-sidebar.php's 'profile' case) and footer come from the
- * shell — not from here.
- *
- * This is the signed-in mock user's own profile, so it adapts to whichever
- * role is currently active (includes/left-sidebar.php's same $currentUser
- * role state — not a second role system) rather than existing as two
- * separate learner/mentor profile pages.
- *
- * Frontend-only mock data throughout — no real profile persistence, no
- * database, no backend of any kind.
- */
 require_once __DIR__ . '/../../components/stat-card.php';
 require_once __DIR__ . '/../../components/goal-card.php';
 require_once __DIR__ . '/../../components/post-card.php';
-
 $activeRole = !empty($currentUser['dualRole']) ? ($currentUser['activeRole'] ?? 'learner') : ($currentUser['role'] ?? 'learner');
 $isMentor = $activeRole === 'mentor';
-
 $department = 'Computer Science';
 $yearOfStudy = $isMentor ? '4th Year' : '3rd Year';
 $shortBio = $isMentor
@@ -30,26 +12,6 @@ $shortBio = $isMentor
 $aboutBio = $isMentor
     ? "I'm a Computer Science student who mentors Python, database design and data analysis through project-based sessions. I enjoy helping other students get unstuck on real assignments rather than toy examples."
     : "I'm a Computer Science student interested in Python, databases, and data analysis. I'm currently improving my backend and problem-solving skills.";
-
-/**
- * Points stat — the ONE stat that must follow the CURRENT ACTIVE ROLE.
- *
- * Learner active -> "Learning Points" / 412
- * Mentor  active -> "Mentor Points"   / 520
- *
- * A dual-role user can flip role without a page load, and role state is
- * still client-side (localStorage['ukn_active_role'], applied by
- * assets/js/core/role-switch.js). Rather than adding a second role
- * system, this reuses the EXACT convention includes/left-sidebar.php
- * already uses for the nav: render both variants server-side, each
- * wrapped in [data-role="..."], with the inactive one `hidden`.
- * role-switch.js's applyRole() already toggles every [data-role] element
- * in the document, so this needs no new JavaScript at all.
- *
- * A single-role user gets only their own card, with no [data-role]
- * wrapper — again mirroring left-sidebar.php's $rolesToRender — so a
- * Learner can never be shown Mentor Points and vice versa.
- */
 $pointsStatByRole = [
     'learner' => ['label' => 'Learning Points', 'value' => '412', 'icon' => 'military_tech', 'trend' => '+64 this month'],
     'mentor'  => ['label' => 'Mentor Points',   'value' => '520', 'icon' => 'military_tech', 'trend' => '+20 this month'],
@@ -57,8 +19,6 @@ $pointsStatByRole = [
 
 $isDualRoleUser = !empty($currentUser['loggedIn']) && !empty($currentUser['dualRole']);
 $pointsRolesToRender = $isDualRoleUser ? ['learner', 'mentor'] : [$isMentor ? 'mentor' : 'learner'];
-
-/** The remaining stats stay exactly as they were — role-forked server-side. */
 $profileStats = $isMentor
     ? [
         ['label' => 'Average Rating', 'value' => '4.8', 'icon' => 'star'],
@@ -70,19 +30,16 @@ $profileStats = $isMentor
         ['label' => 'Skills Learning', 'value' => '4', 'icon' => 'workspaces'],
         ['label' => 'Current Goals', 'value' => '3', 'icon' => 'flag'],
     ];
-
 $skillsSectionTitle = $isMentor ? 'Teaching Skills' : 'Learning Skills';
 $skillsSectionCta = $isMentor ? 'Manage Teaching Skills' : 'Manage Learning Skills';
 $skillsSectionHref = ukn_route_href($isMentor ? 'teaching-skills' : 'learning-skills');
 $skills = $isMentor
     ? ['Python', 'Database Design', 'Data Analysis']
     : ['Python', 'MySQL', 'Data Analysis', 'Public Speaking'];
-
 $goals = [
     ['title' => 'Learn Python for Data Analysis', 'skill' => 'Python', 'progress' => 65, 'targetDate' => 'December 2026'],
     ['title' => 'Improve Database Design Skills', 'skill' => 'DBMS', 'progress' => 40, 'targetDate' => 'November 2026'],
 ];
-
 $activity = $isMentor
     ? [
         ['icon' => 'event_available', 'text' => 'Completed a Python session with Nabila Rahman'],
@@ -96,7 +53,6 @@ $activity = $isMentor
         ['icon' => 'bookmark', 'text' => 'Saved "Database Normalization Guide"'],
         ['icon' => 'workspaces', 'text' => 'Added Data Analysis to Learning Skills'],
     ];
-
 $myPost = [
     'id' => 1, 'href' => 'index.php?page=post-details&id=1',
     'author' => $currentUser['name'] ?? 'Nabila Rahman', 'initials' => $currentUser['initials'] ?? 'NR',
@@ -124,7 +80,6 @@ $myPost = [
     </div>
   </div>
 </div>
-
 <div class="row g-3 mb-4">
   <?php foreach ($pointsRolesToRender as $pointsRole): ?>
     <div
@@ -137,7 +92,6 @@ $myPost = [
     <div class="col-6 col-lg-3"><?php ukn_stat_card($stat); ?></div>
   <?php endforeach; ?>
 </div>
-
 <div class="row g-3 mb-4">
   <div class="col-lg-8">
     <div class="card h-100">
@@ -163,7 +117,6 @@ $myPost = [
     </div>
   </div>
 </div>
-
 <?php if (!$isMentor): ?>
 <div class="mb-4">
   <div class="d-flex align-items-center justify-content-between mb-3">
@@ -173,7 +126,6 @@ $myPost = [
   <?php foreach ($goals as $goal): ukn_goal_card($goal); endforeach; ?>
 </div>
 <?php endif; ?>
-
 <div class="card mb-4">
   <div class="card-body">
     <h2 class="ukn-h4">Recent Activity</h2>
@@ -185,7 +137,6 @@ $myPost = [
     <?php endforeach; ?>
   </div>
 </div>
-
 <div>
   <div class="d-flex align-items-center justify-content-between mb-3">
     <h2 class="ukn-h4 mb-0">My Posts</h2>

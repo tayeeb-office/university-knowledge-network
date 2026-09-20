@@ -1,38 +1,12 @@
-/**
- * Admin Departments / Skill Categories / Skills — page-specific frontend
- * behavior for all three management pages (each section below only runs
- * if that page's own table exists in the DOM — see "page detection"
- * guards). Search/filter/sort/pagination are all client-side against the
- * server-rendered table; Add/Edit uses one reusable modal per page,
- * populated fresh on every open so there is never stale context between
- * two different rows. Deactivate/Activate all reuse the ONE shared
- * modals/delete-confirmation-modal.php + its existing generic
- * [data-delete-confirm] toast/close behavior (assets/js/core/modal.js) —
- * this file only adds the "which row triggered it" pending-reference step,
- * the same pattern admin/users.js already uses for Suspend/Restore.
- *
- * Frontend-only: nothing here ever calls a backend. "Adding" a row only
- * appends a new <tr> to the current page's own DOM/table — it resets on
- * refresh, which is an accepted, explicitly-sanctioned limitation of this
- * frontend-only phase rather than a bug.
- */
 (function () {
   'use strict';
-
   function escapeHtml(value) {
     var div = document.createElement('div');
     div.textContent = value == null ? '' : String(value);
     return div.innerHTML;
   }
-
-  /* =====================================================================
-     Shared Deactivate/Activate pending-action handling for all three
-     entity types on ONE shared modals/delete-confirmation-modal.php.
-     ===================================================================== */
-
   var deleteModal = document.getElementById('deleteConfirmationModal');
-  var pendingStatusAction = null; // { entity: 'department'|'category'|'skill', action: 'activate'|'deactivate', row }
-
+  var pendingStatusAction = null;
   if (deleteModal) {
     deleteModal.addEventListener('show.bs.modal', function (event) {
       var trigger = event.relatedTarget;
@@ -57,13 +31,10 @@
       }
     });
   }
-
   function setEntityStatus(entity, row, status) {
     var label = status === 'active' ? 'Active' : 'Inactive';
     var statusClass = status === 'active' ? 'ukn-status-accent' : 'ukn-status-neutral';
-
     row.dataset[entity + 'Status'] = status;
-
     var badge = row.querySelector('[data-' + entity + '-status-badge]');
     if (badge) {
       badge.textContent = label;
@@ -79,7 +50,6 @@
       activateBtn.hidden = status === 'active';
     }
   }
-
   document.addEventListener('click', function (event) {
     if (!event.target.closest('[data-delete-confirm]') || !pendingStatusAction) {
       return;
@@ -98,10 +68,6 @@
     }
   });
 
-  /* =====================================================================
-     Departments (admin/departments.php)
-     ===================================================================== */
-
   var departmentTable = document.querySelector('[data-department-table]');
   if (departmentTable) {
     var deptTbody = departmentTable.querySelector('tbody');
@@ -109,11 +75,9 @@
     var deptStatusFilter = document.querySelector('[data-department-filter="status"]');
     var deptResultCount = document.querySelector('[data-department-result-count]');
     var deptEmpty = document.querySelector('[data-department-empty]');
-
     function deptRows() {
       return Array.prototype.slice.call(deptTbody.querySelectorAll('tr[data-department-row]'));
     }
-
     window.applyDepartmentsView = function applyDepartmentsView() {
       var query = deptSearch ? deptSearch.value.trim().toLowerCase() : '';
       var status = deptStatusFilter ? deptStatusFilter.value : '';
@@ -134,7 +98,6 @@
       }
       departmentTable.closest('.card').querySelector('.table-responsive').hidden = visibleCount === 0;
     };
-
     if (deptSearch) { deptSearch.addEventListener('input', applyDepartmentsView); }
     if (deptStatusFilter) { deptStatusFilter.addEventListener('change', applyDepartmentsView); }
     document.addEventListener('click', function (event) {
@@ -146,14 +109,10 @@
       if (deptStatusFilter) { deptStatusFilter.value = ''; }
       applyDepartmentsView();
     });
-
-    /* ---- Add / Edit Department ---- */
-
     var deptForm = document.querySelector('[data-department-form]');
     var deptFormTitle = document.querySelector('[data-department-form-title]');
     var deptFormSubmit = document.querySelector('[data-department-form-submit]');
     var deptFormId = document.querySelector('[data-department-form-id]');
-
     function nextDepartmentId() {
       var max = 0;
       deptRows().forEach(function (row) {
@@ -161,7 +120,6 @@
       });
       return max + 1;
     }
-
     function buildDepartmentRow(id, data) {
       var row = document.createElement('tr');
       row.setAttribute('data-department-row', '');
@@ -191,7 +149,6 @@
         '</td>';
       return row;
     }
-
     function checkDepartmentDuplicate(form) {
       var nameField = form.querySelector('[name="name"]');
       var codeField = form.querySelector('[name="code"]');
@@ -217,7 +174,6 @@
       }
       return !nameDup && !codeDup;
     }
-
     document.addEventListener('click', function (event) {
       if (event.target.closest('[data-department-add]')) {
         deptForm.reset();
@@ -237,7 +193,6 @@
         deptFormSubmit.textContent = 'Save Changes';
       }
     });
-
     if (deptForm) {
       deptForm.addEventListener('submit', function (event) {
         event.preventDefault();
@@ -246,13 +201,11 @@
         if (!requiredValid || !noDuplicate) {
           return;
         }
-
         var data = {
           name: deptForm.querySelector('[name="name"]').value.trim(),
           code: deptForm.querySelector('[name="code"]').value.trim().toUpperCase(),
           status: deptForm.querySelector('[name="status"]').value,
         };
-
         if (deptFormId.value) {
           var row = deptTbody.querySelector('[data-department-id="' + deptFormId.value + '"]');
           if (row) {
@@ -277,14 +230,8 @@
         }
       });
     }
-
     applyDepartmentsView();
   }
-
-  /* =====================================================================
-     Skill Categories (admin/skill-categories.php)
-     ===================================================================== */
-
   var categoryTable = document.querySelector('[data-category-table]');
   if (categoryTable) {
     var catTbody = categoryTable.querySelector('tbody');
@@ -296,7 +243,6 @@
     function catRows() {
       return Array.prototype.slice.call(catTbody.querySelectorAll('tr[data-category-row]'));
     }
-
     window.applyCategoriesView = function applyCategoriesView() {
       var query = catSearch ? catSearch.value.trim().toLowerCase() : '';
       var status = catStatusFilter ? catStatusFilter.value : '';
@@ -328,14 +274,10 @@
       if (catStatusFilter) { catStatusFilter.value = ''; }
       applyCategoriesView();
     });
-
-    /* ---- Add / Edit Category ---- */
-
     var catForm = document.querySelector('[data-category-form]');
     var catFormTitle = document.querySelector('[data-category-form-title]');
     var catFormSubmit = document.querySelector('[data-category-form-submit]');
     var catFormId = document.querySelector('[data-category-form-id]');
-
     function nextCategoryId() {
       var max = 0;
       catRows().forEach(function (row) {
@@ -343,7 +285,6 @@
       });
       return max + 1;
     }
-
     function buildCategoryRow(id, data) {
       var row = document.createElement('tr');
       row.setAttribute('data-category-row', '');
@@ -372,7 +313,6 @@
         '</td>';
       return row;
     }
-
     function checkCategoryDuplicate(form) {
       var nameField = form.querySelector('[name="name"]');
       var editingId = catFormId.value;
@@ -391,7 +331,6 @@
       }
       return !dup;
     }
-
     document.addEventListener('click', function (event) {
       if (event.target.closest('[data-category-add]')) {
         catForm.reset();
@@ -411,7 +350,6 @@
         catFormSubmit.textContent = 'Save Changes';
       }
     });
-
     if (catForm) {
       catForm.addEventListener('submit', function (event) {
         event.preventDefault();
@@ -420,13 +358,11 @@
         if (!requiredValid || !noDuplicate) {
           return;
         }
-
         var data = {
           name: catForm.querySelector('[name="name"]').value.trim(),
           description: catForm.querySelector('[name="description"]').value.trim(),
           status: catForm.querySelector('[name="status"]').value,
         };
-
         if (catFormId.value) {
           var row = catTbody.querySelector('[data-category-id="' + catFormId.value + '"]');
           if (row) {
@@ -441,7 +377,6 @@
           catTbody.appendChild(newRow);
           if (window.UKN && window.UKN.showToast) { window.UKN.showToast('Category added in demo mode.', 'success'); }
         }
-
         applyCategoriesView();
         var modalEl = catForm.closest('.modal');
         if (modalEl && window.bootstrap) {
@@ -453,11 +388,6 @@
 
     applyCategoriesView();
   }
-
-  /* =====================================================================
-     Skills (admin/skills.php)
-     ===================================================================== */
-
   var skillTable = document.querySelector('[data-skill-table]');
   if (skillTable) {
     var skillTbody = skillTable.querySelector('tbody');
@@ -472,7 +402,6 @@
     var skillPaginationPages = document.querySelector('[data-skill-pagination-pages]');
     var SKILL_PAGE_SIZE = 10;
     var skillCurrentPage = 1;
-
     function skillRows() {
       return Array.prototype.slice.call(skillTbody.querySelectorAll('tr[data-skill-row]'));
     }
@@ -497,7 +426,6 @@
       });
       sorted.forEach(function (row) { skillTbody.appendChild(row); });
     }
-
     function skillMatches(row) {
       var query = skillSearch ? skillSearch.value.trim().toLowerCase() : '';
       if (query) {
@@ -514,7 +442,6 @@
       }
       return true;
     }
-
     function renderSkillPagination(total) {
       if (!skillPagination) {
         return;
@@ -556,7 +483,6 @@
       }
       skillPagination.hidden = total === 0;
     }
-
     window.applySkillsView = function applySkillsView() {
       sortSkillRows();
       var rows = skillRows();
@@ -564,11 +490,9 @@
       var pageStart = (skillCurrentPage - 1) * SKILL_PAGE_SIZE;
       var visibleThisPage = matched.slice(pageStart, pageStart + SKILL_PAGE_SIZE);
       var visibleSet = new Set(visibleThisPage);
-
       rows.forEach(function (row) {
         row.hidden = !visibleSet.has(row);
       });
-
       if (skillResultCount) {
         skillResultCount.textContent = matched.length + (matched.length === 1 ? ' skill found' : ' skills found');
       }
@@ -578,12 +502,10 @@
       skillTable.closest('.card').querySelector('.table-responsive').hidden = matched.length === 0;
       renderSkillPagination(matched.length);
     };
-
     function resetSkillsToFirstPage() {
       skillCurrentPage = 1;
       applySkillsView();
     }
-
     if (skillSearch) { skillSearch.addEventListener('input', resetSkillsToFirstPage); }
     [skillCategoryFilter, skillStatusFilter, skillSort].forEach(function (control) {
       if (control) { control.addEventListener('change', resetSkillsToFirstPage); }
@@ -599,15 +521,11 @@
       if (skillSort) { skillSort.value = 'name-asc'; }
       resetSkillsToFirstPage();
     });
-
-    /* ---- Add / Edit Skill ---- */
-
     var skillForm = document.querySelector('[data-skill-form]');
     var skillFormTitle = document.querySelector('[data-skill-form-title]');
     var skillFormSubmit = document.querySelector('[data-skill-form-submit]');
     var skillFormId = document.querySelector('[data-skill-form-id]');
     var skillFormCountsNote = document.querySelector('[data-skill-form-counts-note]');
-
     function nextSkillId() {
       var max = 0;
       skillRows().forEach(function (row) {
@@ -615,12 +533,10 @@
       });
       return max + 1;
     }
-
     function categoryNameFor(categoryId) {
       var option = skillForm.querySelector('[name="categoryId"] option[value="' + categoryId + '"]');
       return option ? option.textContent.replace(' (Inactive)', '') : '';
     }
-
     function buildSkillRow(id, data) {
       var row = document.createElement('tr');
       row.setAttribute('data-skill-row', '');
@@ -656,7 +572,6 @@
         '</td>';
       return row;
     }
-
     function checkSkillDuplicate(form) {
       var nameField = form.querySelector('[name="name"]');
       var editingId = skillFormId.value;
@@ -675,7 +590,6 @@
       }
       return !dup;
     }
-
     document.addEventListener('click', function (event) {
       if (event.target.closest('[data-skill-add]')) {
         skillForm.reset();
@@ -698,7 +612,6 @@
         if (skillFormCountsNote) { skillFormCountsNote.hidden = false; }
       }
     });
-
     if (skillForm) {
       skillForm.addEventListener('submit', function (event) {
         event.preventDefault();
@@ -707,14 +620,12 @@
         if (!requiredValid || !noDuplicate) {
           return;
         }
-
         var data = {
           name: skillForm.querySelector('[name="name"]').value.trim(),
           categoryId: skillForm.querySelector('[name="categoryId"]').value,
           description: skillForm.querySelector('[name="description"]').value.trim(),
           status: skillForm.querySelector('[name="status"]').value,
         };
-
         if (skillFormId.value) {
           var row = skillTbody.querySelector('[data-skill-id="' + skillFormId.value + '"]');
           if (row) {
@@ -742,7 +653,6 @@
         }
       });
     }
-
     applySkillsView();
   }
 })();

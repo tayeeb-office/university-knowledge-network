@@ -1,22 +1,4 @@
 <?php
-/**
- * Stat card — compact single-metric card for dashboards.
- * Used by: Learner Dashboard, Mentor Dashboard, Points, Sessions,
- * Profile summaries — anywhere a labeled number needs a card.
- *
- * Usage:
- *   require_once __DIR__ . '/../components/stat-card.php';
- *   ukn_stat_card(['label' => 'Learning Points', 'value' => '412', 'icon' => 'military_tech', 'trend' => '+64 this month']);
- *
- * $stat shape:
- *   [
- *     'label' => 'Learning Points',
- *     'value' => '412',
- *     'icon'  => 'military_tech',   // optional Material Symbol name
- *     'trend' => '+64 this month',  // optional small helper/trend line
- *     'helper'=> null,              // optional secondary helper text (alternative to trend)
- *   ]
- */
 if (!function_exists('ukn_stat_card')) {
     function ukn_stat_card(array $stat): void
     {

@@ -1,7 +1,0 @@
-/* ==========================================================================
-   Points / Mentor Points — page-specific composition on top of the shared
-   card/stat-card/transaction-row vocabulary in components.css. The
-   transaction filter reuses Bootstrap's own .form-select-sm/.w-auto
-   utilities (same pattern as pages/mentors/find-mentors.php); nothing on
-   this page needed new CSS.
-   ========================================================================== */

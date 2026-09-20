@@ -1,38 +1,15 @@
 <?php
-/**
- * Admin Departments Management. Reuses the shared
- * admin/includes/taxonomy-data.php mock dataset (also used by
- * admin/skill-categories.php and admin/skills.php) so all three Admin
- * taxonomy pages agree on the same names/counts.
- *
- * Add/Edit uses ONE reusable modal (#departmentFormModal) for both
- * actions rather than a modal per row; Deactivate/Activate reuses the
- * one shared modals/delete-confirmation-modal.php exactly like Suspend/
- * Restore did in admin/users.php. Deactivating a department with
- * assigned users is allowed (it's reversible, mock-only) but the
- * confirmation message always states the impact plainly rather than
- * silently proceeding — this project deliberately does not implement a
- * destructive Delete for Departments at all (deactivation is the
- * preferred, safer action per this prompt's own repeated guidance).
- *
- * Frontend-only: assets/js/admin/skills.js does all search/filter/Add/
- * Edit/status-toggle work against this server-rendered table; nothing
- * here calls a backend or persists past a page refresh.
- */
 require_once __DIR__ . '/includes/taxonomy-data.php';
 require_once __DIR__ . '/../components/empty-state.php';
 require_once __DIR__ . '/../components/stat-card.php';
-
 $adminActiveNav = 'departments';
 $adminPageTitle = 'Departments';
 $adminPageSub = 'Manage the academic departments available across the network.';
 $adminPageStyles = ['../assets/css/admin/tables.css', '../assets/css/admin/forms.css'];
 $adminPageScripts = ['../assets/js/admin/skills.js'];
-
 $departments = ukn_admin_mock_departments();
 $statusLabels = ['active' => 'Active', 'inactive' => 'Inactive'];
 $statusClass = ['active' => 'ukn-status-accent', 'inactive' => 'ukn-status-neutral'];
-
 $totalUsers = array_sum(array_column($departments, 'users'));
 $largest = null;
 foreach ($departments as $dept) {
@@ -40,7 +17,6 @@ foreach ($departments as $dept) {
         $largest = $dept;
     }
 }
-
 require __DIR__ . '/includes/header.php';
 ?>
 <div class="d-flex justify-content-end mb-3">
@@ -48,7 +24,6 @@ require __DIR__ . '/includes/header.php';
     <span class="ms" aria-hidden="true">add</span> Add Department
   </button>
 </div>
-
 <div class="ukn-admin-stat-grid mb-4">
   <?php
   ukn_stat_card(['label' => 'Total Departments', 'value' => (string) count($departments), 'icon' => 'apartment']);
@@ -57,7 +32,6 @@ require __DIR__ . '/includes/header.php';
   ukn_stat_card(['label' => 'Largest Department', 'value' => $largest['name'], 'icon' => 'trending_up', 'helper' => number_format($largest['users']) . ' users']);
   ?>
 </div>
-
 <div class="card mb-3">
   <div class="card-body">
     <div class="ukn-admin-filters">
@@ -78,7 +52,6 @@ require __DIR__ . '/includes/header.php';
 </div>
 
 <p class="ukn-body-sm ukn-text-muted" data-department-result-count role="status"><?= count($departments) ?> departments found</p>
-
 <div class="card">
   <div class="table-responsive">
     <table class="table ukn-admin-table" data-department-table>
@@ -159,7 +132,6 @@ require __DIR__ . '/includes/header.php';
       </tbody>
     </table>
   </div>
-
   <div class="card-body" hidden data-department-empty>
     <?php ukn_empty_state([
         'icon' => 'apartment',
@@ -170,7 +142,6 @@ require __DIR__ . '/includes/header.php';
     ]); ?>
   </div>
 </div>
-
 <div class="modal fade" id="departmentFormModal" tabindex="-1" aria-labelledby="departmentFormModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
@@ -213,5 +184,4 @@ require __DIR__ . '/includes/header.php';
     </div>
   </div>
 </div>
-
 <?php require __DIR__ . '/includes/footer.php'; ?>
