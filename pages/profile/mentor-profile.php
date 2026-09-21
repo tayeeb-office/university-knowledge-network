@@ -1,66 +1,137 @@
 <?php
 require_once __DIR__ . '/../../components/stat-card.php';
 require_once __DIR__ . '/../../components/rating-item.php';
-$mentors = [
-    2 => [
-        'name' => 'Rahim Ahmed', 'initials' => 'RA', 'department' => 'Computer Science', 'year' => '4th Year',
-        'title' => 'Python & Data Analysis Mentor',
-        'bio' => 'I help students learn Python, database design and practical data analysis through project-based sessions.',
-        'rating' => 4.9, 'points' => 520, 'sessions' => 127, 'learnersHelped' => 84,
-        'availabilityStatus' => 'Available This Week',
-        'skills' => [
-            ['name' => 'Python', 'level' => 'Advanced', 'sessions' => 52],
-            ['name' => 'Database Design', 'level' => 'Advanced', 'sessions' => 41],
-            ['name' => 'Data Analysis', 'level' => 'Intermediate', 'sessions' => 34],
-        ],
-        'skillOptions' => ['Python', 'Database Design', 'Data Analysis'],
-        'availability' => [
-            ['day' => 'Wednesday', 'time' => '7:00 PM – 9:00 PM'],
-            ['day' => 'Saturday', 'time' => '6:00 PM – 9:00 PM'],
-            ['day' => 'Sunday', 'time' => '5:00 PM – 8:00 PM'],
-        ],
-        'ratingBreakdown' => ['Teaching Quality' => 4.9, 'Communication' => 4.8, 'Helpfulness' => 4.9],
-        'totalReviews' => 42,
-        'reviews' => [
-            ['reviewer' => 'Nabila Rahman', 'initials' => 'NR', 'overall' => 5, 'skill' => 'Python', 'date' => 'Sep 10', 'review' => 'Rahim explained normalization clearly and used examples that were easy to follow.'],
-            ['reviewer' => 'Tanvir Hossain', 'initials' => 'TH', 'overall' => 5, 'skill' => 'Python', 'date' => 'Sep 3', 'review' => 'Patient with beginner questions and always ties concepts back to an actual assignment.'],
-            ['reviewer' => 'Sara Khan', 'initials' => 'SK', 'overall' => 4, 'skill' => 'Data Analysis', 'date' => 'Aug 22', 'review' => 'Solid session on pandas groupby — would have liked a bit more time on edge cases.'],
-        ],
-    ],
-    3 => [
-        'name' => 'Hasan Mahmud', 'initials' => 'HM', 'department' => 'Electrical Engineering', 'year' => '4th Year',
-        'title' => 'Arduino & Embedded Systems Mentor',
-        'bio' => 'I mentor students building their first Arduino projects, focusing on wiring, debouncing and practical debugging over pure theory.',
-        'rating' => 4.7, 'points' => 365, 'sessions' => 52, 'learnersHelped' => 38,
-        'availabilityStatus' => 'Available Next Week',
-        'skills' => [
-            ['name' => 'Arduino', 'level' => 'Advanced', 'sessions' => 33],
-            ['name' => 'Embedded Systems', 'level' => 'Intermediate', 'sessions' => 19],
-        ],
-        'skillOptions' => ['Arduino', 'Embedded Systems'],
-        'availability' => [
-            ['day' => 'Tuesday', 'time' => '6:00 PM – 8:00 PM'],
-            ['day' => 'Thursday', 'time' => '6:00 PM – 8:00 PM'],
-        ],
-        'ratingBreakdown' => ['Teaching Quality' => 4.7, 'Communication' => 4.6, 'Helpfulness' => 4.8],
-        'totalReviews' => 21,
-        'reviews' => [
-            ['reviewer' => 'Farhana Islam', 'initials' => 'FI', 'overall' => 5, 'skill' => 'Arduino', 'date' => 'Sep 5', 'review' => 'Fixed my debounce circuit in ten minutes with a wiring diagram I actually understood.'],
-            ['reviewer' => 'Mahi Noor', 'initials' => 'MN', 'overall' => 4, 'skill' => 'Embedded Systems', 'date' => 'Aug 18', 'review' => 'Good practical session, a little fast-paced for a first-timer.'],
-        ],
-    ],
-];
-$requestedId = isset($_GET['id']) && is_string($_GET['id']) && isset($mentors[(int) $_GET['id']]) ? (int) $_GET['id'] : 2;
-$mentor = $mentors[$requestedId];
+require_once __DIR__ . '/../../components/error-state.php';
+require_once __DIR__ . '/../../components/empty-state.php';
+require_once __DIR__ . '/../../backend/config/database.php';
+require_once __DIR__ . '/../../backend/helpers/format.php';
+
+$requestedId = isset($_GET['id']) && is_numeric($_GET['id']) ? (int) $_GET['id'] : 0;
+$mentor = false;
+$mentorDbError = false;
+$dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+
+try {
+    $pdo = getDatabaseConnection();
+
+    $selectBase = "SELECT u.id, u.full_name AS name, u.initials, u.year_of_study AS year, u.headline AS title,
+            u.bio, u.avg_rating AS rating, u.mentor_points AS points, u.sessions_as_mentor AS sessions,
+            u.learners_helped AS learnersHelped, u.total_reviews AS totalReviews, d.name AS department
+        FROM users u
+        LEFT JOIN departments d ON d.id = u.department_id
+        WHERE u.role IN ('mentor', 'dual') AND u.status = 'active' ";
+
+    $stmt = $pdo->prepare($selectBase . "AND u.id = ?");
+    $stmt->execute([$requestedId]);
+    $mentor = $stmt->fetch();
+
+    if ($mentor === false) {
+        // No matching/active mentor for the requested id: fall back to the lowest-id
+        // active mentor, mirroring the page's previous "always show something" mock behaviour.
+        $stmt = $pdo->prepare($selectBase . "ORDER BY u.id ASC LIMIT 1");
+        $stmt->execute();
+        $mentor = $stmt->fetch();
+    }
+
+    if ($mentor !== false) {
+        $mentorId = (int) $mentor['id'];
+        $mentor['year'] = (string) ($mentor['year'] ?? '');
+        $mentor['title'] = (string) ($mentor['title'] ?? '');
+        $mentor['bio'] = (string) ($mentor['bio'] ?? '');
+        $mentor['department'] = (string) ($mentor['department'] ?? '');
+        $mentor['points'] = (int) $mentor['points'];
+        $mentor['sessions'] = (int) $mentor['sessions'];
+        $mentor['learnersHelped'] = (int) $mentor['learnersHelped'];
+        $mentor['totalReviews'] = (int) $mentor['totalReviews'];
+
+        $skillsStmt = $pdo->prepare(
+            "SELECT s.name, us.proficiency AS level, us.sessions_count AS sessions
+             FROM user_skills us JOIN skills s ON s.id = us.skill_id
+             WHERE us.user_id = ? AND us.skill_type = 'teaching'
+             ORDER BY us.sessions_count DESC, us.proficiency DESC"
+        );
+        $skillsStmt->execute([$mentorId]);
+        $mentor['skills'] = array_map(static function (array $row): array {
+            $row['sessions'] = (int) $row['sessions'];
+            return $row;
+        }, $skillsStmt->fetchAll());
+        $mentor['skillOptions'] = array_column($mentor['skills'], 'name');
+
+        $availabilityStmt = $pdo->prepare(
+            "SELECT day_of_week, start_time, end_time FROM mentor_availability
+             WHERE user_id = ? AND is_enabled = 1
+             ORDER BY day_of_week, start_time"
+        );
+        $availabilityStmt->execute([$mentorId]);
+        $availabilityRows = $availabilityStmt->fetchAll();
+        $mentor['availability'] = array_map(static function (array $row) use ($dayNames): array {
+            return [
+                'day' => $dayNames[(int) $row['day_of_week']] ?? '',
+                'time' => date('g:i A', strtotime($row['start_time'])) . ' – ' . date('g:i A', strtotime($row['end_time'])),
+            ];
+        }, $availabilityRows);
+        $mentor['availabilityStatus'] = ukn_availability_bucket(array_map(
+            static fn (array $row) => (int) $row['day_of_week'],
+            $availabilityRows
+        ));
+
+        $breakdownStmt = $pdo->prepare(
+            "SELECT AVG(teaching) AS teaching, AVG(communication) AS communication, AVG(helpfulness) AS helpfulness
+             FROM session_ratings WHERE mentor_id = ?"
+        );
+        $breakdownStmt->execute([$mentorId]);
+        $breakdownRow = $breakdownStmt->fetch();
+        $mentor['ratingBreakdown'] = [];
+        if ($breakdownRow && $breakdownRow['teaching'] !== null) {
+            $mentor['ratingBreakdown'] = [
+                'Teaching Quality' => round((float) $breakdownRow['teaching'], 1),
+                'Communication' => round((float) $breakdownRow['communication'], 1),
+                'Helpfulness' => round((float) $breakdownRow['helpfulness'], 1),
+            ];
+        }
+
+        $reviewsStmt = $pdo->prepare(
+            "SELECT ur.full_name AS reviewer, ur.initials, sr.overall, sk.name AS skill,
+                    sr.created_at, sr.review
+             FROM session_ratings sr
+             JOIN users ur ON ur.id = sr.reviewer_id
+             LEFT JOIN skills sk ON sk.id = sr.skill_id
+             WHERE sr.mentor_id = ?
+             ORDER BY sr.created_at DESC
+             LIMIT 10"
+        );
+        $reviewsStmt->execute([$mentorId]);
+        $mentor['reviews'] = array_map(static function (array $row): array {
+            $row['date'] = date('M j', strtotime($row['created_at']));
+            return $row;
+        }, $reviewsStmt->fetchAll());
+    }
+} catch (Throwable $e) {
+    error_log('[UKN mentor-profile] ' . $e->getMessage());
+    $mentorDbError = true;
+}
+
 $stars = static function (float $value): string {
     $rounded = (int) round($value);
     return str_repeat('★', max(0, min(5, $rounded))) . str_repeat('☆', 5 - max(0, min(5, $rounded)));
 };
-$requestMentor = [
+$requestMentor = $mentor === false ? [] : [
     'name' => $mentor['name'], 'initials' => $mentor['initials'], 'department' => $mentor['department'],
     'skill' => $mentor['skills'][0]['name'] ?? '', 'rating' => $mentor['rating'], 'skillOptions' => $mentor['skillOptions'],
 ];
 ?>
+<?php if ($mentorDbError): ?>
+  <?php ukn_error_state([
+      'title' => 'Unable to load this profile.',
+      'message' => 'Something went wrong while loading this mentor profile. Please try again shortly.',
+  ]); ?>
+<?php elseif ($mentor === false): ?>
+  <?php ukn_empty_state([
+      'icon' => 'person_off',
+      'title' => 'Mentor not found.',
+      'message' => 'This profile may no longer be available.',
+  ]); ?>
+<?php else: ?>
 <div class="card mb-4">
   <div class="card-body">
     <div class="d-flex align-items-start gap-3 flex-wrap">
@@ -75,7 +146,9 @@ $requestMentor = [
         <div class="d-flex align-items-center gap-3 flex-wrap mt-2 ukn-body-sm">
           <span><span class="ukn-stars" aria-hidden="true">★</span> <?= htmlspecialchars((string) $mentor['rating']) ?></span>
           <span><?= (int) $mentor['points'] ?> Mentor Points</span>
-          <span class="ukn-status ukn-status-success"><?= htmlspecialchars($mentor['availabilityStatus']) ?></span>
+          <?php if ($mentor['availabilityStatus']): ?>
+            <span class="ukn-status ukn-status-success"><?= htmlspecialchars($mentor['availabilityStatus']) ?></span>
+          <?php endif; ?>
         </div>
       </div>
       <div class="d-flex flex-column gap-2 flex-shrink-0">
@@ -156,3 +229,4 @@ $requestMentor = [
   </div>
   <?php foreach ($mentor['reviews'] as $review): ukn_rating_item($review); endforeach; ?>
 </div>
+<?php endif; ?>

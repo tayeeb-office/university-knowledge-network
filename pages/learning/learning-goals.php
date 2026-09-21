@@ -2,28 +2,70 @@
 require_once __DIR__ . '/../../components/stat-card.php';
 require_once __DIR__ . '/../../components/goal-card.php';
 require_once __DIR__ . '/../../components/empty-state.php';
-$skillOptions = ['Python', 'MySQL', 'Data Analysis', 'Database Design', 'Public Speaking', 'React', 'UI/UX Design'];
-$activeGoals = [
-    ['id' => 1, 'title' => 'Learn Python for Data Analysis', 'skill' => 'Python', 'progress' => 65, 'targetDate' => 'December 15, 2026', 'targetDateRaw' => '2026-12-15', 'status' => 'in-progress'],
-    ['id' => 2, 'title' => 'Improve Database Design Skills', 'skill' => 'Database Design', 'progress' => 40, 'targetDate' => 'November 30, 2026', 'targetDateRaw' => '2026-11-30', 'status' => 'in-progress'],
-    ['id' => 3, 'title' => 'Become Confident in Public Speaking', 'skill' => 'Public Speaking', 'progress' => 70, 'targetDate' => 'January 20, 2027', 'targetDateRaw' => '2027-01-20', 'status' => 'in-progress'],
-];
-$completedGoals = [
-    ['id' => 4, 'title' => 'Learn SQL Fundamentals', 'skill' => 'MySQL', 'progress' => 100, 'targetDate' => 'August 28, 2026', 'targetDateRaw' => '2026-08-28', 'status' => 'completed'],
-    ['id' => 5, 'title' => 'Build My First React Project', 'skill' => 'React', 'progress' => 100, 'targetDate' => 'July 12, 2026', 'targetDateRaw' => '2026-07-12', 'status' => 'completed'],
-    ['id' => 6, 'title' => 'Complete a Data Analysis Mini-Project', 'skill' => 'Data Analysis', 'progress' => 100, 'targetDate' => 'June 20, 2026', 'targetDateRaw' => '2026-06-20', 'status' => 'completed'],
-    ['id' => 7, 'title' => 'Design a Simple UI Mockup', 'skill' => 'UI/UX Design', 'progress' => 100, 'targetDate' => 'May 15, 2026', 'targetDateRaw' => '2026-05-15', 'status' => 'completed'],
-    ['id' => 8, 'title' => 'Finish Database Normalization Basics', 'skill' => 'Database Design', 'progress' => 100, 'targetDate' => 'April 2, 2026', 'targetDateRaw' => '2026-04-02', 'status' => 'completed'],
-];
+require_once __DIR__ . '/../../components/error-state.php';
+require_once __DIR__ . '/../../backend/config/database.php';
+
+// TODO(auth): replace with the real session user id; mirrors index.php's own hardcoded
+// demo identity (Nabila Rahman, user id 1) until real sessions exist.
+if (!defined('UKN_DEMO_USER_ID')) {
+    define('UKN_DEMO_USER_ID', 1);
+}
+
+$skillOptions = [];
+$activeGoals = [];
+$completedGoals = [];
+$summaryStats = [];
+$learningGoalsDbError = false;
+
+try {
+    $pdo = getDatabaseConnection();
+
+    $skillOptions = $pdo->query(
+        "SELECT name FROM skills WHERE status = 'active' ORDER BY name"
+    )->fetchAll(PDO::FETCH_COLUMN);
+
+    $goalsBase = "SELECT lg.id, lg.title, s.name AS skill, lg.progress, lg.target_date, lg.status
+        FROM learning_goals lg LEFT JOIN skills s ON s.id = lg.skill_id
+        WHERE lg.user_id = ? AND lg.status = ? ";
+
+    $mapGoal = static function (array $row): array {
+        $row['targetDateRaw'] = $row['target_date'];
+        $row['targetDate'] = $row['target_date'] ? date('F j, Y', strtotime($row['target_date'])) : '';
+        return $row;
+    };
+
+    $activeStmt = $pdo->prepare($goalsBase . "ORDER BY lg.target_date ASC");
+    $activeStmt->execute([UKN_DEMO_USER_ID, 'in-progress']);
+    $activeGoals = array_map($mapGoal, $activeStmt->fetchAll());
+
+    $completedStmt = $pdo->prepare($goalsBase . "ORDER BY lg.target_date DESC");
+    $completedStmt->execute([UKN_DEMO_USER_ID, 'completed']);
+    $completedGoals = array_map($mapGoal, $completedStmt->fetchAll());
+
+    $targetSkillsStmt = $pdo->prepare(
+        "SELECT COUNT(DISTINCT skill_id) FROM learning_goals WHERE user_id = ? AND skill_id IS NOT NULL"
+    );
+    $targetSkillsStmt->execute([UKN_DEMO_USER_ID]);
+
+    $activeCount = count($activeGoals);
+    $completedCount = count($completedGoals);
+    $averageProgress = $activeCount ? (int) round(array_sum(array_column($activeGoals, 'progress')) / $activeCount) : 0;
+    $summaryStats = [
+        ['label' => 'Active Goals', 'value' => (string) $activeCount, 'icon' => 'flag'],
+        ['label' => 'Completed Goals', 'value' => (string) $completedCount, 'icon' => 'check_circle'],
+        ['label' => 'Average Progress', 'value' => $averageProgress . '%', 'icon' => 'trending_up'],
+        ['label' => 'Target Skills', 'value' => (string) $targetSkillsStmt->fetchColumn(), 'icon' => 'workspaces'],
+    ];
+} catch (Throwable $e) {
+    error_log('[UKN learning-goals] ' . $e->getMessage());
+    $learningGoalsDbError = true;
+    $skillOptions = [];
+    $activeGoals = [];
+    $completedGoals = [];
+    $summaryStats = [];
+}
 $activeCount = count($activeGoals);
 $completedCount = count($completedGoals);
-$averageProgress = $activeCount ? (int) round(array_sum(array_column($activeGoals, 'progress')) / $activeCount) : 0;
-$summaryStats = [
-    ['label' => 'Active Goals', 'value' => (string) $activeCount, 'icon' => 'flag'],
-    ['label' => 'Completed Goals', 'value' => (string) $completedCount, 'icon' => 'check_circle'],
-    ['label' => 'Average Progress', 'value' => $averageProgress . '%', 'icon' => 'trending_up'],
-    ['label' => 'Target Skills', 'value' => '4', 'icon' => 'workspaces'],
-];
 ?>
 <div class="ukn-page-header">
   <div>
@@ -34,6 +76,12 @@ $summaryStats = [
     <span class="ms" aria-hidden="true">add</span>Create Goal
   </button>
 </div>
+<?php if ($learningGoalsDbError): ?>
+  <?php ukn_error_state([
+      'title' => 'Unable to load your learning goals.',
+      'message' => 'Something went wrong while loading this page. Please try again shortly.',
+  ]); ?>
+<?php else: ?>
 <div class="row g-3 mb-4">
   <?php foreach ($summaryStats as $stat): ?>
     <div class="col-6 col-lg-3"><?php ukn_stat_card($stat); ?></div>
@@ -72,6 +120,7 @@ $summaryStats = [
     ]); ?>
   </div>
 </div>
+<?php endif; ?>
 <div class="modal fade" id="goalFormModal" tabindex="-1" aria-labelledby="goalFormModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">

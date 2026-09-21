@@ -1,5 +1,8 @@
 <?php
 require_once __DIR__ . '/../components/stat-card.php';
+require_once __DIR__ . '/../components/error-state.php';
+require_once __DIR__ . '/../backend/helpers/format.php';
+require_once __DIR__ . '/../backend/config/database.php';
 $adminActiveNav = 'dashboard';
 $adminPageTitle = 'Admin Dashboard';
 $adminPageSub = 'Monitor users, skills, sessions and community activity across the network.';
@@ -8,62 +11,257 @@ $adminPageScripts = [
     'https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js',
     '../assets/js/admin/dashboard.js',
 ];
-$stats = [
-    ['label' => 'Total Users', 'value' => '1,152', 'icon' => 'group', 'helper' => '986 Learners · 214 Mentors · 48 Dual-Role'],
-    ['label' => 'Total Skills', 'value' => '76', 'icon' => 'workspaces', 'trend' => 'Up 4 this month'],
-    ['label' => 'Total Sessions', 'value' => '3,482', 'icon' => 'event', 'trend' => 'Up 12.2% this month'],
-    ['label' => 'Community Posts', 'value' => '1,126', 'icon' => 'article', 'trend' => 'Up 5.1% this month'],
-    ['label' => 'Pending Reports', 'value' => '8', 'icon' => 'flag', 'trend' => '2 new this week'],
-];
-$roleBreakdown = ['labels' => ['Learner only', 'Mentor only', 'Dual-Role'], 'values' => [938, 166, 48]];
-$sessionActivity = ['labels' => ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'], 'values' => [42, 51, 47, 63, 58, 74, 69]];
-$sessionStatus = [
-    ['label' => 'Upcoming', 'value' => 128],
-    ['label' => 'Completed', 'value' => 3142],
-    ['label' => 'Cancelled', 'value' => 176],
-    ['label' => 'Pending', 'value' => 36],
-];
-$recentUsers = [
-    ['name' => 'Tanjim Rahman', 'initials' => 'TR', 'role' => 'Learner', 'department' => 'Business Administration', 'joined' => 'Sep 13, 2026', 'status' => 'Active'],
-    ['name' => 'Farhana Islam', 'initials' => 'FI', 'role' => 'Learner', 'department' => 'English', 'joined' => 'Sep 13, 2026', 'status' => 'Active'],
-    ['name' => 'Kamrul Hasan', 'initials' => 'KH', 'role' => 'Mentor', 'department' => 'Electrical Engineering', 'joined' => 'Sep 12, 2026', 'status' => 'Active'],
-    ['name' => 'Sabrina Ali', 'initials' => 'SA', 'role' => 'Learner', 'department' => 'English', 'joined' => 'Sep 12, 2026', 'status' => 'Active'],
-    ['name' => 'Adil Hasan', 'initials' => 'AH', 'role' => 'Learner', 'department' => 'Electrical Engineering', 'joined' => 'Sep 11, 2026', 'status' => 'Active'],
-];
 
-$recentSessions = [
-    ['learner' => 'Mahi Noor', 'mentor' => 'Nabila Rahman', 'skill' => 'Python', 'date' => 'Sep 18, 2026', 'status' => 'Pending'],
-    ['learner' => 'Nabila Rahman', 'mentor' => 'Rahim Ahmed', 'skill' => 'Python', 'date' => 'Sep 18, 2026', 'status' => 'Upcoming'],
-    ['learner' => 'Nabila Rahman', 'mentor' => 'Rahim Ahmed', 'skill' => 'Python', 'date' => 'Sep 8, 2026', 'status' => 'Completed'],
-    ['learner' => 'Nabila Rahman', 'mentor' => 'Hasan Mahmud', 'skill' => 'Arduino', 'date' => 'Aug 28, 2026', 'status' => 'Cancelled'],
-];
-$popularSkills = [
-    ['name' => 'Python', 'learners' => 340, 'mentors' => 124],
-    ['name' => 'Data Analysis', 'learners' => 256, 'mentors' => 91],
-    ['name' => 'MySQL', 'learners' => 214, 'mentors' => 82],
-    ['name' => 'React', 'learners' => 196, 'mentors' => 76],
-];
-$pendingReports = [
-    ['type' => 'Post', 'reason' => 'Off-topic / spam', 'content' => 'Looking for paid assignment help', 'time' => '22 min ago'],
-    ['type' => 'Comment', 'reason' => 'Inappropriate language', 'content' => 'Comment on "Best Resources for Learning MySQL Joins?"', 'time' => '1 hr ago'],
-    ['type' => 'User Conduct', 'reason' => 'Repeated late cancellations', 'content' => 'Reported user: Sara Khan', 'time' => '3 hr ago'],
-];
-$recentActivity = [
-    ['icon' => 'person_add', 'text' => 'Tanjim Rahman registered as a new Learner.', 'time' => '18 min ago'],
-    ['icon' => 'event_available', 'text' => 'Rahim Ahmed completed a Python mentoring session.', 'time' => '35 min ago'],
-    ['icon' => 'flag', 'text' => 'A community post was reported for review.', 'time' => '22 min ago'],
-    ['icon' => 'category', 'text' => 'New skill category added: Business.', 'time' => '2 hr ago'],
-    ['icon' => 'star', 'text' => 'Sara Khan received a 5-star mentoring rating.', 'time' => '4 hr ago'],
-];
+$stats = [];
+$roleBreakdown = ['labels' => ['Learner only', 'Mentor only', 'Dual-Role'], 'values' => [0, 0, 0]];
+$sessionActivity = ['labels' => [], 'values' => []];
+$sessionStatus = [];
+$recentUsers = [];
+$recentSessions = [];
+$popularSkills = [];
+$pendingReports = [];
+$recentActivity = [];
 $statusClass = [
     'Active' => 'ukn-status-accent',
     'Upcoming' => 'ukn-status-accent',
     'Pending' => 'ukn-status-neutral',
     'Completed' => 'ukn-status-accent',
     'Cancelled' => 'ukn-status-neutral',
+    'Rejected' => 'ukn-status-neutral',
 ];
+$dashboardDbError = false;
+
+$reasonLabels = [
+    'academic-integrity' => 'Academic Integrity Concern',
+    'off-topic' => 'Off-topic',
+    'spam' => 'Spam',
+    'inappropriate' => 'Inappropriate Content',
+    'harassment' => 'Harassment / Conduct',
+    'other' => 'Other',
+];
+$sessionStatusLabels = ['pending' => 'Pending', 'accepted' => 'Upcoming', 'completed' => 'Completed', 'cancelled' => 'Cancelled', 'rejected' => 'Rejected'];
+
+try {
+    $pdo = getDatabaseConnection();
+
+    // --- Stat cards -------------------------------------------------------
+    $roleCountsStmt = $pdo->query("SELECT role, COUNT(*) AS c FROM users GROUP BY role");
+    $roleCounts = ['learner' => 0, 'mentor' => 0, 'dual' => 0];
+    foreach ($roleCountsStmt->fetchAll() as $row) {
+        if (isset($roleCounts[$row['role']])) {
+            $roleCounts[$row['role']] = (int) $row['c'];
+        }
+    }
+    $totalUsers = array_sum($roleCounts);
+    $roleBreakdown['values'] = [$roleCounts['learner'], $roleCounts['mentor'], $roleCounts['dual']];
+
+    $totalSkills = (int) $pdo->query("SELECT COUNT(*) FROM skills")->fetchColumn();
+    $skillsThisMonthStmt = $pdo->query(
+        "SELECT COUNT(*) FROM skills WHERE created_at >= DATE_FORMAT(NOW(), '%Y-%m-01')"
+    );
+    $skillsThisMonth = (int) $skillsThisMonthStmt->fetchColumn();
+
+    $totalSessions = (int) $pdo->query("SELECT COUNT(*) FROM mentoring_sessions")->fetchColumn();
+    $totalPosts = (int) $pdo->query("SELECT COUNT(*) FROM posts")->fetchColumn();
+
+    $thisMonthStart = date('Y-m-01');
+    $nextMonthStart = date('Y-m-d', strtotime('+1 month', strtotime($thisMonthStart)));
+    $lastMonthStart = date('Y-m-01', strtotime('-1 month'));
+
+    $growthLabel = static function (PDO $pdo, string $table, string $dateColumn, string $thisMonthStart, string $nextMonthStart, string $lastMonthStart): string {
+        $stmt = $pdo->prepare("SELECT COUNT(*) FROM {$table} WHERE {$dateColumn} >= ? AND {$dateColumn} < ?");
+        $stmt->execute([$thisMonthStart, $nextMonthStart]);
+        $thisMonth = (int) $stmt->fetchColumn();
+        $stmt->execute([$lastMonthStart, $thisMonthStart]);
+        $lastMonth = (int) $stmt->fetchColumn();
+        if ($lastMonth !== 0) {
+            $pct = round((($thisMonth - $lastMonth) / abs($lastMonth)) * 100, 1);
+            return ($pct >= 0 ? 'Up ' : 'Down ') . abs($pct) . '% this month';
+        }
+        return $thisMonth > 0 ? 'Up 100% this month' : 'No change this month';
+    };
+    $sessionsTrend = $growthLabel($pdo, 'mentoring_sessions', 'requested_at', $thisMonthStart, $nextMonthStart, $lastMonthStart);
+    $postsTrend = $growthLabel($pdo, 'posts', 'created_at', $thisMonthStart, $nextMonthStart, $lastMonthStart);
+
+    $pendingReportsCount = (int) $pdo->query("SELECT COUNT(*) FROM reports WHERE status = 'pending'")->fetchColumn();
+    $weekStart = date('Y-m-d', strtotime('monday this week'));
+    $newReportsStmt = $pdo->prepare("SELECT COUNT(*) FROM reports WHERE status = 'pending' AND created_at >= ?");
+    $newReportsStmt->execute([$weekStart]);
+    $newReportsThisWeek = (int) $newReportsStmt->fetchColumn();
+
+    $stats = [
+        ['label' => 'Total Users', 'value' => number_format($totalUsers), 'icon' => 'group',
+            'helper' => number_format($roleCounts['learner']) . ' Learners · ' . number_format($roleCounts['mentor']) . ' Mentors · ' . number_format($roleCounts['dual']) . ' Dual-Role'],
+        ['label' => 'Total Skills', 'value' => number_format($totalSkills), 'icon' => 'workspaces',
+            'trend' => $skillsThisMonth > 0 ? 'Up ' . $skillsThisMonth . ' this month' : 'No change this month'],
+        ['label' => 'Total Sessions', 'value' => number_format($totalSessions), 'icon' => 'event', 'trend' => $sessionsTrend],
+        ['label' => 'Community Posts', 'value' => number_format($totalPosts), 'icon' => 'article', 'trend' => $postsTrend],
+        ['label' => 'Pending Reports', 'value' => (string) $pendingReportsCount, 'icon' => 'flag',
+            'trend' => $newReportsThisWeek . ' new this week'],
+    ];
+
+    // --- Sessions Over Time (Mon-Sun of the current week) -----------------
+    $weekEnd = date('Y-m-d', strtotime($weekStart . ' +7 days'));
+    $activityStmt = $pdo->prepare(
+        "SELECT DATE(requested_at) AS d, COUNT(*) AS c FROM mentoring_sessions
+         WHERE requested_at >= ? AND requested_at < ? GROUP BY DATE(requested_at)"
+    );
+    $activityStmt->execute([$weekStart, $weekEnd]);
+    $countsByDate = array_column($activityStmt->fetchAll(), 'c', 'd');
+    for ($i = 0; $i < 7; $i++) {
+        $d = date('Y-m-d', strtotime($weekStart . " +{$i} days"));
+        $sessionActivity['labels'][] = date('D', strtotime($d));
+        $sessionActivity['values'][] = (int) ($countsByDate[$d] ?? 0);
+    }
+
+    // --- Session status breakdown -------------------------------------
+    $statusStmt = $pdo->query("SELECT status, COUNT(*) AS c FROM mentoring_sessions GROUP BY status");
+    $byStatus = array_column($statusStmt->fetchAll(), 'c', 'status');
+    $sessionStatus = [
+        ['label' => 'Upcoming', 'value' => (int) ($byStatus['accepted'] ?? 0)],
+        ['label' => 'Completed', 'value' => (int) ($byStatus['completed'] ?? 0)],
+        ['label' => 'Cancelled', 'value' => (int) ($byStatus['cancelled'] ?? 0)],
+        ['label' => 'Pending', 'value' => (int) ($byStatus['pending'] ?? 0)],
+    ];
+
+    // --- Recent Users ---------------------------------------------------
+    $roleLabels = ['learner' => 'Learner', 'mentor' => 'Mentor', 'dual' => 'Dual Role'];
+    $userStatusLabels = ['active' => 'Active', 'inactive' => 'Inactive', 'suspended' => 'Suspended'];
+    $recentUsersStmt = $pdo->query(
+        "SELECT u.id, u.full_name AS name, u.initials, u.role, u.status, u.created_at, d.name AS department
+         FROM users u LEFT JOIN departments d ON d.id = u.department_id
+         ORDER BY u.created_at DESC LIMIT 5"
+    );
+    $recentUsers = array_map(static function (array $row) use ($roleLabels, $userStatusLabels): array {
+        return [
+            'id' => (int) $row['id'],
+            'name' => $row['name'],
+            'initials' => $row['initials'],
+            'role' => $roleLabels[$row['role']] ?? ucfirst($row['role']),
+            'department' => (string) ($row['department'] ?? ''),
+            'joined' => date('M j, Y', strtotime($row['created_at'])),
+            'status' => $userStatusLabels[$row['status']] ?? ucfirst($row['status']),
+        ];
+    }, $recentUsersStmt->fetchAll());
+
+    // --- Recent & Upcoming Sessions --------------------------------------
+    $recentSessionsStmt = $pdo->query(
+        "SELECT ms.status, ms.requested_at, l.full_name AS learner, m.full_name AS mentor, sk.name AS skill
+         FROM mentoring_sessions ms
+         JOIN users l ON l.id = ms.learner_id
+         JOIN users m ON m.id = ms.mentor_id
+         JOIN skills sk ON sk.id = ms.skill_id
+         ORDER BY ms.requested_at DESC LIMIT 4"
+    );
+    $recentSessions = array_map(static function (array $row) use ($sessionStatusLabels): array {
+        return [
+            'learner' => $row['learner'],
+            'mentor' => $row['mentor'],
+            'skill' => $row['skill'],
+            'date' => date('M j, Y', strtotime($row['requested_at'])),
+            'status' => $sessionStatusLabels[$row['status']] ?? ucfirst($row['status']),
+        ];
+    }, $recentSessionsStmt->fetchAll());
+
+    // --- Popular Skills (by combined learner + mentor engagement) --------
+    $popularSkillsStmt = $pdo->query(
+        "SELECT s.name,
+                (SELECT COUNT(*) FROM user_skills WHERE skill_id = s.id AND skill_type = 'learning') AS learners,
+                (SELECT COUNT(*) FROM user_skills WHERE skill_id = s.id AND skill_type = 'teaching') AS mentors
+         FROM skills s
+         ORDER BY (SELECT COUNT(*) FROM user_skills WHERE skill_id = s.id AND skill_type = 'learning')
+                + (SELECT COUNT(*) FROM user_skills WHERE skill_id = s.id AND skill_type = 'teaching') DESC
+         LIMIT 4"
+    );
+    $popularSkills = array_map(static function (array $row): array {
+        return ['name' => $row['name'], 'learners' => (int) $row['learners'], 'mentors' => (int) $row['mentors']];
+    }, $popularSkillsStmt->fetchAll());
+
+    // --- Pending Reports (most recent, with real target info) -----------
+    $pendingReportsStmt = $pdo->query(
+        "SELECT target_type, target_id, reason, created_at FROM reports
+         WHERE status = 'pending' ORDER BY created_at DESC LIMIT 3"
+    );
+    foreach ($pendingReportsStmt->fetchAll() as $row) {
+        if ($row['target_type'] === 'post') {
+            $type = 'Post';
+            $stmt = $pdo->prepare("SELECT title FROM posts WHERE id = ?");
+            $stmt->execute([$row['target_id']]);
+            $content = (string) $stmt->fetchColumn();
+        } elseif ($row['target_type'] === 'comment') {
+            $type = 'Comment';
+            $stmt = $pdo->prepare("SELECT content FROM comments WHERE id = ?");
+            $stmt->execute([$row['target_id']]);
+            $text = (string) $stmt->fetchColumn();
+            $content = $text !== '' ? ukn_excerpt($text, 60) : '';
+        } else {
+            $type = 'User Conduct';
+            $stmt = $pdo->prepare("SELECT full_name FROM users WHERE id = ?");
+            $stmt->execute([$row['target_id']]);
+            $content = 'Reported user: ' . (string) $stmt->fetchColumn();
+        }
+        $pendingReports[] = [
+            'type' => $type,
+            'reason' => $reasonLabels[$row['reason']] ?? ucfirst($row['reason']),
+            'content' => $content,
+            'time' => ukn_time_ago($row['created_at']),
+        ];
+    }
+
+    // --- Recent Activity: real events from across the platform, newest
+    // first. No activity-log table exists in the schema, so this combines
+    // the same real signals already used elsewhere (registrations, completed
+    // sessions, reports, new skill categories, 5-star ratings) instead of a
+    // single per-user proxy — see DATABASE_READ_INTEGRATION_PLAN.md §2.2.
+    $activityStmt = $pdo->query(
+        "(SELECT 'person_add' AS icon,
+                 CONCAT(u.full_name, ' registered as a new ',
+                        CASE u.role WHEN 'mentor' THEN 'Mentor' WHEN 'dual' THEN 'Dual-Role member' ELSE 'Learner' END, '.') AS text,
+                 u.created_at AS ts
+          FROM users u ORDER BY u.created_at DESC LIMIT 5)
+         UNION ALL
+         (SELECT 'event_available',
+                 CONCAT(mu.full_name, ' completed a ', sk.name, ' mentoring session.'),
+                 ms.completed_at
+          FROM mentoring_sessions ms
+          JOIN users mu ON mu.id = ms.mentor_id
+          JOIN skills sk ON sk.id = ms.skill_id
+          WHERE ms.status = 'completed' AND ms.completed_at IS NOT NULL
+          ORDER BY ms.completed_at DESC LIMIT 5)
+         UNION ALL
+         (SELECT 'flag',
+                 CONCAT('A ', r.target_type, ' was reported for review.'),
+                 r.created_at
+          FROM reports r ORDER BY r.created_at DESC LIMIT 5)
+         UNION ALL
+         (SELECT 'category',
+                 CONCAT('New skill category added: ', sc.name, '.'),
+                 sc.created_at
+          FROM skill_categories sc ORDER BY sc.created_at DESC LIMIT 5)
+         UNION ALL
+         (SELECT 'star',
+                 CONCAT(mu.full_name, ' received a 5-star mentoring rating.'),
+                 sr.created_at
+          FROM session_ratings sr
+          JOIN users mu ON mu.id = sr.mentor_id
+          WHERE sr.overall = 5 ORDER BY sr.created_at DESC LIMIT 5)
+         ORDER BY ts DESC LIMIT 5"
+    );
+    $recentActivity = array_map(static function (array $row): array {
+        return ['icon' => $row['icon'], 'text' => $row['text'], 'time' => ukn_time_ago($row['ts'])];
+    }, $activityStmt->fetchAll());
+} catch (Throwable $e) {
+    error_log('[UKN admin/dashboard] ' . $e->getMessage());
+    $dashboardDbError = true;
+}
 require __DIR__ . '/includes/header.php';
 ?>
+<?php if ($dashboardDbError): ?>
+  <?php ukn_error_state([
+      'title' => 'Unable to load the dashboard.',
+      'message' => 'Something went wrong while loading admin dashboard data. Please try again shortly.',
+  ]); ?>
+<?php else: ?>
 <div class="ukn-admin-stat-grid mb-4">
   <?php foreach ($stats as $stat): ukn_stat_card($stat); endforeach; ?>
 </div>
@@ -78,10 +276,10 @@ require __DIR__ . '/includes/header.php';
             data-chart-labels="<?= htmlspecialchars(json_encode($roleBreakdown['labels'])) ?>"
             data-chart-values="<?= htmlspecialchars(json_encode($roleBreakdown['values'])) ?>"
             role="img"
-            aria-label="User role breakdown: 938 Learner only, 166 Mentor only, 48 Dual-Role"
+            aria-label="User role breakdown: <?= (int) $roleBreakdown['values'][0] ?> Learner only, <?= (int) $roleBreakdown['values'][1] ?> Mentor only, <?= (int) $roleBreakdown['values'][2] ?> Dual-Role"
           ></canvas>
         </div>
-        <p class="ukn-body-sm ukn-text-muted mb-0">Each user counted once — 1,152 total. Dual-role users are shown separately, not double-counted in Learner or Mentor.</p>
+        <p class="ukn-body-sm ukn-text-muted mb-0">Each user counted once — <?= number_format(array_sum($roleBreakdown['values'])) ?> total. Dual-role users are shown separately, not double-counted in Learner or Mentor.</p>
       </div>
     </div>
   </div>
@@ -96,7 +294,7 @@ require __DIR__ . '/includes/header.php';
             data-chart-values="<?= htmlspecialchars(json_encode($sessionActivity['values'])) ?>"
             data-chart-dataset-label="Sessions"
             role="img"
-            aria-label="Sessions held per day this week: Mon 42, Tue 51, Wed 47, Thu 63, Fri 58, Sat 74, Sun 69"
+            aria-label="Sessions requested per day this week"
           ></canvas>
         </div>
         <div class="ukn-admin-inline-stats mt-3">
@@ -119,7 +317,7 @@ require __DIR__ . '/includes/header.php';
         <tr><th scope="col">User</th><th scope="col">Role</th><th scope="col">Department</th><th scope="col">Joined</th><th scope="col">Status</th><th scope="col">Action</th></tr>
       </thead>
       <tbody>
-        <?php foreach ($recentUsers as $i => $user): ?>
+        <?php foreach ($recentUsers as $user): ?>
           <tr>
             <td data-label="User">
               <div class="d-flex align-items-center gap-2">
@@ -131,7 +329,7 @@ require __DIR__ . '/includes/header.php';
             <td data-label="Department"><?= htmlspecialchars($user['department']) ?></td>
             <td data-label="Joined"><?= htmlspecialchars($user['joined']) ?></td>
             <td data-label="Status"><span class="ukn-status <?= $statusClass[$user['status']] ?? 'ukn-status-neutral' ?>"><?= htmlspecialchars($user['status']) ?></span></td>
-            <td data-label="Action"><a href="user-details.php?id=<?= $i + 1 ?>" class="btn btn-outline-secondary btn-sm">View</a></td>
+            <td data-label="Action"><a href="user-details.php?id=<?= $user['id'] ?>" class="btn btn-outline-secondary btn-sm">View</a></td>
           </tr>
         <?php endforeach; ?>
       </tbody>
@@ -232,4 +430,5 @@ require __DIR__ . '/includes/header.php';
     <a href="sessions.php" class="btn btn-outline-secondary btn-sm"><span class="ms" aria-hidden="true">event</span> View Sessions</a>
   </div>
 </div>
+<?php endif; ?>
 <?php require __DIR__ . '/includes/footer.php'; ?>

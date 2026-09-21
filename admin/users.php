@@ -1,32 +1,73 @@
 <?php
-require_once __DIR__ . '/includes/users-data.php';
 require_once __DIR__ . '/../components/empty-state.php';
+require_once __DIR__ . '/../components/error-state.php';
 require_once __DIR__ . '/../components/stat-card.php';
+require_once __DIR__ . '/../backend/config/database.php';
 $adminActiveNav = 'users';
 $adminPageTitle = 'Users';
 $adminPageSub = 'Manage learners, mentors and account status across the network.';
 $adminPageStyles = ['../assets/css/admin/tables.css', '../assets/css/admin/forms.css'];
 $adminPageScripts = ['../assets/js/admin/users.js'];
-$users = ukn_admin_mock_users();
 $roleLabels = ['learner' => 'Learner', 'mentor' => 'Mentor', 'dual' => 'Dual Role'];
 $statusLabels = ['active' => 'Active', 'inactive' => 'Inactive', 'suspended' => 'Suspended'];
 $statusClass = ['active' => 'ukn-status-accent', 'inactive' => 'ukn-status-neutral', 'suspended' => 'ukn-status-neutral'];
+
+$users = [];
 $departments = [];
-foreach ($users as $u) {
-    $departments[$u['department']] = true;
+$roleCounts = ['learner' => 0, 'mentor' => 0, 'dual' => 0];
+$statusCounts = ['active' => 0, 'inactive' => 0, 'suspended' => 0];
+$usersDbError = false;
+
+try {
+    $pdo = getDatabaseConnection();
+
+    $stmt = $pdo->query(
+        "SELECT u.id, u.full_name AS name, u.initials, u.email, u.university_id AS universityId,
+                u.role, u.status, u.created_at, u.sessions_as_learner, u.sessions_as_mentor,
+                d.name AS department
+         FROM users u
+         LEFT JOIN departments d ON d.id = u.department_id
+         ORDER BY u.created_at DESC"
+    );
+    $deptSet = [];
+    foreach ($stmt->fetchAll() as $row) {
+        $row['department'] = (string) ($row['department'] ?? '');
+        $row['joined'] = date('F j, Y', strtotime($row['created_at']));
+        $row['joinedSort'] = date('Y-m-d', strtotime($row['created_at']));
+        $users[$row['id']] = $row;
+        if ($row['department'] !== '') {
+            $deptSet[$row['department']] = true;
+        }
+        if (isset($roleCounts[$row['role']])) {
+            $roleCounts[$row['role']]++;
+        }
+        if (isset($statusCounts[$row['status']])) {
+            $statusCounts[$row['status']]++;
+        }
+    }
+    $departments = array_keys($deptSet);
+    sort($departments);
+} catch (Throwable $e) {
+    error_log('[UKN admin/users] ' . $e->getMessage());
+    $usersDbError = true;
+    $users = [];
 }
-$departments = array_keys($departments);
-sort($departments);
 require __DIR__ . '/includes/header.php';
 ?>
+<?php if ($usersDbError): ?>
+  <?php ukn_error_state([
+      'title' => 'Unable to load users.',
+      'message' => 'Something went wrong while loading this page. Please try again shortly.',
+  ]); ?>
+<?php else: ?>
 <div class="ukn-admin-stat-grid mb-4">
   <?php
-  ukn_stat_card(['label' => 'Total Users', 'value' => '1,152', 'icon' => 'group']);
-  ukn_stat_card(['label' => 'Learners', 'value' => '986', 'icon' => 'school']);
-  ukn_stat_card(['label' => 'Mentors', 'value' => '214', 'icon' => 'record_voice_over']);
-  ukn_stat_card(['label' => 'Dual Role', 'value' => '48', 'icon' => 'swap_horiz']);
-  ukn_stat_card(['label' => 'Active', 'value' => '1,120', 'icon' => 'check_circle']);
-  ukn_stat_card(['label' => 'Suspended', 'value' => '12', 'icon' => 'block']);
+  ukn_stat_card(['label' => 'Total Users', 'value' => number_format(count($users)), 'icon' => 'group']);
+  ukn_stat_card(['label' => 'Learners', 'value' => number_format($roleCounts['learner']), 'icon' => 'school']);
+  ukn_stat_card(['label' => 'Mentors', 'value' => number_format($roleCounts['mentor']), 'icon' => 'record_voice_over']);
+  ukn_stat_card(['label' => 'Dual Role', 'value' => number_format($roleCounts['dual']), 'icon' => 'swap_horiz']);
+  ukn_stat_card(['label' => 'Active', 'value' => number_format($statusCounts['active']), 'icon' => 'check_circle']);
+  ukn_stat_card(['label' => 'Suspended', 'value' => number_format($statusCounts['suspended']), 'icon' => 'block']);
   ?>
 </div>
 <div class="card mb-3">
@@ -91,7 +132,7 @@ require __DIR__ . '/includes/header.php';
       </thead>
       <tbody>
         <?php foreach ($users as $id => $user):
-            $sessions = ($user['learner']['sessions'] ?? 0) + ($user['mentor']['sessions'] ?? 0);
+            $sessions = (int) $user['sessions_as_learner'] + (int) $user['sessions_as_mentor'];
             $isSuspended = $user['status'] === 'suspended';
         ?>
           <tr
@@ -168,7 +209,7 @@ require __DIR__ . '/includes/header.php';
       </tbody>
     </table>
   </div>
-  <div class="card-body" hidden data-user-empty>
+  <div class="card-body"<?= $users ? ' hidden' : '' ?> data-user-empty>
     <?php ukn_empty_state([
         'icon' => 'person_search',
         'title' => 'No users found.',
@@ -182,5 +223,6 @@ require __DIR__ . '/includes/header.php';
     <div class="d-flex gap-1" data-user-pagination-pages></div>
   </div>
 </div>
+<?php endif; ?>
 
 <?php require __DIR__ . '/includes/footer.php'; ?>

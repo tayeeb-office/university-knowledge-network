@@ -1,46 +1,129 @@
 <?php
+require_once __DIR__ . '/../../components/error-state.php';
+require_once __DIR__ . '/../../components/empty-state.php';
+require_once __DIR__ . '/../../backend/config/database.php';
+require_once __DIR__ . '/../../backend/helpers/format.php';
+
 $activeRole = !empty($currentUser['dualRole']) ? ($currentUser['activeRole'] ?? 'learner') : ($currentUser['role'] ?? 'learner');
 $isMentorView = $activeRole === 'mentor';
-$sessions = [
-    101 => ['refId' => 'UKN-1048', 'status' => 'pending', 'timeline' => 'Requested 2 days ago',
-        'learner' => ['name' => 'Mahi Noor', 'department' => 'Computer Science', 'href' => ukn_route_href('learner-profile')],
-        'mentor' => ['name' => 'Nabila Rahman', 'department' => 'Computer Science', 'initials' => 'NR', 'rating' => 4.6, 'sessions' => 18, 'points' => 412, 'skills' => 'Python, Data Analysis', 'href' => ukn_route_href('mentor-profile')],
-        'skill' => 'Python', 'skillHref' => ukn_route_href('skill-details') . '&id=1',
-        'date' => 'September 18, 2026', 'time' => '7:00 PM', 'duration' => '60 minutes',
-        'message' => 'I need help understanding Python data analysis fundamentals and working with pandas.'],
-    104 => ['refId' => 'UKN-1052', 'status' => 'accepted', 'timeline' => 'Requested 4 days ago · Accepted 1 day ago',
-        'learner' => ['name' => 'Tanvir Hossain', 'department' => 'Electrical Engineering', 'href' => ukn_route_href('learner-profile')],
-        'mentor' => ['name' => 'Nabila Rahman', 'department' => 'Computer Science', 'initials' => 'NR', 'rating' => 4.6, 'sessions' => 18, 'points' => 412, 'skills' => 'Python, Data Analysis', 'href' => ukn_route_href('mentor-profile')],
-        'skill' => 'Data Analysis', 'skillHref' => ukn_route_href('skill-details') . '&id=5',
-        'date' => 'September 17, 2026', 'time' => '5:00 PM', 'duration' => '45 minutes',
-        'message' => 'Could we focus on merging dataframes for the coursework assignment?'],
-    105 => ['refId' => 'UKN-1055', 'status' => 'rejected', 'timeline' => 'Requested 5 days ago · Rejected 3 days ago',
-        'learner' => ['name' => 'Sara Khan', 'department' => 'Business Administration', 'href' => ukn_route_href('learner-profile') . '&id=2'],
-        'mentor' => ['name' => 'Nabila Rahman', 'department' => 'Computer Science', 'initials' => 'NR', 'rating' => 4.6, 'sessions' => 18, 'points' => 412, 'skills' => 'Python, Data Analysis', 'href' => ukn_route_href('mentor-profile')],
-        'skill' => 'Python', 'skillHref' => ukn_route_href('skill-details') . '&id=1',
-        'date' => 'September 15, 2026', 'time' => '6:00 PM', 'duration' => '60 minutes', 'message' => null],
-    201 => ['refId' => 'UKN-1040', 'status' => 'upcoming', 'timeline' => 'Requested 5 days ago · Accepted 4 days ago',
-        'learner' => ['name' => 'Nabila Rahman', 'department' => 'Computer Science', 'href' => ukn_route_href('learner-profile')],
-        'mentor' => ['name' => 'Rahim Ahmed', 'department' => 'Computer Science', 'initials' => 'RA', 'rating' => 4.9, 'sessions' => 127, 'points' => 520, 'skills' => 'Python, Data Analysis, Database Design', 'href' => ukn_route_href('mentor-profile') . '&id=2'],
-        'skill' => 'Python', 'skillHref' => ukn_route_href('skill-details') . '&id=1',
-        'date' => 'September 18, 2026', 'time' => '7:00 PM', 'duration' => '60 minutes',
-        'message' => 'I can read basic pandas code but I get lost merging two dataframes for the assignment. Could we work through one real example together?'],
-    203 => ['refId' => 'UKN-1035', 'status' => 'completed', 'ratingStatus' => 'unrated', 'timeline' => 'Completed on September 8, 2026',
-        'learner' => ['name' => 'Nabila Rahman', 'department' => 'Computer Science', 'href' => ukn_route_href('learner-profile')],
-        'mentor' => ['name' => 'Rahim Ahmed', 'department' => 'Computer Science', 'initials' => 'RA', 'rating' => 4.9, 'sessions' => 127, 'points' => 520, 'skills' => 'Python, Data Analysis, Database Design', 'href' => ukn_route_href('mentor-profile') . '&id=2'],
-        'skill' => 'Python', 'skillHref' => ukn_route_href('skill-details') . '&id=1',
-        'date' => 'September 8, 2026', 'time' => '6:00 PM', 'duration' => '60 minutes', 'message' => null],
-    205 => ['refId' => 'UKN-1028', 'status' => 'cancelled', 'timeline' => 'Cancelled 2 days ago',
-        'learner' => ['name' => 'Nabila Rahman', 'department' => 'Computer Science', 'href' => ukn_route_href('learner-profile')],
-        'mentor' => ['name' => 'Hasan Mahmud', 'department' => 'Electrical Engineering', 'initials' => 'HM', 'rating' => 4.7, 'sessions' => 52, 'points' => 365, 'skills' => 'Arduino, Embedded Systems', 'href' => ukn_route_href('mentor-profile') . '&id=3'],
-        'skill' => 'Arduino', 'skillHref' => ukn_route_href('skill-details') . '&id=8',
-        'date' => 'August 28, 2026', 'time' => '3:00 PM', 'duration' => '45 minutes',
-        'message' => 'Cancelled by learner — schedule clash with lab.'],
-];
+// TODO(auth): replace with the real session user id; mirrors index.php's own hardcoded
+// demo identity (Nabila Rahman, user id 1) until real sessions exist.
+if (!defined('UKN_DEMO_USER_ID')) {
+    define('UKN_DEMO_USER_ID', 1);
+}
 
-$requestedId = isset($_GET['id']) && is_string($_GET['id']) && isset($sessions[(int) $_GET['id']]) ? (int) $_GET['id'] : 201;
-$session = $sessions[$requestedId];
-$session += ['ratingStatus' => null, 'ratingValue' => null];
+$requestedId = isset($_GET['id']) && is_numeric($_GET['id']) ? (int) $_GET['id'] : 0;
+$session = false;
+$sessionDetailsDbError = false;
+
+try {
+    $pdo = getDatabaseConnection();
+
+    $selectBase = "SELECT ms.id, ms.reference_code, ms.status, ms.scheduled_date, ms.scheduled_time,
+            ms.duration_minutes, ms.request_message, ms.cancel_reason,
+            ms.requested_at, ms.responded_at, ms.completed_at, ms.updated_at,
+            sk.id AS skill_id, sk.name AS skill,
+            ul.id AS learner_id, ul.full_name AS learner_name, ul.initials AS learner_initials, dl.name AS learner_department,
+            um.id AS mentor_id, um.full_name AS mentor_name, um.initials AS mentor_initials, dm.name AS mentor_department,
+            um.avg_rating AS mentor_rating, um.sessions_as_mentor AS mentor_sessions, um.mentor_points,
+            sr.overall AS rating_value
+        FROM mentoring_sessions ms
+        JOIN skills sk ON sk.id = ms.skill_id
+        JOIN users ul ON ul.id = ms.learner_id
+        LEFT JOIN departments dl ON dl.id = ul.department_id
+        JOIN users um ON um.id = ms.mentor_id
+        LEFT JOIN departments dm ON dm.id = um.department_id
+        LEFT JOIN session_ratings sr ON sr.session_id = ms.id
+        WHERE (ms.learner_id = ? OR ms.mentor_id = ?) ";
+
+    // Access control: only a participant in the session (learner or mentor) may view it,
+    // not just anyone who guesses an id (see DATABASE_READ_INTEGRATION_PLAN.md §2.5).
+    $stmt = $pdo->prepare($selectBase . "AND ms.id = ?");
+    $stmt->execute([UKN_DEMO_USER_ID, UKN_DEMO_USER_ID, $requestedId]);
+    $session = $stmt->fetch();
+
+    if ($session === false) {
+        // No matching/accessible session for the requested id: fall back to the demo
+        // user's most recently requested session, mirroring the page's previous
+        // "always show something" mock behaviour.
+        $stmt = $pdo->prepare($selectBase . "ORDER BY ms.requested_at DESC LIMIT 1");
+        $stmt->execute([UKN_DEMO_USER_ID, UKN_DEMO_USER_ID]);
+        $session = $stmt->fetch();
+    }
+
+    if ($session !== false) {
+        $displayStatus = $session['status'] === 'accepted' ? 'upcoming' : $session['status'];
+
+        $skillsStmt = $pdo->prepare(
+            "SELECT s.name FROM user_skills us JOIN skills s ON s.id = us.skill_id
+             WHERE us.user_id = ? AND us.skill_type = 'teaching' ORDER BY s.name"
+        );
+        $skillsStmt->execute([$session['mentor_id']]);
+        $mentorSkills = $skillsStmt->fetchAll(PDO::FETCH_COLUMN);
+
+        switch ($displayStatus) {
+            case 'pending':
+                $timeline = 'Requested ' . ukn_time_ago($session['requested_at']);
+                break;
+            case 'upcoming':
+                $timeline = 'Requested ' . ukn_time_ago($session['requested_at'])
+                    . ($session['responded_at'] ? ' · Accepted ' . ukn_time_ago($session['responded_at']) : '');
+                break;
+            case 'rejected':
+                $timeline = 'Requested ' . ukn_time_ago($session['requested_at'])
+                    . ($session['responded_at'] ? ' · Rejected ' . ukn_time_ago($session['responded_at']) : '');
+                break;
+            case 'completed':
+                $timeline = $session['completed_at']
+                    ? 'Completed on ' . date('F j, Y', strtotime($session['completed_at']))
+                    : 'Completed';
+                break;
+            case 'cancelled':
+                $timeline = 'Cancelled ' . ukn_time_ago($session['updated_at']);
+                break;
+            default:
+                $timeline = '';
+        }
+
+        $timestamp = strtotime($session['scheduled_date'] . ' ' . $session['scheduled_time']);
+        $realId = (int) $session['id'];
+        $session = [
+            'id' => $realId,
+            'refId' => $session['reference_code'],
+            'status' => $displayStatus,
+            'timeline' => $timeline,
+            'learner' => [
+                'name' => $session['learner_name'],
+                'department' => (string) ($session['learner_department'] ?? ''),
+                'href' => ukn_route_href('learner-profile') . '&id=' . $session['learner_id'],
+            ],
+            'mentor' => [
+                'name' => $session['mentor_name'],
+                'department' => (string) ($session['mentor_department'] ?? ''),
+                'initials' => $session['mentor_initials'],
+                'rating' => $session['mentor_rating'],
+                'sessions' => (int) $session['mentor_sessions'],
+                'points' => (int) $session['mentor_points'],
+                'skills' => implode(', ', $mentorSkills),
+                'href' => ukn_route_href('mentor-profile') . '&id=' . $session['mentor_id'],
+            ],
+            'skill' => $session['skill'],
+            'skillHref' => ukn_route_href('skill-details') . '&id=' . $session['skill_id'],
+            'date' => date('F j, Y', $timestamp),
+            'time' => date('g:i A', $timestamp),
+            'duration' => $session['duration_minutes'] . ' minutes',
+            'message' => $displayStatus === 'cancelled' ? $session['cancel_reason'] : $session['request_message'],
+            'ratingStatus' => $displayStatus === 'completed'
+                ? ($session['rating_value'] !== null ? 'rated' : 'unrated')
+                : null,
+            'ratingValue' => $session['rating_value'] !== null ? (float) $session['rating_value'] : null,
+        ];
+    }
+} catch (Throwable $e) {
+    error_log('[UKN session-details] ' . $e->getMessage());
+    $sessionDetailsDbError = true;
+}
+
 $backTarget = (isset($_GET['from']) && $_GET['from'] === 'requests') ? 'requests' : 'sessions';
 $backHref = $backTarget === 'requests' ? ukn_route_href('learner-requests') : ukn_route_href('sessions');
 $backLabel = $backTarget === 'requests' ? 'Back to Learner Requests' : 'Back to Sessions';
@@ -52,15 +135,17 @@ $statusMeta = [
     'rejected'  => ['label' => 'Rejected',  'class' => 'ukn-status-danger'],
     'cancelled' => ['label' => 'Cancelled', 'class' => 'ukn-status-danger'],
 ];
-$meta = $statusMeta[$session['status']] ?? $statusMeta['upcoming'];
-$facts = [
-    ['label' => 'Session', 'value' => '#' . $session['refId']],
-    ['label' => 'Learner', 'value' => $session['learner']['name'] . ' · ' . $session['learner']['department'], 'href' => $session['learner']['href']],
-    ['label' => 'Mentor', 'value' => $session['mentor']['name'] . ' · ' . $session['mentor']['department'], 'href' => $session['mentor']['href']],
-    ['label' => 'Skill', 'value' => $session['skill'], 'href' => $session['skillHref']],
-    ['label' => 'Date & Time', 'value' => $session['date'] . ' · ' . $session['time']],
-    ['label' => 'Duration', 'value' => $session['duration']],
-];
+if ($session !== false) {
+    $meta = $statusMeta[$session['status']] ?? $statusMeta['upcoming'];
+    $facts = [
+        ['label' => 'Session', 'value' => '#' . $session['refId']],
+        ['label' => 'Learner', 'value' => $session['learner']['name'] . ' · ' . $session['learner']['department'], 'href' => $session['learner']['href']],
+        ['label' => 'Mentor', 'value' => $session['mentor']['name'] . ' · ' . $session['mentor']['department'], 'href' => $session['mentor']['href']],
+        ['label' => 'Skill', 'value' => $session['skill'], 'href' => $session['skillHref']],
+        ['label' => 'Date & Time', 'value' => $session['date'] . ' · ' . $session['time']],
+        ['label' => 'Duration', 'value' => $session['duration']],
+    ];
+}
 ?>
 <div class="ukn-page-header">
   <div>
@@ -70,9 +155,22 @@ $facts = [
     <h1>Session Details</h1>
   </div>
 </div>
+<?php if ($sessionDetailsDbError): ?>
+  <?php ukn_error_state([
+      'title' => 'Unable to load this session.',
+      'message' => 'Something went wrong while loading this session. Please try again shortly.',
+  ]); ?>
+<?php elseif ($session === false): ?>
+  <?php ukn_empty_state([
+      'icon' => 'event_busy',
+      'title' => 'Session not found.',
+      'message' => 'This session may not exist or you may not have access to it.',
+      'action' => ['label' => 'Back to Sessions', 'href' => htmlspecialchars(ukn_route_href('sessions'))],
+  ]); ?>
+<?php else: ?>
 <div class="row g-3">
   <div class="col-lg-8">
-    <div class="card mb-3" data-session-id="<?= $requestedId ?>" data-session-status="<?= htmlspecialchars($session['status']) ?>" data-session-details-href="">
+    <div class="card mb-3" data-session-id="<?= $session['id'] ?>" data-session-status="<?= htmlspecialchars($session['status']) ?>" data-session-details-href="">
       <div class="card-body">
         <div class="d-flex align-items-center gap-2 flex-wrap mb-3">
           <span class="ukn-status <?= $meta['class'] ?>" data-session-status-badge><?= $meta['label'] ?></span>
@@ -158,3 +256,4 @@ $facts = [
     </div>
   </div>
 </div>
+<?php endif; ?>

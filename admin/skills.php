@@ -1,24 +1,60 @@
 <?php
-require_once __DIR__ . '/includes/taxonomy-data.php';
 require_once __DIR__ . '/../components/empty-state.php';
+require_once __DIR__ . '/../components/error-state.php';
 require_once __DIR__ . '/../components/stat-card.php';
+require_once __DIR__ . '/../backend/config/database.php';
 $adminActiveNav = 'skills';
 $adminPageTitle = 'Skills';
 $adminPageSub = 'Manage the skills learners can learn and mentors can teach.';
 $adminPageStyles = ['../assets/css/admin/tables.css', '../assets/css/admin/forms.css'];
 $adminPageScripts = ['../assets/js/admin/skills.js'];
-$categories = ukn_admin_mock_categories();
-$skills = ukn_admin_mock_skills();
 $statusLabels = ['active' => 'Active', 'inactive' => 'Inactive'];
 $statusClass = ['active' => 'ukn-status-accent', 'inactive' => 'ukn-status-neutral'];
+
+$categories = [];
+$skills = [];
 $mostPopular = null;
-foreach ($skills as $skill) {
-    if ($mostPopular === null || $skill['learners'] > $mostPopular['learners']) {
-        $mostPopular = $skill;
+$skillsDbError = false;
+
+try {
+    $pdo = getDatabaseConnection();
+
+    $catStmt = $pdo->query("SELECT id, name, status FROM skill_categories ORDER BY name");
+    foreach ($catStmt->fetchAll() as $row) {
+        $categories[$row['id']] = $row;
     }
+
+    $stmt = $pdo->query(
+        "SELECT s.id, s.name, s.description, s.status, s.category_id AS categoryId, s.updated_at,
+                (SELECT COUNT(*) FROM user_skills WHERE skill_id = s.id AND skill_type = 'learning') AS learners,
+                (SELECT COUNT(*) FROM user_skills WHERE skill_id = s.id AND skill_type = 'teaching') AS mentors
+         FROM skills s
+         ORDER BY s.name"
+    );
+    foreach ($stmt->fetchAll() as $row) {
+        $row['learners'] = (int) $row['learners'];
+        $row['mentors'] = (int) $row['mentors'];
+        $row['updated'] = date('M j, Y', strtotime($row['updated_at']));
+        $row['updated_sort'] = strtotime($row['updated_at']);
+        $skills[$row['id']] = $row;
+        if ($mostPopular === null || $row['learners'] > $mostPopular['learners']) {
+            $mostPopular = $row;
+        }
+    }
+} catch (Throwable $e) {
+    error_log('[UKN admin/skills] ' . $e->getMessage());
+    $skillsDbError = true;
+    $categories = [];
+    $skills = [];
 }
 require __DIR__ . '/includes/header.php';
 ?>
+<?php if ($skillsDbError): ?>
+  <?php ukn_error_state([
+      'title' => 'Unable to load skills.',
+      'message' => 'Something went wrong while loading this page. Please try again shortly.',
+  ]); ?>
+<?php else: ?>
 <div class="d-flex justify-content-end mb-3">
   <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#skillFormModal" data-skill-add>
     <span class="ms" aria-hidden="true">add</span> Add Skill
@@ -30,7 +66,9 @@ require __DIR__ . '/includes/header.php';
   ukn_stat_card(['label' => 'Total Skills', 'value' => (string) count($skills), 'icon' => 'workspaces']);
   ukn_stat_card(['label' => 'Active Skills', 'value' => (string) count(array_filter($skills, static fn ($s) => $s['status'] === 'active')), 'icon' => 'check_circle']);
   ukn_stat_card(['label' => 'Categories', 'value' => (string) count($categories), 'icon' => 'category']);
-  ukn_stat_card(['label' => 'Most Popular', 'value' => $mostPopular['name'], 'icon' => 'trending_up', 'helper' => number_format($mostPopular['learners']) . ' learners']);
+  ukn_stat_card($mostPopular !== null
+      ? ['label' => 'Most Popular', 'value' => $mostPopular['name'], 'icon' => 'trending_up', 'helper' => number_format($mostPopular['learners']) . ' learners']
+      : ['label' => 'Most Popular', 'value' => '—', 'icon' => 'trending_up']);
   ?>
 </div>
 <div class="card mb-3">
@@ -93,7 +131,7 @@ require __DIR__ . '/includes/header.php';
             data-skill-status="<?= htmlspecialchars($skill['status']) ?>"
             data-skill-learners="<?= (int) $skill['learners'] ?>"
             data-skill-mentors="<?= (int) $skill['mentors'] ?>"
-            data-skill-updated-sort="<?= (int) $id ?>"
+            data-skill-updated-sort="<?= (int) $skill['updated_sort'] ?>"
           >
             <td data-label="Skill">
               <div class="fw-bold" data-skill-cell="name"><?= htmlspecialchars($skill['name']) ?></div>
@@ -150,7 +188,7 @@ require __DIR__ . '/includes/header.php';
       </tbody>
     </table>
   </div>
-  <div class="card-body" hidden data-skill-empty>
+  <div class="card-body"<?= $skills ? ' hidden' : '' ?> data-skill-empty>
     <?php ukn_empty_state([
         'icon' => 'workspaces',
         'title' => 'No skills found.',
@@ -164,6 +202,7 @@ require __DIR__ . '/includes/header.php';
     <div class="d-flex gap-1" data-skill-pagination-pages></div>
   </div>
 </div>
+<?php endif; ?>
 <div class="modal fade" id="skillFormModal" tabindex="-1" aria-labelledby="skillFormModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">

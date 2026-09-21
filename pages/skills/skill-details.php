@@ -1,99 +1,124 @@
 <?php
 require_once __DIR__ . '/../../components/mentor-card.php';
 require_once __DIR__ . '/../../components/post-card.php';
+require_once __DIR__ . '/../../components/error-state.php';
+require_once __DIR__ . '/../../components/empty-state.php';
+require_once __DIR__ . '/../../backend/config/database.php';
+require_once __DIR__ . '/../../backend/helpers/format.php';
+
 $activeRole = !empty($currentUser['dualRole']) ? ($currentUser['activeRole'] ?? 'learner') : ($currentUser['role'] ?? 'learner');
 $isMentor = $activeRole === 'mentor';
+// TODO(auth): read from the logged-in user's own user_skills rows once a real session exists.
 $myLearningSkills = ['Python', 'MySQL', 'Data Analysis', 'Public Speaking'];
 $myTeachingSkills = ['Python', 'Database Design', 'Data Analysis'];
-$mentorPool = [
-    'Rahim Ahmed'    => ['initials' => 'RA', 'department' => 'Computer Science', 'skill' => 'Python', 'rating' => 4.9, 'points' => 520, 'sessions' => 127, 'profileHref' => ukn_route_href('mentor-profile') . '&id=2'],
-    'Hasan Mahmud'   => ['initials' => 'HM', 'department' => 'Electrical Engineering', 'skill' => 'Arduino', 'rating' => 4.7, 'points' => 365, 'sessions' => 52, 'profileHref' => ukn_route_href('mentor-profile') . '&id=3'],
-    'Sara Khan'      => ['initials' => 'SK', 'department' => 'Business Administration', 'skill' => 'Public Speaking', 'rating' => 4.8, 'points' => 410, 'sessions' => 47, 'profileHref' => ukn_route_href('mentor-profile')],
-    'Tanvir Hossain' => ['initials' => 'TH', 'department' => 'Electrical Engineering', 'skill' => 'Data Analysis', 'rating' => 4.7, 'points' => 388, 'sessions' => 41, 'profileHref' => ukn_route_href('mentor-profile')],
-];
-$categoryMentors = [
-    'Programming'   => ['Rahim Ahmed', 'Tanvir Hossain'],
-    'Data'          => ['Tanvir Hossain', 'Rahim Ahmed'],
-    'Design'        => ['Rahim Ahmed', 'Sara Khan'],
-    'Communication' => ['Sara Khan', 'Rahim Ahmed'],
-    'Business'      => ['Sara Khan', 'Tanvir Hossain'],
-    'Engineering'   => ['Hasan Mahmud', 'Tanvir Hossain'],
-    'Academic'      => ['Sara Khan', 'Rahim Ahmed'],
-];
-$categoryTopics = [
-    'Programming'   => ['Data Structures', 'APIs', 'Version Control', 'Algorithms'],
-    'Data'          => ['Statistics', 'Data Visualization', 'Data Cleaning'],
-    'Design'        => ['User Research', 'Prototyping', 'Accessibility'],
-    'Communication' => ['Presentation', 'Body Language', 'Storytelling'],
-    'Business'      => ['Market Research', 'Content Strategy', 'Analytics'],
-    'Engineering'   => ['Circuit Design', 'Sensors', 'Robotics'],
-    'Academic'      => ['Research Methods', 'Citation Styles', 'Essay Structure'],
-];
-$skills = [
-    1 => ['name' => 'Python', 'category' => 'Programming', 'mentors' => 124, 'learners' => 340, 'sessionsHeld' => 1248, 'discussions' => 86,
-        'description' => 'A versatile programming language used for software development, automation, data analysis and machine learning.',
-        'about' => 'Python is the most taught skill on the network. Mentors cover everything from first syntax to pandas, scripting and the machine-learning coursework sequence, and most sessions run 45–60 minutes in the Student Union study rooms or online.',
-        'relatedTopics' => ['Data Analysis', 'Automation', 'Backend Development', 'Algorithms', 'APIs'],
-        'discussionPosts' => [
-            ['id' => 2, 'author' => 'Rahim Ahmed', 'initials' => 'RA', 'role' => 'Mentor', 'department' => 'Computer Science', 'time' => '35 min ago',
-                'title' => 'A Simple Way to Start Learning Python for Data Analysis',
-                'excerpt' => 'Skip the theory-heavy courses at first. Start with pandas on a dataset you actually care about — it clicks a lot faster than notebooks full of print statements.',
-                'tags' => ['Python', 'Data Analysis'], 'score' => 48, 'comments' => 12],
-            ['id' => 201, 'author' => 'Imran Chowdhury', 'initials' => 'IC', 'role' => 'Learner', 'department' => 'English', 'time' => '1 day ago',
-                'title' => 'Python List Comprehension Confusion',
-                'excerpt' => "I understand the basic syntax but nested comprehensions with a condition still take me a full minute to read. Any mental model that made this click for you?",
-                'tags' => ['Python'], 'score' => 21, 'comments' => 9],
-            ['id' => 202, 'author' => 'Sara Khan', 'initials' => 'SK', 'role' => 'Learner', 'department' => 'Business Administration', 'time' => '2 days ago',
-                'title' => 'Which Library Should I Learn for Data Analysis?',
-                'excerpt' => 'Trying to decide between going deep on pandas first or splitting time with numpy and matplotlib from the start. What order actually worked for you?',
-                'tags' => ['Python', 'Data Analysis'], 'score' => 17, 'comments' => 6],
-        ],
-    ],
-    2 => ['name' => 'MySQL', 'category' => 'Data', 'mentors' => 82, 'learners' => 214, 'sessionsHeld' => 640, 'discussions' => 42,
-        'description' => 'A widely used relational database system for storing and querying structured data.',
-        'about' => 'Sessions typically start from writing and querying tables, then move into joins, indexes and the normalization rules that show up most in coursework and interviews.'],
-    3 => ['name' => 'React', 'category' => 'Programming', 'mentors' => 76, 'learners' => 196, 'sessionsHeld' => 590, 'discussions' => 51,
-        'description' => 'A JavaScript library for building interactive user interfaces and single-page applications.',
-        'about' => 'Most mentors assume basic JavaScript and focus on components, state and the mistakes that trip up a first real project — prop drilling, effect dependencies and re-render loops.'],
-    4 => ['name' => 'UI/UX Design', 'category' => 'Design', 'mentors' => 68, 'learners' => 173, 'sessionsHeld' => 480, 'discussions' => 37,
-        'description' => 'Designing interfaces and experiences that are functional, accessible and easy to use.',
-        'about' => 'Sessions mix short critique of your own screens with the fundamentals — layout, hierarchy, contrast and how to justify a design decision, not just make one.'],
-    5 => ['name' => 'Data Analysis', 'category' => 'Data', 'mentors' => 91, 'learners' => 256, 'sessionsHeld' => 710, 'discussions' => 63,
-        'description' => 'Turning raw data into insight using spreadsheets, Python and statistical thinking.',
-        'about' => 'Mentors work through a real dataset with you — cleaning it, asking useful questions of it, and presenting what you found, rather than teaching statistics in the abstract.'],
-    6 => ['name' => 'Public Speaking', 'category' => 'Communication', 'mentors' => 54, 'learners' => 161, 'sessionsHeld' => 390, 'discussions' => 28,
-        'description' => 'Structuring and delivering talks and presentations with confidence.',
-        'about' => 'Sessions are mostly practice: structuring a short talk, handling nerves, and getting specific feedback on pacing and filler words rather than general advice.'],
-    7 => ['name' => 'Database Design', 'category' => 'Data', 'mentors' => 63, 'learners' => 147, 'sessionsHeld' => 460, 'discussions' => 33,
-        'description' => 'Modeling data relationships and normalizing schemas for reliable, efficient systems.',
-        'about' => 'Covers modeling entities and relationships, normalization, and the trade-offs between a clean schema and a fast query — the part coursework often skips.'],
-    8 => ['name' => 'Arduino', 'category' => 'Engineering', 'mentors' => 47, 'learners' => 128, 'sessionsHeld' => 310, 'discussions' => 22,
-        'description' => 'Building and programming microcontroller projects, from sensors to simple robotics.',
-        'about' => 'Hands-on sessions with real boards and components — wiring, debouncing, sensors and the debugging habits that save the most time on a first project.'],
-    9 => ['name' => 'Academic Writing', 'category' => 'Academic', 'mentors' => 39, 'learners' => 104, 'sessionsHeld' => 260, 'discussions' => 19,
-        'description' => 'Structuring essays, reports and citations for university-level coursework.',
-        'about' => 'Mentors help structure arguments, tighten paragraphs and get citations right for the specific style your department expects.'],
-    10 => ['name' => 'Digital Marketing', 'category' => 'Business', 'mentors' => 44, 'learners' => 121, 'sessionsHeld' => 300, 'discussions' => 24,
-        'description' => 'Reaching an audience through social media, content and basic campaign analytics.',
-        'about' => 'Sessions cover the basics of reaching an audience — content planning, social platforms and reading enough analytics to know if something worked.'],
-];
-$requestedId = isset($_GET['id']) && is_string($_GET['id']) && isset($skills[(int) $_GET['id']]) ? (int) $_GET['id'] : 1;
-$skill = $skills[$requestedId];
-$skill += ['relatedTopics' => $categoryTopics[$skill['category']] ?? [], 'discussionPosts' => []];
+
+$requestedId = isset($_GET['id']) && is_numeric($_GET['id']) ? (int) $_GET['id'] : 0;
+$skill = false;
+$topMentors = [];
+$skillDbError = false;
+
+try {
+    $pdo = getDatabaseConnection();
+
+    $selectBase = "SELECT s.id, s.name, sc.name AS category, s.description, s.about,
+            (SELECT COUNT(*) FROM user_skills WHERE skill_id = s.id AND skill_type = 'teaching') AS mentors,
+            (SELECT COUNT(*) FROM user_skills WHERE skill_id = s.id AND skill_type = 'learning') AS learners,
+            (SELECT COUNT(*) FROM mentoring_sessions WHERE skill_id = s.id AND status = 'completed') AS sessionsHeld,
+            (SELECT COUNT(*) FROM post_skills ps JOIN posts p ON p.id = ps.post_id WHERE ps.skill_id = s.id AND p.status = 'visible') AS discussions
+        FROM skills s
+        JOIN skill_categories sc ON sc.id = s.category_id ";
+
+    $stmt = $pdo->prepare($selectBase . "WHERE s.id = ? AND s.status = 'active'");
+    $stmt->execute([$requestedId]);
+    $skill = $stmt->fetch();
+
+    if ($skill === false) {
+        // No matching/active skill for the requested id: fall back to the lowest-id active
+        // skill, mirroring the page's previous "always show something" mock behaviour.
+        $stmt = $pdo->prepare($selectBase . "WHERE s.status = 'active' ORDER BY s.id ASC LIMIT 1");
+        $stmt->execute();
+        $skill = $stmt->fetch();
+    }
+
+    if ($skill !== false) {
+        $skillId = (int) $skill['id'];
+        $skill['mentors'] = (int) $skill['mentors'];
+        $skill['learners'] = (int) $skill['learners'];
+        $skill['sessionsHeld'] = (int) $skill['sessionsHeld'];
+        $skill['discussions'] = (int) $skill['discussions'];
+
+        $topicsStmt = $pdo->prepare(
+            "SELECT sk.name FROM skill_relations sr JOIN skills sk ON sk.id = sr.target_skill_id
+             WHERE sr.source_skill_id = ?
+             ORDER BY FIELD(sr.strength, 'Strong', 'Medium', 'Related')
+             LIMIT 6"
+        );
+        $topicsStmt->execute([$skillId]);
+        $skill['relatedTopics'] = $topicsStmt->fetchAll(PDO::FETCH_COLUMN);
+
+        $postsStmt = $pdo->prepare(
+            "SELECT p.id, p.title, p.content, p.vote_score AS score, p.comment_count AS comments,
+                    p.created_at, u.full_name AS author, u.initials, u.role, d.name AS department
+             FROM post_skills ps
+             JOIN posts p ON p.id = ps.post_id
+             JOIN users u ON u.id = p.user_id
+             LEFT JOIN departments d ON d.id = u.department_id
+             WHERE ps.skill_id = ? AND p.status = 'visible'
+             ORDER BY p.created_at DESC
+             LIMIT 3"
+        );
+        $postsStmt->execute([$skillId]);
+        $skill['discussionPosts'] = array_map(static function (array $row) {
+            $row['role'] = ukn_role_label($row['role']);
+            $row['time'] = ukn_time_ago($row['created_at']);
+            $row['excerpt'] = ukn_excerpt($row['content']);
+            $row['tags'] = [];
+            $row['isOwner'] = false;
+            $row['href'] = 'index.php?page=post-details&id=' . $row['id'];
+            return $row;
+        }, $postsStmt->fetchAll());
+
+        $mentorsStmt = $pdo->prepare(
+            "SELECT u.id, u.full_name AS name, u.initials, u.avg_rating AS rating, u.mentor_points AS points,
+                    u.sessions_as_mentor AS sessions, d.name AS department
+             FROM user_skills us
+             JOIN users u ON u.id = us.user_id
+             LEFT JOIN departments d ON d.id = u.department_id
+             WHERE us.skill_id = ? AND us.skill_type = 'teaching'
+             ORDER BY u.avg_rating DESC, u.sessions_as_mentor DESC
+             LIMIT 4"
+        );
+        $mentorsStmt->execute([$skillId]);
+        $topMentors = array_map(static function (array $row) use ($skill) {
+            $row['primarySkill'] = $skill['name'];
+            $row['profileHref'] = ukn_route_href('mentor-profile') . '&id=' . $row['id'];
+            return $row;
+        }, $mentorsStmt->fetchAll());
+    }
+} catch (Throwable $e) {
+    error_log('[UKN skill-details] ' . $e->getMessage());
+    $skillDbError = true;
+}
+
+$skill = $skill === false ? [] : ($skill + ['relatedTopics' => [], 'discussionPosts' => []]);
 $kind = $isMentor ? 'teaching' : 'learning';
 $kindLabel = $isMentor ? 'Teaching' : 'Learning';
 $mySkillNames = $isMentor ? $myTeachingSkills : $myLearningSkills;
-$isAdded = in_array($skill['name'], $mySkillNames, true);
-$topMentorNames = $categoryMentors[$skill['category']] ?? ['Rahim Ahmed', 'Sara Khan'];
-$topMentors = array_map(static function (string $name) use ($mentorPool, $skill) {
-    $mentor = $mentorPool[$name];
-    return [
-        'name' => $name, 'initials' => $mentor['initials'], 'department' => $mentor['department'],
-        'primarySkill' => $skill['name'], 'rating' => $mentor['rating'], 'points' => $mentor['points'],
-        'sessions' => $mentor['sessions'], 'profileHref' => $mentor['profileHref'],
-    ];
-}, $topMentorNames);
+$isAdded = $skill !== [] && in_array($skill['name'], $mySkillNames, true);
 ?>
+<?php if ($skillDbError): ?>
+  <?php ukn_error_state([
+      'title' => 'Unable to load this skill.',
+      'message' => 'Something went wrong while loading skill details. Please try again shortly.',
+  ]); ?>
+<?php elseif ($skill === []): ?>
+  <?php ukn_empty_state([
+      'icon' => 'search_off',
+      'title' => 'Skill not found.',
+      'message' => 'This skill may have been removed or is no longer active.',
+      'action' => ['label' => 'Browse Skills', 'href' => htmlspecialchars(ukn_route_href('skills'))],
+  ]); ?>
+<?php else: ?>
 <div class="card mb-4">
   <div class="card-body" data-skill-name="<?= htmlspecialchars($skill['name']) ?>">
     <div class="d-flex align-items-center gap-2 flex-wrap mb-1">
@@ -164,4 +189,5 @@ $topMentors = array_map(static function (string $name) use ($mentorPool, $skill)
       ukn_post_card($post);
   endforeach; ?>
 </div>
+<?php endif; ?>
 <?php endif; ?>

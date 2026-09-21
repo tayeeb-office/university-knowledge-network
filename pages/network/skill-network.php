@@ -1,41 +1,53 @@
 <?php
 require_once __DIR__ . '/../../components/error-state.php';
+require_once __DIR__ . '/../../components/empty-state.php';
+require_once __DIR__ . '/../../backend/config/database.php';
+
 $activeRole = !empty($currentUser['dualRole']) ? ($currentUser['activeRole'] ?? 'learner') : ($currentUser['role'] ?? 'learner');
 $isMentor = $activeRole === 'mentor';
+// TODO(auth): read from the logged-in user's own user_skills rows once a real session exists.
 $learningSkills = ['Python', 'MySQL', 'Data Analysis'];
 $teachingSkills = ['Python', 'Database Design', 'Data Analysis'];
 $currentSkills = $isMentor ? $teachingSkills : $learningSkills;
-$nodes = [
-    ['id' => 1, 'name' => 'Python', 'category' => 'Programming', 'mentors' => 124, 'learners' => 340, 'sessions' => 1248, 'description' => 'A versatile programming language used for software development, automation, data analysis and machine learning.'],
-    ['id' => 2, 'name' => 'MySQL', 'category' => 'Data', 'mentors' => 82, 'learners' => 214, 'sessions' => 640, 'description' => 'A widely used relational database system for storing and querying structured data.'],
-    ['id' => 3, 'name' => 'React', 'category' => 'Programming', 'mentors' => 76, 'learners' => 196, 'sessions' => 590, 'description' => 'A JavaScript library for building interactive user interfaces and single-page applications.'],
-    ['id' => 4, 'name' => 'UI/UX Design', 'category' => 'Design', 'mentors' => 68, 'learners' => 173, 'sessions' => 480, 'description' => 'Designing interfaces and experiences that are functional, accessible and easy to use.'],
-    ['id' => 5, 'name' => 'Data Analysis', 'category' => 'Data', 'mentors' => 91, 'learners' => 256, 'sessions' => 710, 'description' => 'Turning raw data into insight using spreadsheets, Python and statistical thinking.'],
-    ['id' => 6, 'name' => 'Public Speaking', 'category' => 'Communication', 'mentors' => 54, 'learners' => 161, 'sessions' => 390, 'description' => 'Structuring and delivering talks and presentations with confidence.'],
-    ['id' => 7, 'name' => 'Database Design', 'category' => 'Data', 'mentors' => 63, 'learners' => 147, 'sessions' => 460, 'description' => 'Modeling data relationships and normalizing schemas for reliable, efficient systems.'],
-    ['id' => 8, 'name' => 'Arduino', 'category' => 'Engineering', 'mentors' => 47, 'learners' => 128, 'sessions' => 310, 'description' => 'Building and programming microcontroller projects, from sensors to simple robotics.'],
-    ['id' => 9, 'name' => 'Academic Writing', 'category' => 'Academic', 'mentors' => 39, 'learners' => 104, 'sessions' => 260, 'description' => 'Structuring essays, reports and citations for university-level coursework.'],
-    ['id' => 10, 'name' => 'Digital Marketing', 'category' => 'Business', 'mentors' => 44, 'learners' => 121, 'sessions' => 300, 'description' => 'Reaching an audience through social media, content and basic campaign analytics.'],
-    ['id' => 11, 'name' => 'JavaScript', 'category' => 'Programming', 'mentors' => 58, 'learners' => 162, 'sessions' => 420, 'description' => "The core scripting language of the web, used alongside React for interactive interfaces."],
-    ['id' => 12, 'name' => 'Presentation Skills', 'category' => 'Communication', 'mentors' => 31, 'learners' => 89, 'sessions' => 210, 'description' => "Turning a talk's structure into a confident, well-paced delivery in front of an audience."],
-    ['id' => 13, 'name' => 'Machine Learning', 'category' => 'Data', 'mentors' => 35, 'learners' => 97, 'sessions' => 240, 'description' => 'Using data and Python to build models that recognize patterns and make predictions.'],
-    ['id' => 14, 'name' => 'Embedded Systems', 'category' => 'Engineering', 'mentors' => 22, 'learners' => 58, 'sessions' => 150, 'description' => 'Programming the hardware side of microcontroller projects — sensors, timing and low-level control.'],
-];
-$edges = [
-    ['source' => 1, 'target' => 5, 'strength' => 'Strong', 'reason' => 'Python is the most common language used for data analysis workflows on the network.'],
-    ['source' => 2, 'target' => 7, 'strength' => 'Strong', 'reason' => 'Database Design sessions are usually taught and practiced directly in MySQL.'],
-    ['source' => 3, 'target' => 11, 'strength' => 'Strong', 'reason' => 'React is a JavaScript library — mentors expect basic JavaScript before starting React.'],
-    ['source' => 4, 'target' => 3, 'strength' => 'Medium', 'reason' => 'Many UI/UX mentees go on to implement their designs as real React interfaces.'],
-    ['source' => 6, 'target' => 12, 'strength' => 'Strong', 'reason' => 'Presentation Skills sessions build directly on Public Speaking fundamentals.'],
-    ['source' => 8, 'target' => 14, 'strength' => 'Strong', 'reason' => 'Arduino projects are the most common hands-on introduction to embedded systems.'],
-    ['source' => 1, 'target' => 2, 'strength' => 'Medium', 'reason' => 'Python is frequently used to connect to and query MySQL databases.'],
-    ['source' => 5, 'target' => 2, 'strength' => 'Medium', 'reason' => 'Data analysis sessions often pull data directly from a MySQL database.'],
-    ['source' => 5, 'target' => 7, 'strength' => 'Medium', 'reason' => 'Well-modeled data makes analysis sessions more straightforward.'],
-    ['source' => 10, 'target' => 6, 'strength' => 'Related', 'reason' => 'Presenting campaign results is a common Digital Marketing session topic.'],
-    ['source' => 9, 'target' => 12, 'strength' => 'Medium', 'reason' => 'Both skills focus on structuring an argument clearly for an audience.'],
-    ['source' => 8, 'target' => 1, 'strength' => 'Related', 'reason' => 'Some Arduino projects are scripted or logged using Python.'],
-    ['source' => 1, 'target' => 13, 'strength' => 'Related', 'reason' => 'Machine Learning sessions build on existing Python fluency.'],
-];
+
+$nodes = [];
+$edges = [];
+$networkDbError = false;
+
+try {
+    $pdo = getDatabaseConnection();
+
+    $nodeStmt = $pdo->query(
+        "SELECT s.id, s.name, sc.name AS category, s.description,
+                (SELECT COUNT(*) FROM user_skills WHERE skill_id = s.id AND skill_type = 'teaching') AS mentors,
+                (SELECT COUNT(*) FROM user_skills WHERE skill_id = s.id AND skill_type = 'learning') AS learners,
+                (SELECT COUNT(*) FROM mentoring_sessions WHERE skill_id = s.id AND status = 'completed') AS sessions
+         FROM skills s
+         JOIN skill_categories sc ON sc.id = s.category_id
+         WHERE s.status = 'active'
+         ORDER BY s.id"
+    );
+    $nodes = array_map(static function (array $row): array {
+        $row['id'] = (int) $row['id'];
+        $row['mentors'] = (int) $row['mentors'];
+        $row['learners'] = (int) $row['learners'];
+        $row['sessions'] = (int) $row['sessions'];
+        return $row;
+    }, $nodeStmt->fetchAll());
+
+    $edgeStmt = $pdo->query(
+        "SELECT source_skill_id AS source, target_skill_id AS target, strength, reason
+         FROM skill_relations"
+    );
+    $edges = array_map(static function (array $row): array {
+        $row['source'] = (int) $row['source'];
+        $row['target'] = (int) $row['target'];
+        return $row;
+    }, $edgeStmt->fetchAll());
+} catch (Throwable $e) {
+    error_log('[UKN skill-network] ' . $e->getMessage());
+    $networkDbError = true;
+}
 
 $nodesById = [];
 foreach ($nodes as $node) {
@@ -69,6 +81,18 @@ $joinWithAnd = static function (array $items): string {
     <p class="ukn-page-header__sub">Explore how skills connect and discover related areas to learn or teach.</p>
   </div>
 </div>
+<?php if ($networkDbError): ?>
+  <?php ukn_error_state([
+      'title' => 'Unable to load the skill network.',
+      'message' => 'Something went wrong while loading skills and their relationships. Please try again shortly.',
+  ]); ?>
+<?php elseif ($nodes === []): ?>
+  <?php ukn_empty_state([
+      'icon' => 'hub',
+      'title' => 'No skills to display yet.',
+      'message' => 'The skill network will appear once skills have been added.',
+  ]); ?>
+<?php else: ?>
 <div class="ukn-network-layout">
   <div class="card ukn-network-graph-card">
     <div class="ukn-network-toolbar">
@@ -159,3 +183,4 @@ $joinWithAnd = static function (array $items): string {
     <?php endforeach; ?>
   </div>
 </section>
+<?php endif; ?>

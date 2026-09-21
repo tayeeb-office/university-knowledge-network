@@ -2,36 +2,65 @@
 require_once __DIR__ . '/../../components/stat-card.php';
 require_once __DIR__ . '/../../components/skill-card.php';
 require_once __DIR__ . '/../../components/empty-state.php';
-$summaryStats = [
-    ['label' => 'Skills Learning', 'value' => '4', 'icon' => 'workspaces'],
-    ['label' => 'Sessions Completed', 'value' => '18', 'icon' => 'event_available'],
-    ['label' => 'Current Goals', 'value' => '3', 'icon' => 'flag'],
-    ['label' => 'Learning Points', 'value' => '412', 'icon' => 'military_tech'],
-];
-$learningSkills = [
-    [
-        'name' => 'Python', 'level' => 'Learning', 'progress' => 65,
-        'meta' => 'Mentor: Rahim Ahmed · 6 sessions completed',
-    ],
-    [
-        'name' => 'MySQL', 'level' => 'Learning', 'progress' => 45,
-        'meta' => 'Mentor: Tanvir Hossain · 4 sessions completed',
-    ],
-    [
-        'name' => 'Data Analysis', 'level' => 'Learning', 'progress' => 30,
-        'meta' => 'Mentor: Tanvir Hossain · 2 sessions completed',
-    ],
-    [
-        'name' => 'Public Speaking', 'level' => 'Learning', 'progress' => 55,
-        'meta' => 'Mentor: Sara Khan · 5 sessions completed',
-    ],
-];
-foreach ($learningSkills as &$skill) {
-    $skill['href'] = ukn_route_href('skill-details') . '&id=1';
-    $skill['primaryAction'] = 'Find Mentors';
-    $skill['primaryActionHref'] = ukn_route_href('find-mentors') . '&skill=' . urlencode($skill['name']);
+require_once __DIR__ . '/../../components/error-state.php';
+require_once __DIR__ . '/../../backend/config/database.php';
+
+// TODO(auth): replace with the real session user id; mirrors index.php's own hardcoded
+// demo identity (Nabila Rahman, user id 1) until real sessions exist.
+if (!defined('UKN_DEMO_USER_ID')) {
+    define('UKN_DEMO_USER_ID', 1);
 }
-unset($skill);
+
+$summaryStats = [];
+$learningSkills = [];
+$learningSkillsDbError = false;
+
+try {
+    $pdo = getDatabaseConnection();
+
+    $skillsStmt = $pdo->prepare(
+        "SELECT s.id, s.name, us.proficiency AS level, us.progress, us.sessions_count,
+                m.full_name AS mentor_name
+         FROM user_skills us
+         JOIN skills s ON s.id = us.skill_id
+         LEFT JOIN users m ON m.id = us.primary_mentor_id
+         WHERE us.user_id = ? AND us.skill_type = 'learning'
+         ORDER BY s.name"
+    );
+    $skillsStmt->execute([UKN_DEMO_USER_ID]);
+    $learningSkills = array_map(static function (array $row): array {
+        $sessions = (int) $row['sessions_count'];
+        $sessionsLabel = $sessions . ' session' . ($sessions === 1 ? '' : 's') . ' completed';
+        $row['meta'] = $row['mentor_name'] ? "Mentor: {$row['mentor_name']} · {$sessionsLabel}" : $sessionsLabel;
+        $row['href'] = ukn_route_href('skill-details') . '&id=' . $row['id'];
+        $row['primaryAction'] = 'Find Mentors';
+        $row['primaryActionHref'] = ukn_route_href('find-mentors') . '&skill=' . urlencode($row['name']);
+        return $row;
+    }, $skillsStmt->fetchAll());
+
+    $userStmt = $pdo->prepare(
+        "SELECT sessions_as_learner, learning_points FROM users WHERE id = ?"
+    );
+    $userStmt->execute([UKN_DEMO_USER_ID]);
+    $user = $userStmt->fetch();
+
+    $goalsCountStmt = $pdo->prepare(
+        "SELECT COUNT(*) FROM learning_goals WHERE user_id = ? AND status = 'in-progress'"
+    );
+    $goalsCountStmt->execute([UKN_DEMO_USER_ID]);
+
+    $summaryStats = [
+        ['label' => 'Skills Learning', 'value' => (string) count($learningSkills), 'icon' => 'workspaces'],
+        ['label' => 'Sessions Completed', 'value' => (string) ($user['sessions_as_learner'] ?? 0), 'icon' => 'event_available'],
+        ['label' => 'Current Goals', 'value' => (string) $goalsCountStmt->fetchColumn(), 'icon' => 'flag'],
+        ['label' => 'Learning Points', 'value' => (string) ($user['learning_points'] ?? 0), 'icon' => 'military_tech'],
+    ];
+} catch (Throwable $e) {
+    error_log('[UKN learning-skills] ' . $e->getMessage());
+    $learningSkillsDbError = true;
+    $summaryStats = [];
+    $learningSkills = [];
+}
 ?>
 <div class="ukn-page-header">
   <div>
@@ -40,6 +69,12 @@ unset($skill);
   </div>
   <a href="<?= htmlspecialchars(ukn_route_href('skills')) ?>" class="btn btn-outline-secondary btn-sm">Explore Skills</a>
 </div>
+<?php if ($learningSkillsDbError): ?>
+  <?php ukn_error_state([
+      'title' => 'Unable to load your learning skills.',
+      'message' => 'Something went wrong while loading this page. Please try again shortly.',
+  ]); ?>
+<?php else: ?>
 <div class="row g-3 mb-4">
   <?php foreach ($summaryStats as $stat): ?>
     <div class="col-6 col-lg-3"><?php ukn_stat_card($stat); ?></div>
@@ -69,3 +104,4 @@ unset($skill);
     <a href="<?= htmlspecialchars(ukn_route_href('skills')) ?>" class="btn btn-primary btn-sm flex-shrink-0">Explore More Skills</a>
   </div>
 </div>
+<?php endif; ?>

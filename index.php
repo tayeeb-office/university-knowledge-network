@@ -1,4 +1,13 @@
 <?php
+require_once __DIR__ . '/backend/config/database.php';
+require_once __DIR__ . '/backend/helpers/format.php';
+
+// TODO(auth): replace with the real session user id; mirrors this file's own hardcoded
+// demo identity (Nabila Rahman, user id 1) until real sessions exist.
+if (!defined('UKN_DEMO_USER_ID')) {
+    define('UKN_DEMO_USER_ID', 1);
+}
+
 $routes = [
     'home'              => ['file' => 'pages/home.php', 'title' => 'Home'],
     'login'             => ['file' => 'pages/auth/login.php', 'title' => 'Log In'],
@@ -82,7 +91,61 @@ if (in_array($page, $authOnlyPages, true)) {
     ];
 }
 $activeNav = $page;
-$notificationCount = 3;
+
+// Real shared-layout badge data (notification list/count, mentor's pending learner-requests
+// count, learner's upcoming-sessions count) computed once here so header.php's bell badge,
+// includes/notification-dropdown.php, and includes/left-sidebar.php / includes/mobile-nav.php's
+// nav badges all reuse the same values instead of each running the same queries again.
+$notifications = [];
+$notificationCount = 0;
+$pendingRequestCount = 0;
+$upcomingSessionCount = 0;
+if (!empty($currentUser['loggedIn'])) {
+    $kindLabels = ['session' => 'Session', 'community' => 'Community', 'rating' => 'Rating', 'system' => 'System'];
+    try {
+        $pdo = getDatabaseConnection();
+
+        $notifStmt = $pdo->prepare(
+            "SELECT icon, message, type, is_read, link_url, created_at
+             FROM notifications WHERE user_id = ? ORDER BY created_at DESC LIMIT 5"
+        );
+        $notifStmt->execute([UKN_DEMO_USER_ID]);
+        $notifications = array_map(static function (array $row) use ($kindLabels): array {
+            return [
+                'icon' => $row['icon'],
+                'text' => $row['message'],
+                'time' => ukn_time_ago($row['created_at']),
+                'kind' => $kindLabels[$row['type']] ?? ucfirst($row['type']),
+                'unread' => !$row['is_read'],
+                'href' => $row['link_url'],
+            ];
+        }, $notifStmt->fetchAll());
+
+        $countStmt = $pdo->prepare("SELECT COUNT(*) FROM notifications WHERE user_id = ? AND is_read = 0");
+        $countStmt->execute([UKN_DEMO_USER_ID]);
+        $notificationCount = (int) $countStmt->fetchColumn();
+
+        $pendingStmt = $pdo->prepare("SELECT COUNT(*) FROM mentoring_sessions WHERE mentor_id = ? AND status = 'pending'");
+        $pendingStmt->execute([UKN_DEMO_USER_ID]);
+        $pendingRequestCount = (int) $pendingStmt->fetchColumn();
+
+        // Left-sidebar/mobile-nav "Sessions" badge (learner nav item only, see
+        // includes/left-sidebar.php) = the learner's own upcoming accepted future sessions —
+        // the same metric already used for the Learner Dashboard's "Upcoming Sessions" stat.
+        $upcomingStmt = $pdo->prepare(
+            "SELECT COUNT(*) FROM mentoring_sessions
+             WHERE learner_id = ? AND status = 'accepted' AND scheduled_date >= CURDATE()"
+        );
+        $upcomingStmt->execute([UKN_DEMO_USER_ID]);
+        $upcomingSessionCount = (int) $upcomingStmt->fetchColumn();
+    } catch (Throwable $e) {
+        error_log('[UKN index] ' . $e->getMessage());
+        $notifications = [];
+        $notificationCount = 0;
+        $pendingRequestCount = 0;
+        $upcomingSessionCount = 0;
+    }
+}
 $showRightSidebar = array_key_exists($page, $sidebarContextByPage);
 $rightSidebarContext = $sidebarContextByPage[$page] ?? 'home';
 $pageTitle = $route['title'] . ' · University Knowledge Network';

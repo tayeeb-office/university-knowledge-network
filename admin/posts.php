@@ -1,59 +1,132 @@
 <?php
-require_once __DIR__ . '/includes/users-data.php';
 require_once __DIR__ . '/../components/empty-state.php';
+require_once __DIR__ . '/../components/error-state.php';
 require_once __DIR__ . '/../components/stat-card.php';
+require_once __DIR__ . '/../backend/config/database.php';
 $adminActiveNav = 'posts';
 $adminPageTitle = 'Posts';
 $adminPageSub = 'Review community posts, reported content and visibility status.';
 $adminPageStyles = ['../assets/css/admin/tables.css', '../assets/css/admin/forms.css'];
 $adminPageScripts = ['../assets/js/admin/moderation.js'];
-$users = ukn_admin_mock_users();
-function ukn_admin_author(array $users, int $id): array
-{
-    $u = $users[$id];
-    return ['id' => $id, 'name' => $u['name'], 'department' => $u['department']];
-}
-$posts = [
-    ['id' => 'UKN-P-0001', 'publicId' => 1, 'title' => 'Need Help Understanding Database Normalization', 'author' => 1, 'tags' => ['DBMS', 'MySQL', 'Database Design'], 'excerpt' => 'I understand 1NF, but I am still confused about the practical difference between 2NF and 3NF.', 'votes' => 24, 'comments' => 8, 'reports' => 0, 'status' => 'visible', 'posted' => 'Sep 13, 2026'],
-    ['id' => 'UKN-P-0002', 'publicId' => 2, 'title' => 'A Simple Way to Start Learning Python for Data Analysis', 'author' => 2, 'tags' => ['Python', 'Data Analysis'], 'excerpt' => 'Skip the theory-heavy courses at first. Start with pandas on a dataset you actually care about.', 'votes' => 48, 'comments' => 12, 'reports' => 0, 'status' => 'visible', 'posted' => 'Sep 13, 2026'],
-    ['id' => 'UKN-P-0003', 'publicId' => 3, 'title' => 'Looking for a Public Speaking Practice Partner', 'author' => 6, 'tags' => ['Public Speaking', 'Communication'], 'excerpt' => 'Preparing for a case competition presentation and would love a few practice run-throughs.', 'votes' => 16, 'comments' => 6, 'reports' => 0, 'status' => 'visible', 'posted' => 'Sep 13, 2026'],
-    ['id' => 'UKN-P-0004', 'publicId' => 4, 'title' => 'Can Someone Explain Arduino Interrupts With a Practical Example?', 'author' => 4, 'tags' => ['Arduino', 'Embedded Systems'], 'excerpt' => 'I understand the attachInterrupt() syntax but keep getting inconsistent readings.', 'votes' => 31, 'comments' => 9, 'reports' => 0, 'status' => 'visible', 'posted' => 'Sep 13, 2026'],
-    ['id' => 'UKN-P-0005', 'publicId' => 5, 'title' => 'How Do You Improve Academic Presentation Skills?', 'author' => 3, 'tags' => ['Presentation', 'Communication'], 'excerpt' => 'My seminar presentations feel flat even when the research is solid.', 'votes' => 19, 'comments' => 14, 'reports' => 0, 'status' => 'visible', 'posted' => 'Sep 13, 2026'],
-    ['id' => 'UKN-P-0006', 'publicId' => 6, 'title' => 'Things I Learned While Building My First React Project', 'author' => 10, 'tags' => ['React', 'JavaScript'], 'excerpt' => 'Mainly that prop drilling gets painful fast and useEffect dependency arrays are not optional reading.', 'votes' => 27, 'comments' => 10, 'reports' => 0, 'status' => 'visible', 'posted' => 'Sep 13, 2026'],
-    ['id' => 'UKN-P-0007', 'publicId' => 7, 'title' => 'Best Resources for Learning UI/UX Design as a Beginner', 'author' => 6, 'tags' => ['UI/UX Design'], 'excerpt' => 'Business student trying to pick up enough UI/UX to prototype my own capstone project.', 'votes' => 22, 'comments' => 5, 'reports' => 0, 'status' => 'visible', 'posted' => 'Sep 13, 2026'],
-    ['id' => 'UKN-P-0008', 'publicId' => 8, 'title' => "What's the Fastest Way to Get Comfortable With SQL Joins?", 'author' => 2, 'tags' => ['MySQL', 'SQL'], 'excerpt' => 'Draw the two tables on paper before writing any query.', 'votes' => 37, 'comments' => 11, 'reports' => 0, 'status' => 'visible', 'posted' => 'Sep 12, 2026'],
-    ['id' => 'UKN-P-0009', 'publicId' => 402, 'title' => 'What Is the Best Way to Practice Python Data Analysis?', 'author' => 1, 'tags' => ['Python', 'Data Analysis'], 'excerpt' => 'Looking for a structured way to practice beyond following along with tutorials.', 'votes' => 31, 'comments' => 11, 'reports' => 0, 'status' => 'visible', 'posted' => 'Sep 10, 2026'],
-    ['id' => 'UKN-P-0010', 'publicId' => 403, 'title' => 'Looking for a Study Partner for Database Systems', 'author' => 1, 'tags' => ['Database Design', 'DBMS'], 'excerpt' => 'Anyone else in DBMS lab this semester want to study together before exams?', 'votes' => 14, 'comments' => 5, 'reports' => 0, 'status' => 'visible', 'posted' => 'Sep 6, 2026'],
-    ['id' => 'UKN-P-0011', 'publicId' => 404, 'title' => 'Things I Learned After My First Group Project in DBMS Lab', 'author' => 1, 'tags' => ['Database Design', 'MySQL'], 'excerpt' => 'A few things I wish I knew before splitting up the schema design work.', 'votes' => 19, 'comments' => 6, 'reports' => 0, 'status' => 'visible', 'posted' => 'Aug 30, 2026'],
-    ['id' => 'UKN-P-0012', 'publicId' => 405, 'title' => 'Which MySQL Resources Actually Helped You Learn Joins?', 'author' => 1, 'tags' => ['MySQL', 'DBMS'], 'excerpt' => 'Looking for practice problems that go beyond simple INNER JOIN examples.', 'votes' => 9, 'comments' => 3, 'reports' => 0, 'status' => 'visible', 'posted' => 'Aug 25, 2026'],
-    ['id' => 'UKN-P-0013', 'publicId' => 3, 'title' => 'Best Resources for Learning MySQL Joins?', 'author' => 5, 'tags' => ['MySQL', 'Database'], 'excerpt' => 'Looking for practice problems that go beyond simple INNER JOIN examples.', 'votes' => 31, 'comments' => 6, 'reports' => 1, 'reportReasons' => ['Off-topic (very similar to an existing post)'], 'status' => 'visible', 'posted' => 'Sep 9, 2026'],
-    ['id' => 'UKN-P-0014', 'publicId' => 1, 'title' => 'Anyone Want to Exchange Completed Assignment Files?', 'author' => 14, 'tags' => ['Academic'], 'excerpt' => 'Looking to trade completed assignments from last semester to save time.', 'votes' => 3, 'comments' => 2, 'reports' => 3, 'reportReasons' => ['Off-topic', 'Academic integrity concern'], 'status' => 'visible', 'posted' => 'Sep 13, 2026'],
-    ['id' => 'UKN-P-0015', 'publicId' => 1, 'title' => 'Check Out My New Side Project Website!', 'author' => 15, 'tags' => ['Digital Marketing'], 'excerpt' => 'Promoting a personal side project unrelated to coursework or mentoring.', 'votes' => 2, 'comments' => 0, 'reports' => 2, 'reportReasons' => ['Spam', 'Repeated promotional content'], 'status' => 'hidden', 'posted' => 'Sep 12, 2026'],
-];
 $statusLabels = ['visible' => 'Visible', 'hidden' => 'Hidden'];
 $statusClass = ['visible' => 'ukn-status-accent', 'hidden' => 'ukn-status-neutral'];
+$reasonLabels = [
+    'academic-integrity' => 'Academic integrity concern', 'off-topic' => 'Off-topic',
+    'spam' => 'Spam', 'inappropriate' => 'Inappropriate', 'harassment' => 'Harassment', 'other' => 'Other',
+];
+
+$posts = [];
 $skillOptions = [];
-foreach ($posts as $p) {
-    foreach ($p['tags'] as $tag) {
-        $skillOptions[$tag] = true;
+$totalCount = 0;
+$visibleCount = 0;
+$hiddenCount = 0;
+$reportedCount = 0;
+$postsDbError = false;
+
+try {
+    $pdo = getDatabaseConnection();
+
+    $stmt = $pdo->query(
+        "SELECT p.id, p.title, p.content, p.vote_score AS votes, p.comment_count AS comments,
+                p.report_count AS reports, p.status, p.created_at,
+                u.id AS author_id, u.full_name AS author_name, d.name AS author_department
+         FROM posts p
+         JOIN users u ON u.id = p.user_id
+         LEFT JOIN departments d ON d.id = u.department_id
+         ORDER BY p.created_at DESC"
+    );
+    $rows = $stmt->fetchAll();
+
+    if ($rows) {
+        $postIds = array_column($rows, 'id');
+        $placeholders = implode(',', array_fill(0, count($postIds), '?'));
+
+        $tagsStmt = $pdo->prepare(
+            "SELECT ps.post_id, s.name FROM post_skills ps JOIN skills s ON s.id = ps.skill_id
+             WHERE ps.post_id IN ($placeholders)"
+        );
+        $tagsStmt->execute($postIds);
+        $tagsByPost = [];
+        foreach ($tagsStmt->fetchAll() as $row) {
+            $tagsByPost[$row['post_id']][] = $row['name'];
+        }
+
+        $reportsStmt = $pdo->prepare(
+            "SELECT target_id, reason, description FROM reports
+             WHERE target_type = 'post' AND target_id IN ($placeholders)
+             ORDER BY created_at DESC"
+        );
+        $reportsStmt->execute($postIds);
+        $reasonsByPost = [];
+        foreach ($reportsStmt->fetchAll() as $row) {
+            $label = $row['description'] !== null && $row['description'] !== ''
+                ? $row['description']
+                : ($reasonLabels[$row['reason']] ?? ucfirst($row['reason']));
+            $reasonsByPost[$row['target_id']][] = $label;
+        }
+
+        foreach ($rows as $row) {
+            $tags = $tagsByPost[$row['id']] ?? [];
+            foreach ($tags as $tag) {
+                $skillOptions[$tag] = true;
+            }
+            $reports = (int) $row['reports'];
+            $post = [
+                'id' => 'UKN-P-' . str_pad((string) $row['id'], 4, '0', STR_PAD_LEFT),
+                'publicId' => (int) $row['id'],
+                'title' => $row['title'],
+                'author' => (int) $row['author_id'],
+                'authorName' => $row['author_name'],
+                'authorDepartment' => (string) ($row['author_department'] ?? ''),
+                'tags' => $tags,
+                'excerpt' => $row['content'],
+                'votes' => (int) $row['votes'],
+                'comments' => (int) $row['comments'],
+                'reports' => $reports,
+                'reportReasons' => $reasonsByPost[$row['id']] ?? [],
+                'status' => $row['status'],
+                'posted' => date('M j, Y', strtotime($row['created_at'])),
+            ];
+            $posts[] = $post;
+
+            $totalCount++;
+            if ($post['status'] === 'visible') {
+                $visibleCount++;
+            } else {
+                $hiddenCount++;
+            }
+            if ($reports > 0) {
+                $reportedCount++;
+            }
+        }
     }
+    $skillOptions = array_keys($skillOptions);
+    sort($skillOptions);
+} catch (Throwable $e) {
+    error_log('[UKN admin/posts] ' . $e->getMessage());
+    $postsDbError = true;
+    $posts = [];
 }
-$skillOptions = array_keys($skillOptions);
-sort($skillOptions);
 require __DIR__ . '/includes/header.php';
 ?>
+<?php if ($postsDbError): ?>
+  <?php ukn_error_state([
+      'title' => 'Unable to load posts.',
+      'message' => 'Something went wrong while loading this page. Please try again shortly.',
+  ]); ?>
+<?php else: ?>
 <div class="ukn-admin-stat-grid mb-4">
   <button type="button" class="ukn-admin-stat-btn" data-post-summary-filter="status:">
-    <?php ukn_stat_card(['label' => 'Total Posts', 'value' => '1,126', 'icon' => 'article']); ?>
+    <?php ukn_stat_card(['label' => 'Total Posts', 'value' => number_format($totalCount), 'icon' => 'article']); ?>
   </button>
   <button type="button" class="ukn-admin-stat-btn" data-post-summary-filter="status:visible">
-    <?php ukn_stat_card(['label' => 'Visible', 'value' => '1,102', 'icon' => 'visibility']); ?>
+    <?php ukn_stat_card(['label' => 'Visible', 'value' => number_format($visibleCount), 'icon' => 'visibility']); ?>
   </button>
   <button type="button" class="ukn-admin-stat-btn" data-post-summary-filter="status:hidden">
-    <?php ukn_stat_card(['label' => 'Hidden', 'value' => '24', 'icon' => 'visibility_off']); ?>
+    <?php ukn_stat_card(['label' => 'Hidden', 'value' => number_format($hiddenCount), 'icon' => 'visibility_off']); ?>
   </button>
   <button type="button" class="ukn-admin-stat-btn" data-post-summary-filter="reported:reported">
-    <?php ukn_stat_card(['label' => 'Reported', 'value' => '8', 'icon' => 'flag']); ?>
+    <?php ukn_stat_card(['label' => 'Reported', 'value' => number_format($reportedCount), 'icon' => 'flag']); ?>
   </button>
 </div>
 <div class="card mb-3">
@@ -113,7 +186,7 @@ require __DIR__ . '/includes/header.php';
       </thead>
       <tbody>
         <?php foreach ($posts as $p):
-            $author = ukn_admin_author($users, $p['author']);
+            $author = ['id' => $p['author'], 'name' => $p['authorName'], 'department' => $p['authorDepartment']];
             $isVisible = $p['status'] === 'visible';
             $reportReasons = $p['reportReasons'] ?? [];
         ?>
@@ -198,7 +271,7 @@ require __DIR__ . '/includes/header.php';
       </tbody>
     </table>
   </div>
-  <div class="card-body" hidden data-post-empty>
+  <div class="card-body"<?= $posts ? ' hidden' : '' ?> data-post-empty>
     <?php ukn_empty_state([
         'icon' => 'article',
         'title' => 'No posts found.',
@@ -212,6 +285,7 @@ require __DIR__ . '/includes/header.php';
     <div class="d-flex gap-1" data-post-pagination-pages></div>
   </div>
 </div>
+<?php endif; ?>
 <div class="modal fade" id="postDetailModal" tabindex="-1" aria-labelledby="postDetailModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">

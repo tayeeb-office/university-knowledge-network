@@ -1,6 +1,12 @@
 <?php
 if (!function_exists('ukn_nav_groups_for_role')) {
-    function ukn_nav_groups_for_role(string $role): array
+    /**
+     * $badgeCounts (optional): real per-request counts computed once in index.php —
+     * 'learnerRequests' (mentor's pending mentoring_sessions), 'notifications' (unread
+     * notifications), 'sessions' (learner's upcoming accepted sessions). Missing/absent keys
+     * render no badge at all, matching how !empty($item['count']) already hides a zero badge.
+     */
+    function ukn_nav_groups_for_role(string $role, array $badgeCounts = []): array
     {
         $item = static fn (string $icon, string $label, string $route, ?int $count = null): array
             => ['icon' => $icon, 'label' => $label, 'route' => $route, 'count' => $count];
@@ -26,7 +32,7 @@ if (!function_exists('ukn_nav_groups_for_role')) {
                     ]],
                     ['title' => 'Mentoring', 'items' => [
                         $item('dashboard', 'Dashboard', 'mentor-dashboard'),
-                        $item('inbox', 'Learner Requests', 'learner-requests', 5),
+                        $item('inbox', 'Learner Requests', 'learner-requests', $badgeCounts['learnerRequests'] ?? null),
                         $item('event', 'Sessions', 'sessions'),
                         $item('school', 'Teaching Skills', 'teaching-skills'),
                         $item('schedule', 'Availability', 'availability'),
@@ -34,7 +40,7 @@ if (!function_exists('ukn_nav_groups_for_role')) {
                         $item('military_tech', 'Mentor Points', 'points'),
                     ]],
                     ['title' => 'You', 'items' => [
-                        $item('notifications', 'Notifications', 'notifications', 3),
+                        $item('notifications', 'Notifications', 'notifications', $badgeCounts['notifications'] ?? null),
                         $item('person', 'Profile', 'my-profile'),
                         $item('hub', 'Skill Network', 'skill-network'),
                         $item('settings', 'Settings', 'settings'),
@@ -56,11 +62,11 @@ if (!function_exists('ukn_nav_groups_for_role')) {
                         $item('workspaces', 'Skills', 'skills'),
                         $item('menu_book', 'My Learning', 'learning-skills'),
                         $item('flag', 'Learning Goals', 'learning-goals'),
-                        $item('event', 'Sessions', 'sessions', 2),
+                        $item('event', 'Sessions', 'sessions', $badgeCounts['sessions'] ?? null),
                         $item('military_tech', 'Points', 'points'),
                     ]],
                     ['title' => 'You', 'items' => [
-                        $item('notifications', 'Notifications', 'notifications', 3),
+                        $item('notifications', 'Notifications', 'notifications', $badgeCounts['notifications'] ?? null),
                         $item('person', 'Profile', 'my-profile'),
                         $item('hub', 'Skill Network', 'skill-network'),
                         $item('settings', 'Settings', 'settings'),
@@ -90,11 +96,17 @@ $navRole = $currentUser['loggedIn']
     : 'visitor';
 $isDualRoleUser = $currentUser['loggedIn'] && $currentUser['dualRole'];
 $rolesToRender = $isDualRoleUser ? ['learner', 'mentor'] : [$navRole];
+// Real counts computed once in index.php; falls back to no badge if included standalone.
+$badgeCounts = [
+    'learnerRequests' => $pendingRequestCount ?? 0,
+    'notifications' => $notificationCount ?? 0,
+    'sessions' => $upcomingSessionCount ?? 0,
+];
 ?>
 <nav class="ukn-sidebar-left" aria-label="Primary">
   <?php foreach ($rolesToRender as $roleKey): ?>
     <div<?= $isDualRoleUser ? ' data-role="' . htmlspecialchars($roleKey) . '"' . ($roleKey === $navRole ? '' : ' hidden') : '' ?>>
-      <?php foreach (ukn_nav_groups_for_role($roleKey) as $group): ?>
+      <?php foreach (ukn_nav_groups_for_role($roleKey, $badgeCounts) as $group): ?>
         <div class="ukn-nav-group">
           <span class="ukn-eyebrow ukn-nav-group__title"><?= htmlspecialchars($group['title']) ?></span>
           <?php foreach ($group['items'] as $item):

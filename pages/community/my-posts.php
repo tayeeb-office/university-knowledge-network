@@ -1,51 +1,74 @@
 <?php
 require_once __DIR__ . '/../../components/post-card.php';
 require_once __DIR__ . '/../../components/empty-state.php';
-$myPosts = [
-    [
-        'id' => 1, 'author' => 'Nabila Rahman', 'initials' => 'NR', 'role' => 'Learner', 'department' => 'Computer Science',
-        'authorHref' => ukn_route_href('learner-profile'), 'time' => '12 min ago',
-        'title' => 'Need Help Understanding Database Normalization',
-        'excerpt' => "I get 1NF and 2NF but 3NF stops making sense once foreign keys are involved. Does anyone have a simple example that isn't the classic student/course table?",
-        'tags' => ['DBMS', 'MySQL'], 'score' => 24, 'comments' => 8, 'isOwner' => true,
-    ],
-    [
-        'id' => 402, 'author' => 'Nabila Rahman', 'initials' => 'NR', 'role' => 'Learner', 'department' => 'Computer Science',
-        'authorHref' => ukn_route_href('learner-profile'), 'time' => '2 days ago',
-        'title' => 'What Is the Best Way to Practice Python Data Analysis?',
-        'excerpt' => "I've finished the basics of pandas but I'm not sure what to build next. Should I pick a Kaggle dataset, or is there a more structured way to practice before jumping into a real project?",
-        'tags' => ['Python', 'Data Analysis'], 'score' => 31, 'comments' => 11, 'isOwner' => true,
-    ],
-    [
-        'id' => 403, 'author' => 'Nabila Rahman', 'initials' => 'NR', 'role' => 'Learner', 'department' => 'Computer Science',
-        'authorHref' => ukn_route_href('learner-profile'), 'time' => '4 days ago',
-        'title' => 'Looking for a Study Partner for Database Systems',
-        'excerpt' => "Preparing for the DBMS midterm and would rather work through past papers with someone than alone. CS or related department, evenings work best for me.",
-        'tags' => ['Database Design', 'DBMS'], 'score' => 14, 'comments' => 5, 'isOwner' => true,
-    ],
-    [
-        'id' => 404, 'author' => 'Nabila Rahman', 'initials' => 'NR', 'role' => 'Learner', 'department' => 'Computer Science',
-        'authorHref' => ukn_route_href('learner-profile'), 'time' => '1 week ago',
-        'title' => 'Things I Learned After My First Group Project in DBMS Lab',
-        'excerpt' => "Splitting the schema design before agreeing on naming conventions was our first mistake. Writing down a short list of what actually went wrong in case it saves someone else a merge conflict.",
-        'tags' => ['Database Design', 'MySQL'], 'score' => 19, 'comments' => 6, 'isOwner' => true,
-    ],
-    [
-        'id' => 405, 'author' => 'Nabila Rahman', 'initials' => 'NR', 'role' => 'Learner', 'department' => 'Computer Science',
-        'authorHref' => ukn_route_href('learner-profile'), 'time' => '2 weeks ago',
-        'title' => 'Which MySQL Resources Actually Helped You Learn Joins?',
-        'excerpt' => "I understand INNER JOIN fine but LEFT/RIGHT JOIN with multiple tables still takes me a few tries to get right. Looking for resources that go beyond the two-table textbook examples.",
-        'tags' => ['MySQL', 'DBMS'], 'score' => 9, 'comments' => 3, 'isOwner' => true,
-    ],
-];
-$skillOptions = [];
-foreach ($myPosts as $post) {
-    foreach ($post['tags'] as $tag) {
-        $skillOptions[$tag] = true;
-    }
+require_once __DIR__ . '/../../components/error-state.php';
+require_once __DIR__ . '/../../backend/config/database.php';
+require_once __DIR__ . '/../../backend/helpers/format.php';
+
+// TODO(auth): replace with the real session user id; mirrors index.php's own hardcoded
+// demo identity (Nabila Rahman, user id 1) until real sessions exist.
+if (!defined('UKN_DEMO_USER_ID')) {
+    define('UKN_DEMO_USER_ID', 1);
 }
-$skillOptions = array_keys($skillOptions);
-sort($skillOptions);
+
+$myPosts = [];
+$skillOptions = [];
+$myPostsDbError = false;
+
+try {
+    $pdo = getDatabaseConnection();
+
+    $postsStmt = $pdo->prepare(
+        "SELECT p.id, p.title, p.content, p.vote_score AS score, p.comment_count AS comments,
+                p.created_at, u.full_name AS author, u.initials, u.role, d.name AS department
+         FROM posts p
+         JOIN users u ON u.id = p.user_id
+         LEFT JOIN departments d ON d.id = u.department_id
+         WHERE p.user_id = ? AND p.status = 'visible'
+         ORDER BY p.created_at DESC"
+    );
+    $postsStmt->execute([UKN_DEMO_USER_ID]);
+    $myPosts = $postsStmt->fetchAll();
+
+    if ($myPosts) {
+        $postIds = array_column($myPosts, 'id');
+        $placeholders = implode(',', array_fill(0, count($postIds), '?'));
+        $tagsStmt = $pdo->prepare(
+            "SELECT ps.post_id, s.name FROM post_skills ps JOIN skills s ON s.id = ps.skill_id
+             WHERE ps.post_id IN ($placeholders)"
+        );
+        $tagsStmt->execute($postIds);
+        $tagsByPost = [];
+        foreach ($tagsStmt->fetchAll() as $row) {
+            $tagsByPost[$row['post_id']][] = $row['name'];
+        }
+
+        foreach ($myPosts as &$post) {
+            $post['score'] = (int) $post['score'];
+            $post['comments'] = (int) $post['comments'];
+            $post['tags'] = $tagsByPost[$post['id']] ?? [];
+            $post['role'] = ukn_role_label($post['role']);
+            $post['department'] = (string) ($post['department'] ?? '');
+            $post['time'] = ukn_time_ago($post['created_at']);
+            $post['excerpt'] = ukn_excerpt($post['content']);
+            $post['href'] = 'index.php?page=post-details&id=' . $post['id'];
+            $post['authorHref'] = ukn_route_href($post['role'] === 'Mentor' ? 'mentor-profile' : 'learner-profile') . '&id=' . UKN_DEMO_USER_ID;
+            $post['isOwner'] = true;
+
+            foreach ($post['tags'] as $tag) {
+                $skillOptions[$tag] = true;
+            }
+        }
+        unset($post);
+        $skillOptions = array_keys($skillOptions);
+        sort($skillOptions);
+    }
+} catch (Throwable $e) {
+    error_log('[UKN my-posts] ' . $e->getMessage());
+    $myPostsDbError = true;
+    $myPosts = [];
+    $skillOptions = [];
+}
 ?>
 <div class="ukn-page-header">
   <div>
@@ -69,6 +92,12 @@ sort($skillOptions);
     <?php endforeach; ?>
   </select>
 </div>
+<?php if ($myPostsDbError): ?>
+  <?php ukn_error_state([
+      'title' => 'Unable to load your posts.',
+      'message' => 'Something went wrong while loading your posts. Please try again shortly.',
+  ]); ?>
+<?php else: ?>
 <div data-post-list="my">
   <?php foreach ($myPosts as $post): ukn_post_card($post); endforeach; ?>
 </div>
@@ -80,3 +109,4 @@ sort($skillOptions);
       'action' => ['label' => 'Create Post', 'href' => '#', 'attrs' => 'data-bs-toggle="modal" data-bs-target="#createPostModal"'],
   ]); ?>
 </div>
+<?php endif; ?>

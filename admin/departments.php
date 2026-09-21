@@ -1,24 +1,54 @@
 <?php
-require_once __DIR__ . '/includes/taxonomy-data.php';
 require_once __DIR__ . '/../components/empty-state.php';
+require_once __DIR__ . '/../components/error-state.php';
 require_once __DIR__ . '/../components/stat-card.php';
+require_once __DIR__ . '/../backend/config/database.php';
 $adminActiveNav = 'departments';
 $adminPageTitle = 'Departments';
 $adminPageSub = 'Manage the academic departments available across the network.';
 $adminPageStyles = ['../assets/css/admin/tables.css', '../assets/css/admin/forms.css'];
 $adminPageScripts = ['../assets/js/admin/skills.js'];
-$departments = ukn_admin_mock_departments();
 $statusLabels = ['active' => 'Active', 'inactive' => 'Inactive'];
 $statusClass = ['active' => 'ukn-status-accent', 'inactive' => 'ukn-status-neutral'];
-$totalUsers = array_sum(array_column($departments, 'users'));
+
+$departments = [];
+$totalUsers = 0;
 $largest = null;
-foreach ($departments as $dept) {
-    if ($largest === null || $dept['users'] > $largest['users']) {
-        $largest = $dept;
+$departmentsDbError = false;
+
+try {
+    $pdo = getDatabaseConnection();
+    $stmt = $pdo->query(
+        "SELECT d.id, d.name, d.code, d.status,
+                (SELECT COUNT(*) FROM users u WHERE u.department_id = d.id) AS users,
+                (SELECT COUNT(*) FROM users u WHERE u.department_id = d.id AND u.role IN ('learner','dual')) AS learners,
+                (SELECT COUNT(*) FROM users u WHERE u.department_id = d.id AND u.role IN ('mentor','dual')) AS mentors
+         FROM departments d
+         ORDER BY d.name"
+    );
+    foreach ($stmt->fetchAll() as $row) {
+        $row['users'] = (int) $row['users'];
+        $row['learners'] = (int) $row['learners'];
+        $row['mentors'] = (int) $row['mentors'];
+        $departments[$row['id']] = $row;
+        $totalUsers += $row['users'];
+        if ($largest === null || $row['users'] > $largest['users']) {
+            $largest = $row;
+        }
     }
+} catch (Throwable $e) {
+    error_log('[UKN admin/departments] ' . $e->getMessage());
+    $departmentsDbError = true;
+    $departments = [];
 }
 require __DIR__ . '/includes/header.php';
 ?>
+<?php if ($departmentsDbError): ?>
+  <?php ukn_error_state([
+      'title' => 'Unable to load departments.',
+      'message' => 'Something went wrong while loading this page. Please try again shortly.',
+  ]); ?>
+<?php else: ?>
 <div class="d-flex justify-content-end mb-3">
   <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#departmentFormModal" data-department-add>
     <span class="ms" aria-hidden="true">add</span> Add Department
@@ -29,7 +59,9 @@ require __DIR__ . '/includes/header.php';
   ukn_stat_card(['label' => 'Total Departments', 'value' => (string) count($departments), 'icon' => 'apartment']);
   ukn_stat_card(['label' => 'Active', 'value' => (string) count(array_filter($departments, static fn ($d) => $d['status'] === 'active')), 'icon' => 'check_circle']);
   ukn_stat_card(['label' => 'Total Users', 'value' => number_format($totalUsers), 'icon' => 'group']);
-  ukn_stat_card(['label' => 'Largest Department', 'value' => $largest['name'], 'icon' => 'trending_up', 'helper' => number_format($largest['users']) . ' users']);
+  ukn_stat_card($largest !== null
+      ? ['label' => 'Largest Department', 'value' => $largest['name'], 'icon' => 'trending_up', 'helper' => number_format($largest['users']) . ' users']
+      : ['label' => 'Largest Department', 'value' => '—', 'icon' => 'trending_up']);
   ?>
 </div>
 <div class="card mb-3">
@@ -132,7 +164,7 @@ require __DIR__ . '/includes/header.php';
       </tbody>
     </table>
   </div>
-  <div class="card-body" hidden data-department-empty>
+  <div class="card-body"<?= $departments ? ' hidden' : '' ?> data-department-empty>
     <?php ukn_empty_state([
         'icon' => 'apartment',
         'title' => 'No departments found.',
@@ -142,6 +174,7 @@ require __DIR__ . '/includes/header.php';
     ]); ?>
   </div>
 </div>
+<?php endif; ?>
 <div class="modal fade" id="departmentFormModal" tabindex="-1" aria-labelledby="departmentFormModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">

@@ -1,36 +1,110 @@
 <?php
 require_once __DIR__ . '/../../components/post-card.php';
-$posts = [
-    1 => [
-        'id' => 1, 'author' => 'Nabila Rahman', 'initials' => 'NR', 'role' => 'Learner', 'department' => 'Computer Science',
-        'authorHref' => ukn_route_href('learner-profile'), 'time' => '12 min ago',
-        'title' => 'Need Help Understanding Database Normalization',
-        'excerpt' => "I get 1NF and 2NF but 3NF stops making sense once foreign keys are involved. I understand a table needs a primary key and that every column should depend on the whole key, not just part of it, but I can't tell where 2NF ends and 3NF begins in practice.\n\nCould someone walk through a simple example — maybe a student, course and instructor table — showing exactly which dependency each normal form removes? I don't need the formal definitions again, just a concrete before-and-after.",
-        'tags' => ['Database', 'MySQL', 'DBMS'], 'score' => 24, 'comments' => 8, 'saved' => false, 'isOwner' => true,
-    ],
-];
-$requestedId = isset($_GET['id']) && is_string($_GET['id']) && isset($posts[(int) $_GET['id']]) ? (int) $_GET['id'] : 1;
-$post = $posts[$requestedId];
-$comments = [
-    [
-        'author' => 'Rahim Ahmed', 'initials' => 'RA', 'role' => 'Mentor', 'authorHref' => ukn_route_href('mentor-profile') . '&id=2',
-        'time' => '8 min ago', 'text' => '2NF removes partial dependency — a non-key column depending on only part of a composite key. 3NF removes transitive dependency — a non-key column depending on another non-key column instead of the key itself. Want me to walk through a students/courses example?',
-        'replies' => [
-            ['author' => 'Nabila Rahman', 'initials' => 'NR', 'role' => 'Learner', 'time' => '6 min ago', 'text' => 'Yes please — a students/courses example would really help.'],
-        ],
-    ],
-    [
-        'author' => 'Ayesha Rahman', 'initials' => 'AR', 'role' => 'Learner', 'authorHref' => ukn_route_href('learner-profile'),
-        'time' => '5 min ago', 'text' => 'I had the same confusion. A student-course-instructor example helped me understand the difference.',
-        'replies' => [],
-    ],
-    [
-        'author' => 'Hasan Mahmud', 'initials' => 'HM', 'role' => 'Mentor', 'authorHref' => ukn_route_href('mentor-profile') . '&id=3',
-        'time' => '2 min ago', 'text' => 'Once you see 2NF and 3NF applied to the same table side by side, the difference stops feeling abstract — happy to share a quick before/after if it helps.',
-        'replies' => [],
-    ],
-];
+require_once __DIR__ . '/../../components/error-state.php';
+require_once __DIR__ . '/../../components/empty-state.php';
+require_once __DIR__ . '/../../backend/config/database.php';
+require_once __DIR__ . '/../../backend/helpers/format.php';
+
+$requestedId = isset($_GET['id']) && is_numeric($_GET['id']) ? (int) $_GET['id'] : 0;
+$post = false;
+$comments = [];
+$postDbError = false;
+
+try {
+    $pdo = getDatabaseConnection();
+
+    $selectBase = "SELECT p.id, p.title, p.content AS excerpt, p.vote_score AS score, p.comment_count AS comments,
+            p.created_at, u.id AS author_id, u.full_name AS author, u.initials, u.role, d.name AS department
+        FROM posts p
+        JOIN users u ON u.id = p.user_id
+        LEFT JOIN departments d ON d.id = u.department_id
+        WHERE p.status = 'visible' ";
+
+    $stmt = $pdo->prepare($selectBase . "AND p.id = ?");
+    $stmt->execute([$requestedId]);
+    $post = $stmt->fetch();
+
+    if ($post === false) {
+        // No matching/visible post for the requested id: fall back to the most recent
+        // visible post, mirroring the page's previous "always show something" mock behaviour.
+        $stmt = $pdo->prepare($selectBase . "ORDER BY p.created_at DESC LIMIT 1");
+        $stmt->execute();
+        $post = $stmt->fetch();
+    }
+
+    if ($post !== false) {
+        $postId = (int) $post['id'];
+        $post['score'] = (int) $post['score'];
+        $post['comments'] = (int) $post['comments'];
+        $post['department'] = (string) ($post['department'] ?? '');
+        $post['role'] = ukn_role_label($post['role']);
+        $post['time'] = ukn_time_ago($post['created_at']);
+        $post['authorHref'] = ukn_route_href($post['role'] === 'Mentor' ? 'mentor-profile' : 'learner-profile') . '&id=' . $post['author_id'];
+        // TODO(auth): ownership/saved state need the current session user; not determinable yet.
+        $post['isOwner'] = false;
+        $post['saved'] = false;
+
+        $tagsStmt = $pdo->prepare(
+            "SELECT s.name FROM post_skills ps JOIN skills s ON s.id = ps.skill_id WHERE ps.post_id = ?"
+        );
+        $tagsStmt->execute([$postId]);
+        $post['tags'] = $tagsStmt->fetchAll(PDO::FETCH_COLUMN);
+
+        $commentsStmt = $pdo->prepare(
+            "SELECT c.id, c.parent_id, c.content AS text, c.created_at, u.id AS author_id,
+                    u.full_name AS author, u.initials, u.role
+             FROM comments c
+             JOIN users u ON u.id = c.user_id
+             WHERE c.post_id = ? AND c.status = 'visible'
+             ORDER BY c.created_at ASC"
+        );
+        $commentsStmt->execute([$postId]);
+        $rows = $commentsStmt->fetchAll();
+
+        $byParent = [];
+        foreach ($rows as $row) {
+            $byParent[$row['parent_id'] ?? 0][] = $row;
+        }
+        $comments = array_map(static function (array $row) use ($byParent) {
+            $isMentorAuthor = in_array($row['role'], ['mentor', 'dual'], true);
+            $replies = array_map(static function (array $reply) {
+                return [
+                    'author' => $reply['author'],
+                    'initials' => $reply['initials'],
+                    'role' => ukn_role_label($reply['role']),
+                    'time' => ukn_time_ago($reply['created_at']),
+                    'text' => $reply['text'],
+                ];
+            }, $byParent[$row['id']] ?? []);
+            return [
+                'author' => $row['author'],
+                'initials' => $row['initials'],
+                'role' => ukn_role_label($row['role']),
+                'authorHref' => ukn_route_href($isMentorAuthor ? 'mentor-profile' : 'learner-profile') . '&id=' . $row['author_id'],
+                'time' => ukn_time_ago($row['created_at']),
+                'text' => $row['text'],
+                'replies' => $replies,
+            ];
+        }, $byParent[0] ?? []);
+    }
+} catch (Throwable $e) {
+    error_log('[UKN post-details] ' . $e->getMessage());
+    $postDbError = true;
+}
 ?>
+<?php if ($postDbError): ?>
+  <?php ukn_error_state([
+      'title' => 'Unable to load this post.',
+      'message' => 'Something went wrong while loading this discussion. Please try again shortly.',
+  ]); ?>
+<?php elseif ($post === false): ?>
+  <?php ukn_empty_state([
+      'icon' => 'forum',
+      'title' => 'Post not found.',
+      'message' => 'This post may have been removed.',
+      'action' => ['label' => 'Back to Community', 'href' => htmlspecialchars(ukn_route_href('home'))],
+  ]); ?>
+<?php else: ?>
 <div data-post-detail>
   <a href="<?= htmlspecialchars(ukn_route_href('home')) ?>" class="ukn-body-sm d-inline-flex align-items-center gap-1 mb-3">
     <span class="ms" aria-hidden="true">arrow_back</span>Back to Community
@@ -108,3 +182,4 @@ $comments = [
     <?php endforeach; ?>
   </div>
 </div>
+<?php endif; ?>

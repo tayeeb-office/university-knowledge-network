@@ -1,18 +1,65 @@
 <?php
+require_once __DIR__ . '/../../components/error-state.php';
+require_once __DIR__ . '/../../backend/config/database.php';
+
 $activeRole = !empty($currentUser['dualRole']) ? ($currentUser['activeRole'] ?? 'learner') : ($currentUser['role'] ?? 'learner');
 $isMentor = $activeRole === 'mentor';
-$departments = ['Computer Science', 'Electrical Engineering', 'Business Administration', 'English', 'Economics', 'Civil Engineering', 'Architecture'];
+// TODO(auth): replace with the real session user id; mirrors index.php's own hardcoded
+// demo identity (Nabila Rahman, user id 1) until real sessions exist.
+if (!defined('UKN_DEMO_USER_ID')) {
+    define('UKN_DEMO_USER_ID', 1);
+}
+
 $years = ['1st Year', '2nd Year', '3rd Year', '4th Year'];
-$currentDepartment = 'Computer Science';
-$currentYear = $isMentor ? '4th Year' : '3rd Year';
-$currentBio = $isMentor
-    ? 'Fourth-year CS student. I teach Python and the machine-learning coursework sequence, working through your actual assignment rather than generic examples.'
-    : 'Third-year CS student. Learning Python and React, and slowly getting better at explaining what I just learned to other people.';
+$departments = [];
+$currentName = $currentUser['name'] ?? 'Member';
+$currentStudentId = '';
+$currentDepartment = '';
+$currentYear = '';
+$currentBio = '';
 $skillsLabel = $isMentor ? 'Skills you are teaching' : 'Skills you are learning';
-$currentSkills = $isMentor
-    ? ['Python', 'Database Design', 'Data Analysis']
-    : ['Python', 'MySQL', 'Data Analysis', 'Public Speaking'];
-$skillOptions = ['Python', 'MySQL', 'React', 'UI/UX Design', 'Data Analysis', 'Public Speaking', 'Database Design', 'Machine Learning'];
+$currentSkills = [];
+$skillOptions = [];
+$editProfileDbError = false;
+
+try {
+    $pdo = getDatabaseConnection();
+
+    $departments = $pdo->query(
+        "SELECT name FROM departments WHERE status = 'active' ORDER BY name"
+    )->fetchAll(PDO::FETCH_COLUMN);
+
+    $userStmt = $pdo->prepare(
+        "SELECT u.full_name, u.university_id, u.year_of_study, u.bio, d.name AS department
+         FROM users u LEFT JOIN departments d ON d.id = u.department_id
+         WHERE u.id = ?"
+    );
+    $userStmt->execute([UKN_DEMO_USER_ID]);
+    $user = $userStmt->fetch();
+
+    if ($user !== false) {
+        $currentName = $user['full_name'];
+        $currentStudentId = $user['university_id'];
+        $currentDepartment = (string) ($user['department'] ?? '');
+        $currentYear = (string) ($user['year_of_study'] ?? '');
+        $currentBio = (string) ($user['bio'] ?? '');
+
+        $skillsStmt = $pdo->prepare(
+            "SELECT s.name FROM user_skills us JOIN skills s ON s.id = us.skill_id
+             WHERE us.user_id = ? AND us.skill_type = ?
+             ORDER BY s.name"
+        );
+        $skillsStmt->execute([UKN_DEMO_USER_ID, $isMentor ? 'teaching' : 'learning']);
+        $currentSkills = $skillsStmt->fetchAll(PDO::FETCH_COLUMN);
+    }
+
+    $skillOptions = $pdo->query(
+        "SELECT name FROM skills WHERE status = 'active' ORDER BY name"
+    )->fetchAll(PDO::FETCH_COLUMN);
+} catch (Throwable $e) {
+    error_log('[UKN edit-profile] ' . $e->getMessage());
+    $editProfileDbError = true;
+}
 ?>
 <div class="ukn-page-header">
   <div>
@@ -20,7 +67,12 @@ $skillOptions = ['Python', 'MySQL', 'React', 'UI/UX Design', 'Data Analysis', 'P
     <p class="ukn-page-header__sub">Update your profile information and preferences.</p>
   </div>
 </div>
-
+<?php if ($editProfileDbError): ?>
+  <?php ukn_error_state([
+      'title' => 'Unable to load your profile.',
+      'message' => 'Something went wrong while loading your profile. Please try again shortly.',
+  ]); ?>
+<?php else: ?>
 <div class="row g-3 align-items-start">
   <div class="col-lg-8">
     <div class="card">
@@ -29,14 +81,14 @@ $skillOptions = ['Python', 'MySQL', 'React', 'UI/UX Design', 'Data Analysis', 'P
           <div class="ukn-form-row">
             <div class="ukn-form-group">
               <label for="editProfileName" class="form-label">Full Name <span class="ukn-text-danger" aria-hidden="true">*</span></label>
-              <input type="text" class="form-control" id="editProfileName" name="name" value="<?= htmlspecialchars($currentUser['name'] ?? 'Nabila Rahman') ?>" data-validate="required">
+              <input type="text" class="form-control" id="editProfileName" name="name" value="<?= htmlspecialchars($currentName) ?>" data-validate="required">
               <div class="ukn-field-message is-invalid" data-error-for="name" hidden>
                 <span class="ms" aria-hidden="true">error</span>Please enter your full name.
               </div>
             </div>
             <div class="ukn-form-group">
               <label for="editProfileStudentId" class="form-label">Student ID</label>
-              <input type="text" class="form-control" id="editProfileStudentId" value="2022-CSE-441" disabled>
+              <input type="text" class="form-control" id="editProfileStudentId" value="<?= htmlspecialchars($currentStudentId) ?>" disabled>
               <div class="ukn-body-sm mt-1">Student ID cannot be changed.</div>
             </div>
           </div>
@@ -113,3 +165,4 @@ $skillOptions = ['Python', 'MySQL', 'React', 'UI/UX Design', 'Data Analysis', 'P
     </div>
   </div>
 </div>
+<?php endif; ?>

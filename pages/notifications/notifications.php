@@ -1,16 +1,44 @@
 <?php
 require_once __DIR__ . '/../../components/notification-item.php';
 require_once __DIR__ . '/../../components/empty-state.php';
-$notifications = [
-    ['icon' => 'event_available', 'text' => 'Rahim Ahmed accepted your Python session request.', 'time' => '2 min ago', 'kind' => 'Session', 'unread' => true, 'href' => ukn_route_href('session-details') . '&id=201&from=sessions'],
-    ['icon' => 'chat_bubble', 'text' => 'Sara Khan replied to your discussion.', 'time' => '10 min ago', 'kind' => 'Community', 'unread' => true, 'href' => ukn_route_href('post-details')],
-    ['icon' => 'person_add', 'text' => 'Hasan Mahmud followed you.', 'time' => '1 hr ago', 'kind' => 'Community', 'unread' => true, 'href' => ukn_route_href('mentor-profile') . '&id=3'],
-    ['icon' => 'check_circle', 'text' => 'Your JavaScript mentoring session has been completed.', 'time' => 'Yesterday', 'kind' => 'Session', 'unread' => false, 'href' => ukn_route_href('session-details') . '&id=203&from=sessions'],
-    ['icon' => 'mail', 'text' => 'Mahi Noor requested a Python mentoring session with you.', 'time' => '2 days ago', 'kind' => 'Session', 'unread' => false, 'href' => ukn_route_href('session-details') . '&id=101&from=requests'],
-    ['icon' => 'star', 'text' => 'Sara Khan rated your mentoring session 5 stars.', 'time' => '2 days ago', 'kind' => 'Rating', 'unread' => false, 'href' => ukn_route_href('ratings')],
-    ['icon' => 'reply', 'text' => 'Hasan Mahmud replied to your comment on "Need Help Understanding Database Normalization."', 'time' => '3 days ago', 'kind' => 'Community', 'unread' => false, 'href' => ukn_route_href('post-details')],
-    ['icon' => 'schedule', 'text' => 'Your Python session with Rahim Ahmed starts in 30 minutes.', 'time' => '4 days ago', 'kind' => 'Session', 'unread' => false, 'href' => ukn_route_href('session-details') . '&id=201&from=sessions'],
-];
+require_once __DIR__ . '/../../components/error-state.php';
+require_once __DIR__ . '/../../backend/config/database.php';
+require_once __DIR__ . '/../../backend/helpers/format.php';
+
+// TODO(auth): replace with the real session user id; mirrors index.php's own hardcoded
+// demo identity (Nabila Rahman, user id 1) until real sessions exist.
+if (!defined('UKN_DEMO_USER_ID')) {
+    define('UKN_DEMO_USER_ID', 1);
+}
+
+$notifications = [];
+$notificationsDbError = false;
+$kindLabels = ['session' => 'Session', 'community' => 'Community', 'rating' => 'Rating', 'system' => 'System'];
+
+try {
+    $pdo = getDatabaseConnection();
+
+    $stmt = $pdo->prepare(
+        "SELECT icon, message, type, is_read, link_url, created_at
+         FROM notifications WHERE user_id = ? ORDER BY created_at DESC"
+    );
+    $stmt->execute([UKN_DEMO_USER_ID]);
+    $notifications = array_map(static function (array $row) use ($kindLabels): array {
+        return [
+            'icon' => $row['icon'],
+            'text' => $row['message'],
+            'time' => ukn_time_ago($row['created_at']),
+            'kind' => $kindLabels[$row['type']] ?? ucfirst($row['type']),
+            'unread' => !$row['is_read'],
+            'href' => $row['link_url'],
+        ];
+    }, $stmt->fetchAll());
+} catch (Throwable $e) {
+    error_log('[UKN notifications] ' . $e->getMessage());
+    $notificationsDbError = true;
+    $notifications = [];
+}
+
 $unreadCount = count(array_filter($notifications, static fn (array $n): bool => !empty($n['unread'])));
 ?>
 <div class="ukn-page-header">
@@ -21,6 +49,12 @@ $unreadCount = count(array_filter($notifications, static fn (array $n): bool => 
     </p>
   </div>
 </div>
+<?php if ($notificationsDbError): ?>
+  <?php ukn_error_state([
+      'title' => 'Unable to load notifications.',
+      'message' => 'Something went wrong while loading this page. Please try again shortly.',
+  ]); ?>
+<?php else: ?>
 <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
   <div class="ukn-tabs-pill" data-notification-filters role="group" aria-label="Filter notifications">
     <button type="button" class="ukn-tab-pill is-active" data-notification-filter="all" aria-pressed="true">All</button>
@@ -37,7 +71,7 @@ $unreadCount = count(array_filter($notifications, static fn (array $n): bool => 
     <?php foreach ($notifications as $notification): ukn_notification_item($notification); endforeach; ?>
   </div>
 </div>
-<div hidden data-notification-empty>
+<div<?= $notifications ? ' hidden' : '' ?> data-notification-empty>
   <?php ukn_empty_state([
       'icon' => 'notifications_none',
       'title' => "You're all caught up.",
@@ -45,3 +79,4 @@ $unreadCount = count(array_filter($notifications, static fn (array $n): bool => 
       'dashed' => true,
   ]); ?>
 </div>
+<?php endif; ?>

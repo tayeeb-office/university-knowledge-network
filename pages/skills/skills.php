@@ -1,24 +1,45 @@
 <?php
 require_once __DIR__ . '/../../components/skill-card.php';
 require_once __DIR__ . '/../../components/empty-state.php';
+require_once __DIR__ . '/../../components/error-state.php';
+require_once __DIR__ . '/../../backend/config/database.php';
+
 $activeRole = !empty($currentUser['dualRole']) ? ($currentUser['activeRole'] ?? 'learner') : ($currentUser['role'] ?? 'learner');
 $isMentor = $activeRole === 'mentor';
+// TODO(auth): read from the logged-in user's own user_skills rows once a real session exists.
 $myLearningSkills = ['Python', 'MySQL', 'Data Analysis', 'Public Speaking'];
 $myTeachingSkills = ['Python', 'Database Design', 'Data Analysis'];
-$categories = ['All', 'Programming', 'Data', 'Design', 'Communication', 'Business', 'Engineering', 'Academic'];
-$skills = [
-    ['id' => 1, 'name' => 'Python', 'category' => 'Programming', 'mentors' => 124, 'learners' => 340, 'description' => 'A versatile programming language used for software development, automation, data analysis and machine learning.'],
-    ['id' => 2, 'name' => 'MySQL', 'category' => 'Data', 'mentors' => 82, 'learners' => 214, 'description' => 'A widely used relational database system for storing and querying structured data.'],
-    ['id' => 3, 'name' => 'React', 'category' => 'Programming', 'mentors' => 76, 'learners' => 196, 'description' => 'A JavaScript library for building interactive user interfaces and single-page applications.'],
-    ['id' => 4, 'name' => 'UI/UX Design', 'category' => 'Design', 'mentors' => 68, 'learners' => 173, 'description' => 'Designing interfaces and experiences that are functional, accessible and easy to use.'],
-    ['id' => 5, 'name' => 'Data Analysis', 'category' => 'Data', 'mentors' => 91, 'learners' => 256, 'description' => 'Turning raw data into insight using spreadsheets, Python and statistical thinking.'],
-    ['id' => 6, 'name' => 'Public Speaking', 'category' => 'Communication', 'mentors' => 54, 'learners' => 161, 'description' => 'Structuring and delivering talks and presentations with confidence.'],
-    ['id' => 7, 'name' => 'Database Design', 'category' => 'Data', 'mentors' => 63, 'learners' => 147, 'description' => 'Modeling data relationships and normalizing schemas for reliable, efficient systems.'],
-    ['id' => 8, 'name' => 'Arduino', 'category' => 'Engineering', 'mentors' => 47, 'learners' => 128, 'description' => 'Building and programming microcontroller projects, from sensors to simple robotics.'],
-    ['id' => 9, 'name' => 'Academic Writing', 'category' => 'Academic', 'mentors' => 39, 'learners' => 104, 'description' => 'Structuring essays, reports and citations for university-level coursework.'],
-    ['id' => 10, 'name' => 'Digital Marketing', 'category' => 'Business', 'mentors' => 44, 'learners' => 121, 'description' => 'Reaching an audience through social media, content and basic campaign analytics.'],
-];
+
+$categories = ['All'];
+$skills = [];
+$skillsDbError = false;
+
+try {
+    $pdo = getDatabaseConnection();
+
+    $categoryStmt = $pdo->query("SELECT name FROM skill_categories WHERE status = 'active' ORDER BY name");
+    foreach ($categoryStmt->fetchAll(PDO::FETCH_COLUMN) as $categoryName) {
+        $categories[] = $categoryName;
+    }
+
+    $skillStmt = $pdo->query(
+        "SELECT s.id, s.name, sc.name AS category, s.description,
+                (SELECT COUNT(*) FROM user_skills WHERE skill_id = s.id AND skill_type = 'teaching') AS mentors,
+                (SELECT COUNT(*) FROM user_skills WHERE skill_id = s.id AND skill_type = 'learning') AS learners
+         FROM skills s
+         JOIN skill_categories sc ON sc.id = s.category_id
+         WHERE s.status = 'active'
+         ORDER BY s.name"
+    );
+    $skills = $skillStmt->fetchAll();
+} catch (Throwable $e) {
+    error_log('[UKN skills] ' . $e->getMessage());
+    $skillsDbError = true;
+}
+
 foreach ($skills as &$skill) {
+    $skill['mentors'] = (int) $skill['mentors'];
+    $skill['learners'] = (int) $skill['learners'];
     $skill['href'] = ukn_route_href('skill-details') . '&id=' . $skill['id'];
     if ($isMentor) {
         $skill['teachingState'] = in_array($skill['name'], $myTeachingSkills, true) ? 'added' : 'add';
@@ -49,6 +70,12 @@ unset($skill);
     ><?= htmlspecialchars($category) ?></button>
   <?php endforeach; ?>
 </div>
+<?php if ($skillsDbError): ?>
+  <?php ukn_error_state([
+      'title' => 'Unable to load skills.',
+      'message' => 'Something went wrong while loading the skill directory. Please try again shortly.',
+  ]); ?>
+<?php else: ?>
 <div class="row g-3" data-skill-grid>
   <?php foreach ($skills as $skill): ?>
     <div
@@ -61,7 +88,7 @@ unset($skill);
     </div>
   <?php endforeach; ?>
 </div>
-<div hidden data-skill-empty>
+<div<?= $skills ? ' hidden' : '' ?> data-skill-empty>
   <?php ukn_empty_state([
       'icon' => 'search_off',
       'title' => 'No skills found.',
@@ -70,3 +97,4 @@ unset($skill);
       'dashed' => true,
   ]); ?>
 </div>
+<?php endif; ?>

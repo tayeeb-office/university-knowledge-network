@@ -1,35 +1,102 @@
 <?php
 require_once __DIR__ . '/../../components/leaderboard-row.php';
+require_once __DIR__ . '/../../components/error-state.php';
+require_once __DIR__ . '/../../backend/config/database.php';
+
 $activeRole = !empty($currentUser['dualRole']) ? ($currentUser['activeRole'] ?? 'learner') : ($currentUser['role'] ?? 'learner');
 $isMentor = $activeRole === 'mentor';
 $defaultView = $isMentor ? 'mentors' : 'learners';
-$learners = [
-    ['rank' => 1, 'name' => 'Nabila Rahman', 'initials' => 'NR', 'href' => ukn_route_href('my-profile'), 'category' => 'Computer Science', 'points' => 412, 'pointType' => 'Learning Points', 'sessions' => 18, 'rankChange' => ['direction' => 'up', 'amount' => 1], 'isCurrentUser' => true],
-    ['rank' => 2, 'name' => 'Mahi Noor', 'initials' => 'MN', 'href' => ukn_route_href('learner-profile'), 'category' => 'Computer Science', 'points' => 356, 'pointType' => 'Learning Points', 'sessions' => 16, 'rankChange' => ['direction' => 'up', 'amount' => 2]],
-    ['rank' => 3, 'name' => 'Tanvir Hossain', 'initials' => 'TH', 'href' => ukn_route_href('learner-profile'), 'category' => 'Electrical Engineering', 'points' => 331, 'pointType' => 'Learning Points', 'sessions' => 15, 'rankChange' => ['direction' => 'none']],
-    ['rank' => 4, 'name' => 'Imran Chowdhury', 'initials' => 'IC', 'href' => ukn_route_href('learner-profile') . '&id=1', 'category' => 'English', 'points' => 318, 'pointType' => 'Learning Points', 'sessions' => 14, 'rankChange' => ['direction' => 'down', 'amount' => 1]],
-    ['rank' => 5, 'name' => 'Maliha Islam', 'initials' => 'MI', 'href' => ukn_route_href('learner-profile'), 'category' => 'Business Administration', 'points' => 309, 'pointType' => 'Learning Points', 'sessions' => 14, 'rankChange' => ['direction' => 'up', 'amount' => 1]],
-    ['rank' => 6, 'name' => 'Sabrina Ali', 'initials' => 'SA', 'href' => ukn_route_href('learner-profile'), 'category' => 'English', 'points' => 264, 'pointType' => 'Learning Points', 'sessions' => 12, 'rankChange' => ['direction' => 'none']],
-    ['rank' => 7, 'name' => 'Adil Hasan', 'initials' => 'AH', 'href' => ukn_route_href('learner-profile'), 'category' => 'Electrical Engineering', 'points' => 241, 'pointType' => 'Learning Points', 'sessions' => 10, 'rankChange' => ['direction' => 'down', 'amount' => 2]],
-];
-$mentors = [
-    ['rank' => 1, 'name' => 'Rahim Ahmed', 'initials' => 'RA', 'href' => ukn_route_href('mentor-profile') . '&id=2', 'category' => 'Computer Science', 'points' => 520, 'pointType' => 'Mentor Points', 'rating' => 4.9, 'sessions' => 127, 'rankChange' => ['direction' => 'none']],
-    ['rank' => 2, 'name' => 'Nabila Rahman', 'initials' => 'NR', 'href' => ukn_route_href('my-profile'), 'category' => 'Computer Science', 'points' => 520, 'pointType' => 'Mentor Points', 'rating' => 4.8, 'sessions' => 27, 'rankChange' => ['direction' => 'up', 'amount' => 1], 'isCurrentUser' => true],
-    ['rank' => 3, 'name' => 'Farhan Kabir', 'initials' => 'FK', 'href' => ukn_route_href('mentor-profile'), 'category' => 'Computer Science', 'points' => 462, 'pointType' => 'Mentor Points', 'rating' => 4.9, 'sessions' => 103, 'rankChange' => ['direction' => 'down', 'amount' => 1]],
-    ['rank' => 4, 'name' => 'Sara Khan', 'initials' => 'SK', 'href' => ukn_route_href('mentor-profile'), 'category' => 'Business Administration', 'points' => 410, 'pointType' => 'Mentor Points', 'rating' => 4.8, 'sessions' => 84, 'rankChange' => ['direction' => 'up', 'amount' => 2]],
-    ['rank' => 5, 'name' => 'Ayesha Rahman', 'initials' => 'AR', 'href' => ukn_route_href('mentor-profile'), 'category' => 'Computer Science', 'points' => 368, 'pointType' => 'Mentor Points', 'rating' => 4.7, 'sessions' => 71, 'rankChange' => ['direction' => 'none']],
-    ['rank' => 6, 'name' => 'Hasan Mahmud', 'initials' => 'HM', 'href' => ukn_route_href('mentor-profile') . '&id=3', 'category' => 'Electrical Engineering', 'points' => 365, 'pointType' => 'Mentor Points', 'rating' => 4.7, 'sessions' => 52, 'rankChange' => ['direction' => 'down', 'amount' => 1]],
-    ['rank' => 7, 'name' => 'Nusrat Jahan', 'initials' => 'NJ', 'href' => ukn_route_href('mentor-profile'), 'category' => 'English', 'points' => 240, 'pointType' => 'Mentor Points', 'rating' => 4.6, 'sessions' => 28, 'rankChange' => ['direction' => 'up', 'amount' => 1]],
-];
-$contributors = [
-    ['rank' => 1, 'name' => 'Rahim Ahmed', 'initials' => 'RA', 'href' => ukn_route_href('mentor-profile') . '&id=2', 'category' => 'Computer Science', 'points' => 890, 'pointType' => 'Community Points', 'sessions' => 46, 'activityLabel' => 'posts', 'rankChange' => ['direction' => 'up', 'amount' => 2]],
-    ['rank' => 2, 'name' => 'Nabila Rahman', 'initials' => 'NR', 'href' => ukn_route_href('my-profile'), 'category' => 'Computer Science', 'points' => 745, 'pointType' => 'Community Points', 'sessions' => 38, 'activityLabel' => 'posts', 'rankChange' => ['direction' => 'up', 'amount' => 1], 'isCurrentUser' => true],
-    ['rank' => 3, 'name' => 'Hasan Mahmud', 'initials' => 'HM', 'href' => ukn_route_href('mentor-profile') . '&id=3', 'category' => 'Electrical Engineering', 'points' => 612, 'pointType' => 'Community Points', 'sessions' => 31, 'activityLabel' => 'posts', 'rankChange' => ['direction' => 'none']],
-    ['rank' => 4, 'name' => 'Sara Khan', 'initials' => 'SK', 'href' => ukn_route_href('mentor-profile'), 'category' => 'Business Administration', 'points' => 480, 'pointType' => 'Community Points', 'sessions' => 24, 'activityLabel' => 'posts', 'rankChange' => ['direction' => 'down', 'amount' => 1]],
-    ['rank' => 5, 'name' => 'Ayesha Rahman', 'initials' => 'AR', 'href' => ukn_route_href('mentor-profile'), 'category' => 'Computer Science', 'points' => 410, 'pointType' => 'Community Points', 'sessions' => 19, 'activityLabel' => 'posts', 'rankChange' => ['direction' => 'up', 'amount' => 1]],
-    ['rank' => 6, 'name' => 'Imran Chowdhury', 'initials' => 'IC', 'href' => ukn_route_href('learner-profile') . '&id=1', 'category' => 'English', 'points' => 320, 'pointType' => 'Community Points', 'sessions' => 15, 'activityLabel' => 'posts', 'rankChange' => ['direction' => 'none']],
-    ['rank' => 7, 'name' => 'Tanvir Hossain', 'initials' => 'TH', 'href' => ukn_route_href('learner-profile'), 'category' => 'Electrical Engineering', 'points' => 265, 'pointType' => 'Community Points', 'sessions' => 12, 'activityLabel' => 'posts', 'rankChange' => ['direction' => 'down', 'amount' => 2]],
-];
+// TODO(auth): "you" should be the real session user id; this mirrors index.php's own
+// hardcoded demo identity (Nabila Rahman, user id 1) until real sessions exist.
+if (!defined('UKN_DEMO_USER_ID')) {
+    define('UKN_DEMO_USER_ID', 1);
+}
+
+$learners = [];
+$mentors = [];
+$contributors = [];
+$leaderboardDbError = false;
+
+try {
+    $pdo = getDatabaseConnection();
+
+    $learnersStmt = $pdo->query(
+        "SELECT u.id, u.full_name AS name, u.initials, u.learning_points AS points,
+                u.sessions_as_learner AS sessions, d.name AS category
+         FROM users u LEFT JOIN departments d ON d.id = u.department_id
+         WHERE u.role IN ('learner', 'dual') AND u.status = 'active'
+         ORDER BY u.learning_points DESC
+         LIMIT 20"
+    );
+    $learners = $learnersStmt->fetchAll();
+
+    $mentorsStmt = $pdo->query(
+        "SELECT u.id, u.full_name AS name, u.initials, u.mentor_points AS points, u.avg_rating AS rating,
+                u.sessions_as_mentor AS sessions, d.name AS category
+         FROM users u LEFT JOIN departments d ON d.id = u.department_id
+         WHERE u.role IN ('mentor', 'dual') AND u.status = 'active'
+         ORDER BY u.mentor_points DESC, u.avg_rating DESC
+         LIMIT 20"
+    );
+    $mentors = $mentorsStmt->fetchAll();
+
+    $contributorsStmt = $pdo->query(
+        "SELECT u.id, u.full_name AS name, u.initials, u.role, d.name AS category,
+                SUM(pt.amount) AS points, COUNT(*) AS sessions
+         FROM point_transactions pt
+         JOIN users u ON u.id = pt.user_id
+         LEFT JOIN departments d ON d.id = u.department_id
+         WHERE pt.point_type = 'community'
+         GROUP BY u.id, u.full_name, u.initials, u.role, d.name
+         ORDER BY points DESC
+         LIMIT 20"
+    );
+    $contributors = $contributorsStmt->fetchAll();
+
+    // $defaultProfileRoute is used only for rows where the query itself didn't fetch a
+    // role (learners/mentors tabs are already role-filtered); contributors carries its
+    // own per-row role since it can mix both.
+    $rankAndDecorate = static function (array $rows, string $defaultProfileRoute, string $pointType) {
+        $rank = 0;
+        foreach ($rows as &$row) {
+            $rank++;
+            $row['rank'] = $rank;
+            $row['points'] = (int) $row['points'];
+            $row['category'] = (string) ($row['category'] ?? '');
+            $row['pointType'] = $pointType;
+            $row['isCurrentUser'] = ((int) $row['id'] === UKN_DEMO_USER_ID);
+            $profileRoute = isset($row['role'])
+                ? (in_array($row['role'], ['mentor', 'dual'], true) ? 'mentor-profile' : 'learner-profile')
+                : $defaultProfileRoute;
+            $row['href'] = $row['isCurrentUser']
+                ? ukn_route_href('my-profile')
+                : ukn_route_href($profileRoute) . '&id=' . $row['id'];
+            if (array_key_exists('rating', $row) && $row['rating'] !== null) {
+                $row['rating'] = (float) $row['rating'];
+            }
+            if (array_key_exists('sessions', $row) && $row['sessions'] !== null) {
+                $row['sessions'] = (int) $row['sessions'];
+            }
+            unset($row['id'], $row['role']);
+        }
+        unset($row);
+        return $rows;
+    };
+    $learners = $rankAndDecorate($learners, 'learner-profile', 'Learning Points');
+    $mentors = $rankAndDecorate($mentors, 'mentor-profile', 'Mentor Points');
+    $contributors = $rankAndDecorate($contributors, 'learner-profile', 'Community Points');
+    foreach ($contributors as &$row) {
+        $row['activityLabel'] = 'posts';
+    }
+    unset($row);
+} catch (Throwable $e) {
+    error_log('[UKN leaderboard] ' . $e->getMessage());
+    $leaderboardDbError = true;
+    $learners = [];
+    $mentors = [];
+    $contributors = [];
+}
+
 $views = [
     'mentors'      => ['label' => 'Top Mentors', 'rows' => $mentors],
     'learners'     => ['label' => 'Top Learners', 'rows' => $learners],
@@ -42,6 +109,12 @@ $views = [
     <p class="ukn-page-header__sub">See the most active learners and mentors across the University Knowledge Network.</p>
   </div>
 </div>
+<?php if ($leaderboardDbError): ?>
+  <?php ukn_error_state([
+      'title' => 'Unable to load the leaderboard.',
+      'message' => 'Something went wrong while loading rankings. Please try again shortly.',
+  ]); ?>
+<?php else: ?>
 <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
   <div class="ukn-tabs-pill" data-leaderboard-views role="group" aria-label="Leaderboard ranking view">
     <?php foreach ($views as $key => $view): ?>
@@ -66,3 +139,4 @@ $views = [
     </div>
   </div>
 <?php endforeach; ?>
+<?php endif; ?>

@@ -1,16 +1,60 @@
 <?php
 require_once __DIR__ . '/../../components/session-card.php';
 require_once __DIR__ . '/../../components/empty-state.php';
+require_once __DIR__ . '/../../components/error-state.php';
+require_once __DIR__ . '/../../backend/config/database.php';
+
+// TODO(auth): replace with the real session user id; mirrors index.php's own hardcoded
+// demo identity (Nabila Rahman, user id 1) until real sessions exist.
+if (!defined('UKN_DEMO_USER_ID')) {
+    define('UKN_DEMO_USER_ID', 1);
+}
+
 $sessionView = $sessionView ?? 'sessions';
 $activeRole = !empty($currentUser['dualRole']) ? ($currentUser['activeRole'] ?? 'learner') : ($currentUser['role'] ?? 'learner');
-if ($sessionView === 'requests'):
-    $requests = [
-        ['id' => 101, 'counterparty' => 'Mahi Noor', 'counterpartyInitials' => 'MN', 'counterpartyHref' => ukn_route_href('learner-profile'), 'skill' => 'Python', 'day' => '18', 'month' => 'Sep', 'time' => '7:00 PM', 'duration' => '60 min', 'status' => 'pending', 'message' => 'I need help understanding Python data analysis fundamentals and working with pandas.', 'detailsHref' => ukn_route_href('session-details') . '&id=101&from=requests'],
-        ['id' => 102, 'counterparty' => 'Imran Chowdhury', 'counterpartyInitials' => 'IC', 'counterpartyHref' => ukn_route_href('learner-profile') . '&id=1', 'skill' => 'Presentation Skills', 'day' => '20', 'month' => 'Sep', 'time' => '6:30 PM', 'duration' => '45 min', 'status' => 'pending', 'detailsHref' => ukn_route_href('session-details') . '&id=102&from=requests'],
-        ['id' => 103, 'counterparty' => 'Ayesha Rahman', 'counterpartyInitials' => 'AR', 'counterpartyHref' => ukn_route_href('learner-profile'), 'skill' => 'Database Design', 'day' => '21', 'month' => 'Sep', 'time' => '8:00 PM', 'duration' => '60 min', 'status' => 'pending', 'detailsHref' => ukn_route_href('session-details') . '&id=103&from=requests'],
-        ['id' => 104, 'counterparty' => 'Tanvir Hossain', 'counterpartyInitials' => 'TH', 'counterpartyHref' => ukn_route_href('learner-profile'), 'skill' => 'Data Analysis', 'day' => '17', 'month' => 'Sep', 'time' => '5:00 PM', 'duration' => '45 min', 'status' => 'accepted', 'message' => 'Could we focus on merging dataframes for the coursework assignment?', 'detailsHref' => ukn_route_href('session-details') . '&id=104&from=requests'],
-        ['id' => 105, 'counterparty' => 'Sara Khan', 'counterpartyInitials' => 'SK', 'counterpartyHref' => ukn_route_href('learner-profile') . '&id=2', 'skill' => 'Python', 'day' => '15', 'month' => 'Sep', 'time' => '6:00 PM', 'duration' => '60 min', 'status' => 'rejected', 'detailsHref' => ukn_route_href('session-details') . '&id=105&from=requests'],
+$sessionsDbError = false;
+
+$mapSessionRow = static function (array $row, string $counterpartyRoute): array {
+    $timestamp = strtotime($row['scheduled_date'] . ' ' . $row['scheduled_time']);
+    return [
+        'id' => $row['id'],
+        'counterparty' => $row['counterparty'],
+        'counterpartyInitials' => $row['counterpartyInitials'],
+        'counterpartyHref' => ukn_route_href($counterpartyRoute) . '&id=' . $row['counterparty_id'],
+        'skill' => $row['skill'],
+        'day' => date('d', $timestamp),
+        'month' => date('M', $timestamp),
+        'time' => date('g:i A', $timestamp),
+        'duration' => $row['duration_minutes'] . ' min',
+        'status' => $row['status'],
+        'message' => $row['request_message'],
+        'detailsHref' => ukn_route_href('session-details') . '&id=' . $row['id'],
     ];
+};
+
+if ($sessionView === 'requests'):
+    $requests = [];
+    try {
+        $pdo = getDatabaseConnection();
+        $stmt = $pdo->prepare(
+            "SELECT ms.id, ms.status, ms.scheduled_date, ms.scheduled_time, ms.duration_minutes,
+                    ms.request_message, l.id AS counterparty_id, l.full_name AS counterparty,
+                    l.initials AS counterpartyInitials, sk.name AS skill
+             FROM mentoring_sessions ms
+             JOIN users l ON l.id = ms.learner_id
+             JOIN skills sk ON sk.id = ms.skill_id
+             WHERE ms.mentor_id = ? AND ms.status IN ('pending', 'accepted', 'rejected')
+             ORDER BY ms.scheduled_date DESC, ms.scheduled_time DESC"
+        );
+        $stmt->execute([UKN_DEMO_USER_ID]);
+        $requests = array_map(
+            static fn (array $row) => $mapSessionRow($row, 'learner-profile'),
+            $stmt->fetchAll()
+        );
+    } catch (Throwable $e) {
+        error_log('[UKN sessions/requests] ' . $e->getMessage());
+        $sessionsDbError = true;
+    }
     $tabs = [
         ['id' => 'pending', 'label' => 'Pending'],
         ['id' => 'accepted', 'label' => 'Accepted'],
@@ -25,6 +69,12 @@ if ($sessionView === 'requests'):
         <p class="ukn-page-header__sub">Review and respond to students who want to learn from you.</p>
       </div>
     </div>
+    <?php if ($sessionsDbError): ?>
+      <?php ukn_error_state([
+          'title' => 'Unable to load learner requests.',
+          'message' => 'Something went wrong while loading this page. Please try again shortly.',
+      ]); ?>
+    <?php else: ?>
     <div class="nav nav-tabs mb-3" role="tablist" data-session-tablist>
       <?php foreach ($tabs as $tab): $count = $tab['id'] === 'all' ? count($requests) : count(array_filter($requests, static fn ($r) => $r['status'] === $tab['id'])); ?>
         <button
@@ -39,30 +89,66 @@ if ($sessionView === 'requests'):
     <div data-session-list>
       <?php foreach ($requests as $request): ukn_session_card($request); endforeach; ?>
     </div>
-    <div hidden data-session-empty>
+    <div<?= $requests ? ' hidden' : '' ?> data-session-empty>
       <?php ukn_empty_state([
           'icon' => 'inbox',
           'title' => 'No pending learner requests.',
           'message' => 'New session requests will appear here.',
       ]); ?>
     </div>
+    <?php endif; ?>
 <?php else:
     $isMentor = $activeRole === 'mentor';
-    if ($isMentor) {
-        $sessions = [
-            ['id' => 301, 'counterparty' => 'Imran Chowdhury', 'counterpartyInitials' => 'IC', 'counterpartyHref' => ukn_route_href('learner-profile') . '&id=1', 'skill' => 'Python', 'day' => '19', 'month' => 'Sep', 'time' => '6:00 PM', 'duration' => '60 min', 'status' => 'upcoming', 'detailsHref' => ukn_route_href('session-details') . '&id=301&from=sessions'],
-            ['id' => 302, 'counterparty' => 'Imran Chowdhury', 'counterpartyInitials' => 'IC', 'counterpartyHref' => ukn_route_href('learner-profile') . '&id=1', 'skill' => 'Python', 'day' => '05', 'month' => 'Sep', 'time' => '6:00 PM', 'duration' => '60 min', 'status' => 'completed', 'detailsHref' => ukn_route_href('session-details') . '&id=302&from=sessions'],
-            ['id' => 303, 'counterparty' => 'Tanvir Hossain', 'counterpartyInitials' => 'TH', 'counterpartyHref' => ukn_route_href('learner-profile'), 'skill' => 'Data Analysis', 'day' => '01', 'month' => 'Sep', 'time' => '5:00 PM', 'duration' => '45 min', 'status' => 'completed', 'detailsHref' => ukn_route_href('session-details') . '&id=303&from=sessions'],
-            ['id' => 304, 'counterparty' => 'Imran Chowdhury', 'counterpartyInitials' => 'IC', 'counterpartyHref' => ukn_route_href('learner-profile') . '&id=1', 'skill' => 'Python', 'day' => '25', 'month' => 'Aug', 'time' => '7:00 PM', 'duration' => '60 min', 'status' => 'cancelled', 'message' => 'Cancelled by learner — exam conflict.', 'detailsHref' => ukn_route_href('session-details') . '&id=304&from=sessions'],
-        ];
-    } else {
-        $sessions = [
-            ['id' => 201, 'counterparty' => 'Rahim Ahmed', 'counterpartyInitials' => 'RA', 'counterpartyHref' => ukn_route_href('mentor-profile') . '&id=2', 'skill' => 'Python', 'day' => '18', 'month' => 'Sep', 'time' => '7:00 PM', 'duration' => '60 min', 'status' => 'upcoming', 'detailsHref' => ukn_route_href('session-details') . '&id=201&from=sessions'],
-            ['id' => 202, 'counterparty' => 'Sara Khan', 'counterpartyInitials' => 'SK', 'counterpartyHref' => ukn_route_href('mentor-profile'), 'skill' => 'Public Speaking', 'day' => '21', 'month' => 'Sep', 'time' => '11:00 AM', 'duration' => '45 min', 'status' => 'upcoming', 'detailsHref' => ukn_route_href('session-details') . '&id=202&from=sessions'],
-            ['id' => 203, 'counterparty' => 'Rahim Ahmed', 'counterpartyInitials' => 'RA', 'counterpartyHref' => ukn_route_href('mentor-profile') . '&id=2', 'skill' => 'Python', 'day' => '08', 'month' => 'Sep', 'time' => '6:00 PM', 'duration' => '60 min', 'status' => 'completed', 'ratingStatus' => 'unrated', 'detailsHref' => ukn_route_href('session-details') . '&id=203&from=sessions'],
-            ['id' => 204, 'counterparty' => 'Tanvir Hossain', 'counterpartyInitials' => 'TH', 'counterpartyHref' => ukn_route_href('mentor-profile'), 'skill' => 'Data Analysis', 'day' => '02', 'month' => 'Sep', 'time' => '4:00 PM', 'duration' => '60 min', 'status' => 'completed', 'ratingStatus' => 'rated', 'ratingValue' => 5.0, 'detailsHref' => ukn_route_href('session-details') . '&id=204&from=sessions'],
-            ['id' => 205, 'counterparty' => 'Hasan Mahmud', 'counterpartyInitials' => 'HM', 'counterpartyHref' => ukn_route_href('mentor-profile') . '&id=3', 'skill' => 'Arduino', 'day' => '28', 'month' => 'Aug', 'time' => '3:00 PM', 'duration' => '45 min', 'status' => 'cancelled', 'message' => 'Cancelled by learner — schedule clash with lab.', 'detailsHref' => ukn_route_href('session-details') . '&id=205&from=sessions'],
-        ];
+    $sessions = [];
+    try {
+        $pdo = getDatabaseConnection();
+        if ($isMentor) {
+            $stmt = $pdo->prepare(
+                "SELECT ms.id, ms.status, ms.scheduled_date, ms.scheduled_time, ms.duration_minutes,
+                        ms.request_message, ms.cancel_reason,
+                        l.id AS counterparty_id, l.full_name AS counterparty, l.initials AS counterpartyInitials,
+                        sk.name AS skill
+                 FROM mentoring_sessions ms
+                 JOIN users l ON l.id = ms.learner_id
+                 JOIN skills sk ON sk.id = ms.skill_id
+                 WHERE ms.mentor_id = ? AND ms.status IN ('accepted', 'completed', 'cancelled')
+                 ORDER BY ms.scheduled_date DESC, ms.scheduled_time DESC"
+            );
+            $stmt->execute([UKN_DEMO_USER_ID]);
+            $sessions = array_map(static function (array $row) use ($mapSessionRow) {
+                $row['request_message'] = $row['status'] === 'cancelled' ? $row['cancel_reason'] : $row['request_message'];
+                $mapped = $mapSessionRow($row, 'learner-profile');
+                $mapped['status'] = $row['status'] === 'accepted' ? 'upcoming' : $row['status'];
+                return $mapped;
+            }, $stmt->fetchAll());
+        } else {
+            $stmt = $pdo->prepare(
+                "SELECT ms.id, ms.status, ms.scheduled_date, ms.scheduled_time, ms.duration_minutes,
+                        ms.request_message, ms.cancel_reason,
+                        m.id AS counterparty_id, m.full_name AS counterparty, m.initials AS counterpartyInitials,
+                        sk.name AS skill, sr.overall AS rating_value
+                 FROM mentoring_sessions ms
+                 JOIN users m ON m.id = ms.mentor_id
+                 JOIN skills sk ON sk.id = ms.skill_id
+                 LEFT JOIN session_ratings sr ON sr.session_id = ms.id
+                 WHERE ms.learner_id = ? AND ms.status IN ('accepted', 'completed', 'cancelled')
+                 ORDER BY ms.scheduled_date DESC, ms.scheduled_time DESC"
+            );
+            $stmt->execute([UKN_DEMO_USER_ID]);
+            $sessions = array_map(static function (array $row) use ($mapSessionRow) {
+                $row['request_message'] = $row['status'] === 'cancelled' ? $row['cancel_reason'] : $row['request_message'];
+                $mapped = $mapSessionRow($row, 'mentor-profile');
+                $mapped['status'] = $row['status'] === 'accepted' ? 'upcoming' : $row['status'];
+                if ($row['status'] === 'completed') {
+                    $mapped['ratingStatus'] = $row['rating_value'] !== null ? 'rated' : 'unrated';
+                    $mapped['ratingValue'] = $row['rating_value'] !== null ? (float) $row['rating_value'] : null;
+                }
+                return $mapped;
+            }, $stmt->fetchAll());
+        }
+    } catch (Throwable $e) {
+        error_log('[UKN sessions] ' . $e->getMessage());
+        $sessionsDbError = true;
     }
     $tabs = [
         ['id' => 'upcoming', 'label' => 'Upcoming'],
@@ -77,6 +163,12 @@ if ($sessionView === 'requests'):
         <p class="ukn-page-header__sub">Manage your upcoming and completed learning sessions.</p>
       </div>
     </div>
+    <?php if ($sessionsDbError): ?>
+      <?php ukn_error_state([
+          'title' => 'Unable to load your sessions.',
+          'message' => 'Something went wrong while loading this page. Please try again shortly.',
+      ]); ?>
+    <?php else: ?>
     <div class="nav nav-tabs mb-3" role="tablist" data-session-tablist>
       <?php foreach ($tabs as $tab): $count = count(array_filter($sessions, static fn ($s) => $s['status'] === $tab['id'])); ?>
         <button
@@ -92,11 +184,12 @@ if ($sessionView === 'requests'):
       <?php foreach ($sessions as $session): ukn_session_card($session); endforeach; ?>
     </div>
 
-    <div hidden data-session-empty>
+    <div<?= $sessions ? ' hidden' : '' ?> data-session-empty>
       <?php ukn_empty_state([
           'icon' => 'event',
           'title' => 'No sessions here yet.',
           'message' => 'Sessions you book or accept will show up here.',
       ]); ?>
     </div>
+    <?php endif; ?>
 <?php endif; ?>

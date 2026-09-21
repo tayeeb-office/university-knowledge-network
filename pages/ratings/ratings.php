@@ -1,24 +1,108 @@
 <?php
 require_once __DIR__ . '/../../components/rating-item.php';
 require_once __DIR__ . '/../../components/empty-state.php';
-$overall = 4.8;
-$totalReviews = 42;
-$completedSessions = 27;
-$breakdown = ['Teaching Quality' => 4.9, 'Communication' => 4.7, 'Helpfulness' => 4.8, 'Overall Experience' => 4.8];
-$distribution = [5 => 30, 4 => 9, 3 => 2, 2 => 1, 1 => 0];
+require_once __DIR__ . '/../../components/error-state.php';
+require_once __DIR__ . '/../../backend/config/database.php';
+
+// TODO(auth): replace with the real session user id; mirrors index.php's own hardcoded
+// demo identity (Nabila Rahman, user id 1) until real sessions exist.
+if (!defined('UKN_DEMO_USER_ID')) {
+    define('UKN_DEMO_USER_ID', 1);
+}
+
+$overall = 0.0;
+$totalReviews = 0;
+$completedSessions = 0;
+$breakdown = [];
+$distribution = [5 => 0, 4 => 0, 3 => 0, 2 => 0, 1 => 0];
+$reviews = [];
+$skillFilters = ['All Skills'];
+$ratingsDbError = false;
+
 $stars = static function (float $value): string {
     $rounded = (int) round($value);
     return str_repeat('★', max(0, min(5, $rounded))) . str_repeat('☆', 5 - max(0, min(5, $rounded)));
 };
-$reviews = [
-    ['reviewer' => 'Nabila Rahman', 'initials' => 'NR', 'reviewerHref' => ukn_route_href('learner-profile'), 'overall' => 5.0, 'teaching' => 5, 'communication' => 5, 'helpfulness' => 5, 'skill' => 'Python', 'skillHref' => ukn_route_href('skill-details') . '&id=1', 'date' => 'September 12, 2026', 'dateSort' => '2026-09-12', 'review' => 'Explained Python data analysis clearly and used examples that were easy to follow.'],
-    ['reviewer' => 'Ayesha Rahman', 'initials' => 'AR', 'reviewerHref' => ukn_route_href('learner-profile'), 'overall' => 4.8, 'skill' => 'Database Design', 'skillHref' => ukn_route_href('skill-details') . '&id=7', 'date' => 'September 9, 2026', 'dateSort' => '2026-09-09', 'review' => 'The session helped me understand normalization much better. The practical examples were especially useful.'],
-    ['reviewer' => 'Imran Chowdhury', 'initials' => 'IC', 'reviewerHref' => ukn_route_href('learner-profile') . '&id=1', 'overall' => 4.7, 'skill' => 'Python', 'skillHref' => ukn_route_href('skill-details') . '&id=1', 'sessionLabel' => 'View Session', 'sessionHref' => ukn_route_href('session-details') . '&id=302&from=sessions', 'date' => 'September 4, 2026', 'dateSort' => '2026-09-04', 'review' => 'Very patient explanation and good communication throughout the session.'],
-    ['reviewer' => 'Sara Khan', 'initials' => 'SK', 'reviewerHref' => ukn_route_href('learner-profile') . '&id=2', 'overall' => 5.0, 'skill' => 'Data Analysis', 'skillHref' => ukn_route_href('skill-details') . '&id=5', 'date' => 'August 30, 2026', 'dateSort' => '2026-08-30', 'review' => 'Made pandas groupby finally click with a real coursework example instead of a toy dataset.'],
-    ['reviewer' => 'Tanvir Hossain', 'initials' => 'TH', 'reviewerHref' => ukn_route_href('learner-profile'), 'overall' => 4.5, 'skill' => 'Python', 'skillHref' => ukn_route_href('skill-details') . '&id=1', 'date' => 'August 22, 2026', 'dateSort' => '2026-08-22', 'review' => 'Good session overall, though we ran a bit over time on the debugging part.'],
-    ['reviewer' => 'Mahi Noor', 'initials' => 'MN', 'reviewerHref' => ukn_route_href('learner-profile'), 'overall' => 4.0, 'skill' => 'Python', 'skillHref' => ukn_route_href('skill-details') . '&id=1', 'date' => 'August 15, 2026', 'dateSort' => '2026-08-15', 'review' => "Helpful but assumed I already knew some pandas basics I hadn't covered yet."],
-];
-$skillFilters = ['All Skills', 'Python', 'Database Design', 'Data Analysis'];
+
+try {
+    $pdo = getDatabaseConnection();
+
+    $summaryStmt = $pdo->prepare(
+        "SELECT AVG(overall) AS overall, COUNT(*) AS total, AVG(teaching) AS teaching,
+                AVG(communication) AS communication, AVG(helpfulness) AS helpfulness
+         FROM session_ratings WHERE mentor_id = ?"
+    );
+    $summaryStmt->execute([UKN_DEMO_USER_ID]);
+    $summary = $summaryStmt->fetch();
+    $totalReviews = (int) $summary['total'];
+    $overall = $summary['overall'] !== null ? round((float) $summary['overall'], 1) : 0.0;
+    if ($totalReviews > 0) {
+        $breakdown = [
+            'Teaching Quality' => round((float) $summary['teaching'], 1),
+            'Communication' => round((float) $summary['communication'], 1),
+            'Helpfulness' => round((float) $summary['helpfulness'], 1),
+            'Overall Experience' => $overall,
+        ];
+    }
+
+    $userStmt = $pdo->prepare("SELECT sessions_as_mentor FROM users WHERE id = ?");
+    $userStmt->execute([UKN_DEMO_USER_ID]);
+    $completedSessions = (int) $userStmt->fetchColumn();
+
+    $distStmt = $pdo->prepare(
+        "SELECT ROUND(overall) AS star, COUNT(*) AS n FROM session_ratings
+         WHERE mentor_id = ? GROUP BY star"
+    );
+    $distStmt->execute([UKN_DEMO_USER_ID]);
+    foreach ($distStmt->fetchAll() as $row) {
+        $star = (int) $row['star'];
+        if (isset($distribution[$star])) {
+            $distribution[$star] = (int) $row['n'];
+        }
+    }
+
+    $reviewsStmt = $pdo->prepare(
+        "SELECT sr.session_id, sr.overall, sr.teaching, sr.communication, sr.helpfulness, sr.review,
+                sr.created_at, ur.id AS reviewer_id, ur.full_name AS reviewer, ur.initials,
+                sk.id AS skill_id, sk.name AS skill
+         FROM session_ratings sr
+         JOIN users ur ON ur.id = sr.reviewer_id
+         LEFT JOIN skills sk ON sk.id = sr.skill_id
+         WHERE sr.mentor_id = ?
+         ORDER BY sr.created_at DESC"
+    );
+    $reviewsStmt->execute([UKN_DEMO_USER_ID]);
+    $reviews = array_map(static function (array $row): array {
+        return [
+            'reviewer' => $row['reviewer'],
+            'initials' => $row['initials'],
+            'reviewerHref' => ukn_route_href('learner-profile') . '&id=' . $row['reviewer_id'],
+            'overall' => (float) $row['overall'],
+            'teaching' => $row['teaching'] !== null ? (int) $row['teaching'] : null,
+            'communication' => $row['communication'] !== null ? (int) $row['communication'] : null,
+            'helpfulness' => $row['helpfulness'] !== null ? (int) $row['helpfulness'] : null,
+            'skill' => $row['skill'],
+            'skillHref' => $row['skill_id'] ? ukn_route_href('skill-details') . '&id=' . $row['skill_id'] : null,
+            'sessionLabel' => 'View Session',
+            'sessionHref' => ukn_route_href('session-details') . '&id=' . $row['session_id'] . '&from=sessions',
+            'date' => date('F j, Y', strtotime($row['created_at'])),
+            'dateSort' => date('Y-m-d', strtotime($row['created_at'])),
+            'review' => (string) $row['review'],
+        ];
+    }, $reviewsStmt->fetchAll());
+
+    $skillsStmt = $pdo->prepare(
+        "SELECT DISTINCT sk.name FROM session_ratings sr JOIN skills sk ON sk.id = sr.skill_id
+         WHERE sr.mentor_id = ? ORDER BY sk.name"
+    );
+    $skillsStmt->execute([UKN_DEMO_USER_ID]);
+    foreach ($skillsStmt->fetchAll(PDO::FETCH_COLUMN) as $skillName) {
+        $skillFilters[] = $skillName;
+    }
+} catch (Throwable $e) {
+    error_log('[UKN ratings] ' . $e->getMessage());
+    $ratingsDbError = true;
+}
 ?>
 <div class="ukn-page-header">
   <div>
@@ -26,6 +110,12 @@ $skillFilters = ['All Skills', 'Python', 'Database Design', 'Data Analysis'];
     <p class="ukn-page-header__sub">View feedback from learners you've mentored.</p>
   </div>
 </div>
+<?php if ($ratingsDbError): ?>
+  <?php ukn_error_state([
+      'title' => 'Unable to load ratings.',
+      'message' => 'Something went wrong while loading this page. Please try again shortly.',
+  ]); ?>
+<?php else: ?>
 <div class="row g-3">
   <div class="col-lg-4">
     <div class="card mb-3">
@@ -87,7 +177,7 @@ $skillFilters = ['All Skills', 'Python', 'Database Design', 'Data Analysis'];
     <div data-ratings-list>
       <?php foreach ($reviews as $review): ukn_rating_item($review); endforeach; ?>
     </div>
-    <div hidden data-ratings-empty>
+    <div<?= $reviews ? ' hidden' : '' ?> data-ratings-empty>
       <?php ukn_empty_state([
           'icon' => 'star',
           'title' => 'No ratings match this filter.',
@@ -98,3 +188,4 @@ $skillFilters = ['All Skills', 'Python', 'Database Design', 'Data Analysis'];
     </div>
   </div>
 </div>
+<?php endif; ?>

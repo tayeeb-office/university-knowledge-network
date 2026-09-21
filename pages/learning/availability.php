@@ -1,34 +1,109 @@
 <?php
 require_once __DIR__ . '/../../components/stat-card.php';
 require_once __DIR__ . '/../../components/session-card.php';
-$week = [
-    ['day' => 'Monday', 'key' => 'mon', 'enabled' => false, 'slots' => []],
-    ['day' => 'Tuesday', 'key' => 'tue', 'enabled' => true, 'slots' => [['start' => '18:00', 'end' => '20:00']]],
-    ['day' => 'Wednesday', 'key' => 'wed', 'enabled' => true, 'slots' => [['start' => '19:00', 'end' => '21:00']]],
-    ['day' => 'Thursday', 'key' => 'thu', 'enabled' => false, 'slots' => []],
-    ['day' => 'Friday', 'key' => 'fri', 'enabled' => true, 'slots' => [['start' => '18:00', 'end' => '20:00']]],
-    ['day' => 'Saturday', 'key' => 'sat', 'enabled' => true, 'slots' => [['start' => '16:00', 'end' => '20:00']]],
-    ['day' => 'Sunday', 'key' => 'sun', 'enabled' => true, 'slots' => [['start' => '17:00', 'end' => '20:00']]],
-];
-$toMinutes = static fn (string $t): int => (int) (explode(':', $t)[0]) * 60 + (int) (explode(':', $t)[1]);
-$enabledDayCount = 0;
-$totalMinutes = 0;
-foreach ($week as $day) {
-    if ($day['enabled']) {
-        $enabledDayCount++;
-    }
-    foreach ($day['slots'] as $slot) {
-        $totalMinutes += $toMinutes($slot['end']) - $toMinutes($slot['start']);
-    }
+require_once __DIR__ . '/../../components/error-state.php';
+require_once __DIR__ . '/../../backend/config/database.php';
+
+// TODO(auth): replace with the real session user id; mirrors index.php's own hardcoded
+// demo identity (Nabila Rahman, user id 1) until real sessions exist.
+if (!defined('UKN_DEMO_USER_ID')) {
+    define('UKN_DEMO_USER_ID', 1);
 }
-$totalHours = (int) round($totalMinutes / 60);
-$bookedHours = 8;
-$openHours = max(0, $totalHours - $bookedHours);
-$pendingRequestCount = 5;
-$upcomingSessions = [
-    ['counterparty' => 'Tanvir Hossain', 'counterpartyInitials' => 'TH', 'skill' => 'Python', 'day' => '19', 'month' => 'Sep', 'time' => 'Sat 6:00pm', 'duration' => '60 min', 'status' => 'upcoming', 'detailsHref' => ukn_route_href('session-details')],
-    ['counterparty' => 'Sara Khan', 'counterpartyInitials' => 'SK', 'skill' => 'Database Design', 'day' => '23', 'month' => 'Sep', 'time' => 'Wed 7:00pm', 'duration' => '45 min', 'status' => 'upcoming', 'detailsHref' => ukn_route_href('session-details')],
+
+// Display order Monday -> Sunday; day_of_week follows the 0 = Sunday .. 6 = Saturday
+// convention used throughout this project (see DATABASE_READ_INTEGRATION_PLAN.md §2.3).
+$dayDefs = [
+    ['day' => 'Monday', 'key' => 'mon', 'dow' => 1],
+    ['day' => 'Tuesday', 'key' => 'tue', 'dow' => 2],
+    ['day' => 'Wednesday', 'key' => 'wed', 'dow' => 3],
+    ['day' => 'Thursday', 'key' => 'thu', 'dow' => 4],
+    ['day' => 'Friday', 'key' => 'fri', 'dow' => 5],
+    ['day' => 'Saturday', 'key' => 'sat', 'dow' => 6],
+    ['day' => 'Sunday', 'key' => 'sun', 'dow' => 0],
 ];
+$week = [];
+$enabledDayCount = 0;
+$totalHours = 0;
+$bookedHours = 0;
+$openHours = 0;
+$pendingRequestCount = 0;
+$upcomingSessions = [];
+$availabilityDbError = false;
+
+try {
+    $pdo = getDatabaseConnection();
+
+    $slotsStmt = $pdo->prepare(
+        "SELECT day_of_week, start_time, end_time FROM mentor_availability
+         WHERE user_id = ? AND is_enabled = 1
+         ORDER BY day_of_week, start_time"
+    );
+    $slotsStmt->execute([UKN_DEMO_USER_ID]);
+    $slotsByDay = [];
+    $toMinutes = static fn (string $t): int => (int) explode(':', $t)[0] * 60 + (int) explode(':', $t)[1];
+    $totalMinutes = 0;
+    foreach ($slotsStmt->fetchAll() as $row) {
+        $start = substr($row['start_time'], 0, 5);
+        $end = substr($row['end_time'], 0, 5);
+        $slotsByDay[(int) $row['day_of_week']][] = ['start' => $start, 'end' => $end];
+        $totalMinutes += $toMinutes($end) - $toMinutes($start);
+    }
+    $totalHours = (int) round($totalMinutes / 60);
+
+    foreach ($dayDefs as $def) {
+        $slots = $slotsByDay[$def['dow']] ?? [];
+        if ($slots) {
+            $enabledDayCount++;
+        }
+        $week[] = ['day' => $def['day'], 'key' => $def['key'], 'enabled' => (bool) $slots, 'slots' => $slots];
+    }
+
+    $today = date('Y-m-d');
+    $weekAhead = date('Y-m-d', strtotime('+7 days'));
+    $bookedMinutesStmt = $pdo->prepare(
+        "SELECT COALESCE(SUM(duration_minutes), 0) FROM mentoring_sessions
+         WHERE mentor_id = ? AND status = 'accepted' AND scheduled_date BETWEEN ? AND ?"
+    );
+    $bookedMinutesStmt->execute([UKN_DEMO_USER_ID, $today, $weekAhead]);
+    $bookedHours = (int) round(((int) $bookedMinutesStmt->fetchColumn()) / 60);
+    $openHours = max(0, $totalHours - $bookedHours);
+
+    $pendingStmt = $pdo->prepare(
+        "SELECT COUNT(*) FROM mentoring_sessions WHERE mentor_id = ? AND status = 'pending'"
+    );
+    $pendingStmt->execute([UKN_DEMO_USER_ID]);
+    $pendingRequestCount = (int) $pendingStmt->fetchColumn();
+
+    $upcomingStmt = $pdo->prepare(
+        "SELECT ms.id, ms.scheduled_date, ms.scheduled_time, ms.duration_minutes,
+                l.full_name AS counterparty, l.initials AS counterpartyInitials, sk.name AS skill
+         FROM mentoring_sessions ms
+         JOIN users l ON l.id = ms.learner_id
+         JOIN skills sk ON sk.id = ms.skill_id
+         WHERE ms.mentor_id = ? AND ms.status = 'accepted' AND ms.scheduled_date >= CURDATE()
+         ORDER BY ms.scheduled_date, ms.scheduled_time"
+    );
+    $upcomingStmt->execute([UKN_DEMO_USER_ID]);
+    $upcomingSessions = array_map(static function (array $row): array {
+        $timestamp = strtotime($row['scheduled_date'] . ' ' . $row['scheduled_time']);
+        return [
+            'counterparty' => $row['counterparty'],
+            'counterpartyInitials' => $row['counterpartyInitials'],
+            'skill' => $row['skill'],
+            'day' => date('j', $timestamp),
+            'month' => date('M', $timestamp),
+            'time' => date('D g:ia', $timestamp),
+            'duration' => $row['duration_minutes'] . ' min',
+            'status' => 'upcoming',
+            'detailsHref' => ukn_route_href('session-details') . '&id=' . $row['id'],
+        ];
+    }, $upcomingStmt->fetchAll());
+} catch (Throwable $e) {
+    error_log('[UKN availability] ' . $e->getMessage());
+    $availabilityDbError = true;
+    $week = [];
+    $upcomingSessions = [];
+}
 ?>
 <div class="ukn-page-header">
   <div>
@@ -36,6 +111,12 @@ $upcomingSessions = [
     <p class="ukn-page-header__sub">Set the days and times when you're available for mentoring sessions.</p>
   </div>
 </div>
+<?php if ($availabilityDbError): ?>
+  <?php ukn_error_state([
+      'title' => 'Unable to load your availability.',
+      'message' => 'Something went wrong while loading this page. Please try again shortly.',
+  ]); ?>
+<?php else: ?>
 <form data-availability-form novalidate>
   <div class="row g-3 mb-4">
     <div class="col-lg-8">
@@ -125,3 +206,4 @@ $upcomingSessions = [
   </div>
   <?php foreach ($upcomingSessions as $session): ukn_session_card($session); endforeach; ?>
 </div>
+<?php endif; ?>

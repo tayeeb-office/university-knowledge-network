@@ -2,66 +2,174 @@
 require_once __DIR__ . '/../../components/stat-card.php';
 require_once __DIR__ . '/../../components/goal-card.php';
 require_once __DIR__ . '/../../components/post-card.php';
+require_once __DIR__ . '/../../components/error-state.php';
+require_once __DIR__ . '/../../backend/config/database.php';
+require_once __DIR__ . '/../../backend/helpers/format.php';
+
 $activeRole = !empty($currentUser['dualRole']) ? ($currentUser['activeRole'] ?? 'learner') : ($currentUser['role'] ?? 'learner');
 $isMentor = $activeRole === 'mentor';
-$department = 'Computer Science';
-$yearOfStudy = $isMentor ? '4th Year' : '3rd Year';
-$shortBio = $isMentor
-    ? 'Mentor for Python, Machine Learning and Data Analysis.'
-    : 'Interested in Python, databases and data analysis.';
-$aboutBio = $isMentor
-    ? "I'm a Computer Science student who mentors Python, database design and data analysis through project-based sessions. I enjoy helping other students get unstuck on real assignments rather than toy examples."
-    : "I'm a Computer Science student interested in Python, databases, and data analysis. I'm currently improving my backend and problem-solving skills.";
-$pointsStatByRole = [
-    'learner' => ['label' => 'Learning Points', 'value' => '412', 'icon' => 'military_tech', 'trend' => '+64 this month'],
-    'mentor'  => ['label' => 'Mentor Points',   'value' => '520', 'icon' => 'military_tech', 'trend' => '+20 this month'],
-];
-
 $isDualRoleUser = !empty($currentUser['loggedIn']) && !empty($currentUser['dualRole']);
+// TODO(auth): replace with the real session user id; mirrors index.php's own hardcoded
+// demo identity (Nabila Rahman, user id 1) until real sessions exist.
+if (!defined('UKN_DEMO_USER_ID')) {
+    define('UKN_DEMO_USER_ID', 1);
+}
+
+$department = '';
+$yearOfStudy = '';
+$shortBio = '';
+$aboutBio = '';
+$pointsStatByRole = [];
+$profileStats = [];
+$skills = [];
+$goals = [];
+$activity = [];
+$myPost = null;
+$myProfileDbError = false;
+
+try {
+    $pdo = getDatabaseConnection();
+
+    $userStmt = $pdo->prepare(
+        "SELECT u.headline, u.bio, u.year_of_study, u.learning_points, u.mentor_points,
+                u.avg_rating, u.sessions_as_learner, u.sessions_as_mentor, d.name AS department
+         FROM users u LEFT JOIN departments d ON d.id = u.department_id
+         WHERE u.id = ?"
+    );
+    $userStmt->execute([UKN_DEMO_USER_ID]);
+    $user = $userStmt->fetch();
+
+    if ($user !== false) {
+        $department = (string) ($user['department'] ?? '');
+        $yearOfStudy = (string) ($user['year_of_study'] ?? '');
+        $shortBio = (string) ($user['headline'] ?? '');
+        $aboutBio = (string) ($user['bio'] ?? '');
+
+        $learningMonthStmt = $pdo->prepare(
+            "SELECT COALESCE(SUM(amount), 0) FROM point_transactions
+             WHERE user_id = ? AND point_type = 'learning' AND created_at >= DATE_FORMAT(NOW(), '%Y-%m-01')"
+        );
+        $learningMonthStmt->execute([UKN_DEMO_USER_ID]);
+        $learningMonth = (int) $learningMonthStmt->fetchColumn();
+
+        $mentorMonthStmt = $pdo->prepare(
+            "SELECT COALESCE(SUM(amount), 0) FROM point_transactions
+             WHERE user_id = ? AND point_type = 'mentor' AND created_at >= DATE_FORMAT(NOW(), '%Y-%m-01')"
+        );
+        $mentorMonthStmt->execute([UKN_DEMO_USER_ID]);
+        $mentorMonth = (int) $mentorMonthStmt->fetchColumn();
+
+        $pointsStatByRole = [
+            'learner' => ['label' => 'Learning Points', 'value' => (string) $user['learning_points'], 'icon' => 'military_tech',
+                'trend' => ($learningMonth >= 0 ? '+' : '') . $learningMonth . ' this month'],
+            'mentor' => ['label' => 'Mentor Points', 'value' => (string) $user['mentor_points'], 'icon' => 'military_tech',
+                'trend' => ($mentorMonth >= 0 ? '+' : '') . $mentorMonth . ' this month'],
+        ];
+
+        $teachingCountStmt = $pdo->prepare(
+            "SELECT COUNT(*) FROM user_skills WHERE user_id = ? AND skill_type = 'teaching'"
+        );
+        $teachingCountStmt->execute([UKN_DEMO_USER_ID]);
+
+        $learningCountStmt = $pdo->prepare(
+            "SELECT COUNT(*) FROM user_skills WHERE user_id = ? AND skill_type = 'learning'"
+        );
+        $learningCountStmt->execute([UKN_DEMO_USER_ID]);
+
+        $goalsCountStmt = $pdo->prepare(
+            "SELECT COUNT(*) FROM learning_goals WHERE user_id = ? AND status = 'in-progress'"
+        );
+        $goalsCountStmt->execute([UKN_DEMO_USER_ID]);
+
+        $profileStats = $isMentor
+            ? [
+                ['label' => 'Average Rating', 'value' => $user['avg_rating'] !== null ? (string) $user['avg_rating'] : '—', 'icon' => 'star'],
+                ['label' => 'Completed Sessions', 'value' => (string) $user['sessions_as_mentor'], 'icon' => 'event_available'],
+                ['label' => 'Teaching Skills', 'value' => (string) $teachingCountStmt->fetchColumn(), 'icon' => 'school'],
+            ]
+            : [
+                ['label' => 'Completed Sessions', 'value' => (string) $user['sessions_as_learner'], 'icon' => 'event_available'],
+                ['label' => 'Skills Learning', 'value' => (string) $learningCountStmt->fetchColumn(), 'icon' => 'workspaces'],
+                ['label' => 'Current Goals', 'value' => (string) $goalsCountStmt->fetchColumn(), 'icon' => 'flag'],
+            ];
+
+        $skillsStmt = $pdo->prepare(
+            "SELECT s.name FROM user_skills us JOIN skills s ON s.id = us.skill_id
+             WHERE us.user_id = ? AND us.skill_type = ?
+             ORDER BY s.name"
+        );
+        $skillsStmt->execute([UKN_DEMO_USER_ID, $isMentor ? 'teaching' : 'learning']);
+        $skills = $skillsStmt->fetchAll(PDO::FETCH_COLUMN);
+
+        if (!$isMentor) {
+            $goalsStmt = $pdo->prepare(
+                "SELECT lg.title, s.name AS skill, lg.progress, lg.target_date
+                 FROM learning_goals lg LEFT JOIN skills s ON s.id = lg.skill_id
+                 WHERE lg.user_id = ? AND lg.status = 'in-progress'
+                 ORDER BY lg.target_date ASC"
+            );
+            $goalsStmt->execute([UKN_DEMO_USER_ID]);
+            $goals = array_map(static function (array $row): array {
+                $row['targetDate'] = $row['target_date'] ? date('F Y', strtotime($row['target_date'])) : '';
+                return $row;
+            }, $goalsStmt->fetchAll());
+        }
+
+        // No activity/audit-log table exists in the schema (see DATABASE_READ_INTEGRATION_PLAN.md
+        // §2.2). As a defensible simplification, this reuses the real points ledger — its `reason`
+        // text is already human-readable — instead of a full activity feed.
+        $activityIcons = [
+            'session' => 'event_available', 'rating' => 'star', 'goal' => 'flag',
+            'community' => 'forum', 'penalty' => 'warning',
+        ];
+        $activityStmt = $pdo->prepare(
+            "SELECT category, reason FROM point_transactions
+             WHERE user_id = ? ORDER BY created_at DESC LIMIT 4"
+        );
+        $activityStmt->execute([UKN_DEMO_USER_ID]);
+        $activity = array_map(static function (array $row) use ($activityIcons): array {
+            return ['icon' => $activityIcons[$row['category']] ?? 'inbox', 'text' => $row['reason']];
+        }, $activityStmt->fetchAll());
+
+        $postStmt = $pdo->prepare(
+            "SELECT id, title, content, vote_score AS score, comment_count AS comments, created_at
+             FROM posts WHERE user_id = ? AND status = 'visible'
+             ORDER BY created_at DESC LIMIT 1"
+        );
+        $postStmt->execute([UKN_DEMO_USER_ID]);
+        $postRow = $postStmt->fetch();
+        if ($postRow !== false) {
+            $tagsStmt = $pdo->prepare(
+                "SELECT s.name FROM post_skills ps JOIN skills s ON s.id = ps.skill_id WHERE ps.post_id = ?"
+            );
+            $tagsStmt->execute([$postRow['id']]);
+            $postRow['tags'] = $tagsStmt->fetchAll(PDO::FETCH_COLUMN);
+            $postRow['excerpt'] = ukn_excerpt($postRow['content']);
+            $postRow['href'] = 'index.php?page=post-details&id=' . $postRow['id'];
+            $postRow['author'] = $currentUser['name'] ?? 'Member';
+            $postRow['initials'] = $currentUser['initials'] ?? '?';
+            $postRow['role'] = $isMentor ? 'Mentor' : 'Learner';
+            $postRow['department'] = $department;
+            $postRow['isOwner'] = true;
+            $myPost = $postRow;
+        }
+    }
+} catch (Throwable $e) {
+    error_log('[UKN my-profile] ' . $e->getMessage());
+    $myProfileDbError = true;
+}
+
 $pointsRolesToRender = $isDualRoleUser ? ['learner', 'mentor'] : [$isMentor ? 'mentor' : 'learner'];
-$profileStats = $isMentor
-    ? [
-        ['label' => 'Average Rating', 'value' => '4.8', 'icon' => 'star'],
-        ['label' => 'Completed Sessions', 'value' => '27', 'icon' => 'event_available'],
-        ['label' => 'Teaching Skills', 'value' => '3', 'icon' => 'school'],
-    ]
-    : [
-        ['label' => 'Completed Sessions', 'value' => '18', 'icon' => 'event_available'],
-        ['label' => 'Skills Learning', 'value' => '4', 'icon' => 'workspaces'],
-        ['label' => 'Current Goals', 'value' => '3', 'icon' => 'flag'],
-    ];
 $skillsSectionTitle = $isMentor ? 'Teaching Skills' : 'Learning Skills';
 $skillsSectionCta = $isMentor ? 'Manage Teaching Skills' : 'Manage Learning Skills';
 $skillsSectionHref = ukn_route_href($isMentor ? 'teaching-skills' : 'learning-skills');
-$skills = $isMentor
-    ? ['Python', 'Database Design', 'Data Analysis']
-    : ['Python', 'MySQL', 'Data Analysis', 'Public Speaking'];
-$goals = [
-    ['title' => 'Learn Python for Data Analysis', 'skill' => 'Python', 'progress' => 65, 'targetDate' => 'December 2026'],
-    ['title' => 'Improve Database Design Skills', 'skill' => 'DBMS', 'progress' => 40, 'targetDate' => 'November 2026'],
-];
-$activity = $isMentor
-    ? [
-        ['icon' => 'event_available', 'text' => 'Completed a Python session with Nabila Rahman'],
-        ['icon' => 'military_tech', 'text' => 'Earned +20 Mentor Points'],
-        ['icon' => 'star', 'text' => 'Received a 5-star rating from Sara Khan'],
-        ['icon' => 'inbox', 'text' => 'Accepted a new session request from Tanvir Hossain'],
-    ]
-    : [
-        ['icon' => 'event_available', 'text' => 'Completed a Python session with Rahim Ahmed'],
-        ['icon' => 'military_tech', 'text' => 'Earned +10 Learning Points'],
-        ['icon' => 'bookmark', 'text' => 'Saved "Database Normalization Guide"'],
-        ['icon' => 'workspaces', 'text' => 'Added Data Analysis to Learning Skills'],
-    ];
-$myPost = [
-    'id' => 1, 'href' => 'index.php?page=post-details&id=1',
-    'author' => $currentUser['name'] ?? 'Nabila Rahman', 'initials' => $currentUser['initials'] ?? 'NR',
-    'role' => 'Learner', 'department' => $department, 'time' => '12 min ago',
-    'title' => 'Need Help Understanding Database Normalization',
-    'excerpt' => "I get 1NF and 2NF but 3NF stops making sense once foreign keys are involved. Does anyone have a simple example that isn't the classic student/course table?",
-    'tags' => ['Database', 'MySQL', 'DBMS'], 'score' => 24, 'comments' => 8, 'isOwner' => true,
-];
 ?>
+<?php if ($myProfileDbError): ?>
+  <?php ukn_error_state([
+      'title' => 'Unable to load your profile.',
+      'message' => 'Something went wrong while loading your profile. Please try again shortly.',
+  ]); ?>
+<?php else: ?>
 <div class="card mb-4">
   <div class="card-body">
     <div class="d-flex align-items-start gap-3 flex-wrap">
@@ -72,7 +180,9 @@ $myPost = [
           <span class="ukn-status ukn-status-accent"><?= htmlspecialchars(ucfirst($activeRole)) ?></span>
         </div>
         <div class="ukn-body-sm mt-1"><?= htmlspecialchars($department) ?> &middot; <?= htmlspecialchars($yearOfStudy) ?></div>
-        <p class="ukn-body-sm mt-2 mb-0"><?= htmlspecialchars($shortBio) ?></p>
+        <?php if ($shortBio): ?>
+          <p class="ukn-body-sm mt-2 mb-0"><?= htmlspecialchars($shortBio) ?></p>
+        <?php endif; ?>
       </div>
       <div class="flex-shrink-0">
         <a href="<?= htmlspecialchars(ukn_route_href('edit-profile')) ?>" class="btn btn-outline-secondary btn-sm">Edit Profile</a>
@@ -137,6 +247,7 @@ $myPost = [
     <?php endforeach; ?>
   </div>
 </div>
+<?php if ($myPost !== null): ?>
 <div>
   <div class="d-flex align-items-center justify-content-between mb-3">
     <h2 class="ukn-h4 mb-0">My Posts</h2>
@@ -144,3 +255,5 @@ $myPost = [
   </div>
   <?php ukn_post_card($myPost); ?>
 </div>
+<?php endif; ?>
+<?php endif; ?>

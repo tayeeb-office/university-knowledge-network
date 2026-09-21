@@ -1,71 +1,63 @@
 <?php
 require_once __DIR__ . '/../components/post-card.php';
 require_once __DIR__ . '/../components/empty-state.php';
-$viewerName = $currentUser['name'] ?? 'Member';
-$communityPosts = [
-    [
-        'id' => 1, 'author' => 'Nabila Rahman', 'initials' => 'NR', 'role' => 'Learner', 'department' => 'Computer Science',
-        'time' => '12 min ago',
-        'title' => 'Need Help Understanding Database Normalization',
-        'excerpt' => "I get 1NF and 2NF but 3NF stops making sense once foreign keys are involved. Does anyone have a simple example that isn't the classic student/course table?",
-        'tags' => ['Database', 'MySQL', 'DBMS'], 'score' => 24, 'comments' => 8, 'following' => true,
-    ],
-    [
-        'id' => 2, 'author' => 'Rahim Ahmed', 'initials' => 'RA', 'role' => 'Mentor', 'department' => 'Computer Science',
-        'time' => '35 min ago',
-        'title' => 'A Simple Way to Start Learning Python for Data Analysis',
-        'excerpt' => 'Skip the theory-heavy courses at first. Start with pandas on a dataset you actually care about — it clicks a lot faster than notebooks full of print statements.',
-        'tags' => ['Python', 'Data Analysis'], 'score' => 48, 'comments' => 12, 'following' => true,
-    ],
-    [
-        'id' => 3, 'author' => 'Sara Khan', 'initials' => 'SK', 'role' => 'Learner', 'department' => 'Business Administration',
-        'time' => '1 hour ago',
-        'title' => 'Looking for a Public Speaking Practice Partner',
-        'excerpt' => 'Preparing for a case competition presentation and would love a few practice run-throughs with someone this week. Open to swapping skills too.',
-        'tags' => ['Public Speaking', 'Communication'], 'score' => 16, 'comments' => 6, 'following' => false,
-    ],
-    [
-        'id' => 4, 'author' => 'Hasan Mahmud', 'initials' => 'HM', 'role' => 'Mentor', 'department' => 'Electrical Engineering',
-        'time' => '2 hours ago',
-        'title' => 'Can Someone Explain Arduino Interrupts With a Practical Example?',
-        'excerpt' => 'I understand the attachInterrupt() syntax but keep getting inconsistent readings on a push-button debounce circuit. A real wiring example would help more than the docs.',
-        'tags' => ['Arduino', 'Embedded Systems'], 'score' => 31, 'comments' => 9, 'following' => false,
-    ],
-    [
-        'id' => 5, 'author' => 'Imran Chowdhury', 'initials' => 'IC', 'role' => 'Learner', 'department' => 'English',
-        'time' => '3 hours ago',
-        'title' => 'How Do You Improve Academic Presentation Skills?',
-        'excerpt' => 'My seminar presentations feel flat even when the research is solid. Looking for practical habits, not just "practice more" advice.',
-        'tags' => ['Presentation', 'Communication'], 'score' => 19, 'comments' => 14, 'following' => false,
-    ],
-    [
-        'id' => 6, 'author' => 'Tanvir Hossain', 'initials' => 'TH', 'role' => 'Learner', 'department' => 'Computer Science',
-        'time' => '5 hours ago',
-        'title' => 'Things I Learned While Building My First React Project',
-        'excerpt' => 'Mainly that prop drilling gets painful fast and useEffect dependency arrays are not optional reading. Sharing a few mistakes so others can skip them.',
-        'tags' => ['React', 'JavaScript'], 'score' => 27, 'comments' => 10, 'following' => false,
-    ],
-    [
-        'id' => 7, 'author' => 'Sara Khan', 'initials' => 'SK', 'role' => 'Learner', 'department' => 'Business Administration',
-        'time' => '7 hours ago',
-        'title' => 'Best Resources for Learning UI/UX Design as a Beginner',
-        'excerpt' => 'Business student trying to pick up enough UI/UX to prototype my own capstone project. Free resources preferred over paid courses for now.',
-        'tags' => ['UI/UX Design'], 'score' => 22, 'comments' => 5, 'following' => false,
-    ],
-    [
-        'id' => 8, 'author' => 'Rahim Ahmed', 'initials' => 'RA', 'role' => 'Mentor', 'department' => 'Computer Science',
-        'time' => '1 day ago',
-        'title' => "What's the Fastest Way to Get Comfortable With SQL Joins?",
-        'excerpt' => 'Draw the two tables on paper before writing any query. Sounds basic, but it fixes most of the confusion I see in mentoring sessions.',
-        'tags' => ['MySQL', 'SQL'], 'score' => 37, 'comments' => 11, 'following' => true,
-    ],
-];
-foreach ($communityPosts as &$post) {
-    $post['href'] = 'index.php?page=post-details&id=' . $post['id'];
-    $post['authorHref'] = ukn_route_href($post['role'] === 'Mentor' ? 'mentor-profile' : 'learner-profile') . '&id=' . $post['id'];
-    $post['isOwner'] = ($post['author'] === $viewerName);
+require_once __DIR__ . '/../components/error-state.php';
+require_once __DIR__ . '/../backend/config/database.php';
+require_once __DIR__ . '/../backend/helpers/format.php';
+
+$communityPosts = [];
+$homeDbError = false;
+
+try {
+    $pdo = getDatabaseConnection();
+
+    $postsStmt = $pdo->query(
+        "SELECT p.id, p.title, p.content, p.vote_score AS score, p.comment_count AS comments,
+                p.created_at, u.id AS author_id, u.full_name AS author, u.initials, u.role,
+                d.name AS department
+         FROM posts p
+         JOIN users u ON u.id = p.user_id
+         LEFT JOIN departments d ON d.id = u.department_id
+         WHERE p.status = 'visible'
+         ORDER BY p.created_at DESC
+         LIMIT 20"
+    );
+    $communityPosts = $postsStmt->fetchAll();
+
+    if ($communityPosts) {
+        $postIds = array_column($communityPosts, 'id');
+        $placeholders = implode(',', array_fill(0, count($postIds), '?'));
+        $tagsStmt = $pdo->prepare(
+            "SELECT ps.post_id, s.name FROM post_skills ps JOIN skills s ON s.id = ps.skill_id
+             WHERE ps.post_id IN ($placeholders)"
+        );
+        $tagsStmt->execute($postIds);
+        $tagsByPost = [];
+        foreach ($tagsStmt->fetchAll() as $row) {
+            $tagsByPost[$row['post_id']][] = $row['name'];
+        }
+
+        foreach ($communityPosts as &$post) {
+            $post['score'] = (int) $post['score'];
+            $post['comments'] = (int) $post['comments'];
+            $post['tags'] = $tagsByPost[$post['id']] ?? [];
+            $post['role'] = ukn_role_label($post['role']);
+            $post['department'] = (string) ($post['department'] ?? '');
+            $post['time'] = ukn_time_ago($post['created_at']);
+            $post['excerpt'] = ukn_excerpt($post['content']);
+            $post['href'] = 'index.php?page=post-details&id=' . $post['id'];
+            $post['authorHref'] = ukn_route_href($post['role'] === 'Mentor' ? 'mentor-profile' : 'learner-profile') . '&id=' . $post['author_id'];
+            // TODO(auth): ownership/following need the current session user; not determinable yet.
+            $post['isOwner'] = false;
+        }
+        unset($post);
+    }
+} catch (Throwable $e) {
+    error_log('[UKN home] ' . $e->getMessage());
+    $homeDbError = true;
+    $communityPosts = [];
 }
-unset($post);
+
 $firstBatch = array_slice($communityPosts, 0, 5);
 $remainingBatch = array_slice($communityPosts, 5);
 ?>
@@ -75,7 +67,12 @@ $remainingBatch = array_slice($communityPosts, 5);
     <p class="ukn-page-header__sub">Ask questions, share what you know, and connect with learners and mentors across campus.</p>
   </div>
 </div>
-<?php if (empty($communityPosts)): ?>
+<?php if ($homeDbError): ?>
+  <?php ukn_error_state([
+      'title' => 'Unable to load the feed.',
+      'message' => 'Something went wrong while loading community posts. Please try again shortly.',
+  ]); ?>
+<?php elseif (empty($communityPosts)): ?>
 
   <?php
   ukn_empty_state([

@@ -1,24 +1,49 @@
 <?php
-require_once __DIR__ . '/includes/taxonomy-data.php';
 require_once __DIR__ . '/../components/empty-state.php';
+require_once __DIR__ . '/../components/error-state.php';
 require_once __DIR__ . '/../components/stat-card.php';
+require_once __DIR__ . '/../backend/config/database.php';
 $adminActiveNav = 'skill-categories';
 $adminPageTitle = 'Skill Categories';
 $adminPageSub = 'Organize skills into clear categories for learners and mentors.';
 $adminPageStyles = ['../assets/css/admin/tables.css', '../assets/css/admin/forms.css'];
 $adminPageScripts = ['../assets/js/admin/skills.js'];
-$categories = ukn_admin_mock_categories();
-$skills = ukn_admin_mock_skills();
 $statusLabels = ['active' => 'Active', 'inactive' => 'Inactive'];
 $statusClass = ['active' => 'ukn-status-accent', 'inactive' => 'ukn-status-neutral'];
-$skillCounts = array_fill_keys(array_keys($categories), 0);
-foreach ($skills as $skill) {
-    if (isset($skillCounts[$skill['categoryId']])) {
-        $skillCounts[$skill['categoryId']]++;
+
+$categories = [];
+$skillCounts = [];
+$totalSkills = 0;
+$categoriesDbError = false;
+
+try {
+    $pdo = getDatabaseConnection();
+    $stmt = $pdo->query(
+        "SELECT sc.id, sc.name, sc.description, sc.status, sc.updated_at,
+                (SELECT COUNT(*) FROM skills s WHERE s.category_id = sc.id) AS skill_count
+         FROM skill_categories sc
+         ORDER BY sc.name"
+    );
+    foreach ($stmt->fetchAll() as $row) {
+        $row['updated'] = date('M j, Y', strtotime($row['updated_at']));
+        $skillCounts[$row['id']] = (int) $row['skill_count'];
+        $categories[$row['id']] = $row;
     }
+    $totalSkills = (int) $pdo->query("SELECT COUNT(*) FROM skills")->fetchColumn();
+} catch (Throwable $e) {
+    error_log('[UKN admin/skill-categories] ' . $e->getMessage());
+    $categoriesDbError = true;
+    $categories = [];
+    $skillCounts = [];
 }
 require __DIR__ . '/includes/header.php';
 ?>
+<?php if ($categoriesDbError): ?>
+  <?php ukn_error_state([
+      'title' => 'Unable to load skill categories.',
+      'message' => 'Something went wrong while loading this page. Please try again shortly.',
+  ]); ?>
+<?php else: ?>
 <div class="d-flex justify-content-end mb-3">
   <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#categoryFormModal" data-category-add>
     <span class="ms" aria-hidden="true">add</span> Add Category
@@ -29,7 +54,7 @@ require __DIR__ . '/includes/header.php';
   <?php
   ukn_stat_card(['label' => 'Total Categories', 'value' => (string) count($categories), 'icon' => 'category']);
   ukn_stat_card(['label' => 'Active Categories', 'value' => (string) count(array_filter($categories, static fn ($c) => $c['status'] === 'active')), 'icon' => 'check_circle']);
-  ukn_stat_card(['label' => 'Total Skills', 'value' => (string) count($skills), 'icon' => 'workspaces']);
+  ukn_stat_card(['label' => 'Total Skills', 'value' => (string) $totalSkills, 'icon' => 'workspaces']);
   ?>
 </div>
 <div class="card mb-3">
@@ -123,7 +148,7 @@ require __DIR__ . '/includes/header.php';
       </tbody>
     </table>
   </div>
-  <div class="card-body" hidden data-category-empty>
+  <div class="card-body"<?= $categories ? ' hidden' : '' ?> data-category-empty>
     <?php ukn_empty_state([
         'icon' => 'category',
         'title' => 'No skill categories found.',
@@ -133,6 +158,7 @@ require __DIR__ . '/includes/header.php';
     ]); ?>
   </div>
 </div>
+<?php endif; ?>
 <div class="modal fade" id="categoryFormModal" tabindex="-1" aria-labelledby="categoryFormModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">

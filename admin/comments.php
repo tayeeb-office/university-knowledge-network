@@ -1,59 +1,120 @@
 <?php
-require_once __DIR__ . '/includes/users-data.php';
 require_once __DIR__ . '/../components/empty-state.php';
+require_once __DIR__ . '/../components/error-state.php';
 require_once __DIR__ . '/../components/stat-card.php';
+require_once __DIR__ . '/../backend/config/database.php';
 $adminActiveNav = 'comments';
 $adminPageTitle = 'Comments';
 $adminPageSub = 'Review community comments, replies and moderation status.';
 $adminPageStyles = ['../assets/css/admin/tables.css', '../assets/css/admin/forms.css'];
 $adminPageScripts = ['../assets/js/admin/moderation.js'];
-$users = ukn_admin_mock_users();
-function ukn_admin_comment_author(array $users, int $id): array
-{
-    $u = $users[$id];
-    return ['id' => $id, 'name' => $u['name']];
-}
-
-$comments = [
-    ['id' => 'UKN-C-0101', 'post' => 'Need Help Understanding Database Normalization', 'postId' => 1, 'author' => 2, 'text' => '2NF removes partial dependency — a non-key column depending on only part of a composite key. 3NF removes transitive dependency — a non-key column depending on another non-key column instead of the key itself. Want me to walk through a students/courses example?', 'replies' => 1, 'reports' => 0, 'status' => 'visible', 'type' => 'top-level', 'posted' => 'Sep 13, 2026'],
-    ['id' => 'UKN-C-0102', 'post' => 'Need Help Understanding Database Normalization', 'postId' => 1, 'author' => 5, 'text' => 'I had the same confusion. A student-course-instructor example helped me understand the difference.', 'replies' => 0, 'reports' => 0, 'status' => 'visible', 'type' => 'top-level', 'posted' => 'Sep 13, 2026'],
-    ['id' => 'UKN-C-0103', 'post' => 'Need Help Understanding Database Normalization', 'postId' => 1, 'author' => 4, 'text' => 'Once you see 2NF and 3NF applied to the same table side by side, the difference stops feeling abstract — happy to share a quick before/after if it helps.', 'replies' => 0, 'reports' => 0, 'status' => 'visible', 'type' => 'top-level', 'posted' => 'Sep 13, 2026'],
-    ['id' => 'UKN-C-0104', 'post' => 'Need Help Understanding Database Normalization', 'postId' => 1, 'author' => 1, 'text' => 'Yes please — a students/courses example would really help.', 'replies' => 0, 'reports' => 0, 'status' => 'visible', 'type' => 'reply', 'parent' => 'UKN-C-0101', 'posted' => 'Sep 13, 2026'],
-    ['id' => 'UKN-C-0105', 'post' => 'A Simple Way to Start Learning Python for Data Analysis', 'postId' => 2, 'author' => 3, 'text' => 'Starting with pandas on a small dataset really did make a difference for me too.', 'replies' => 0, 'reports' => 0, 'status' => 'visible', 'type' => 'top-level', 'posted' => 'Sep 13, 2026'],
-    ['id' => 'UKN-C-0106', 'post' => 'A Simple Way to Start Learning Python for Data Analysis', 'postId' => 2, 'author' => 6, 'text' => 'Which library would you recommend first — pandas or numpy?', 'replies' => 1, 'reports' => 0, 'status' => 'visible', 'type' => 'top-level', 'posted' => 'Sep 13, 2026'],
-    ['id' => 'UKN-C-0107', 'post' => 'Looking for a Public Speaking Practice Partner', 'postId' => 3, 'author' => 3, 'text' => "I'd be interested in practicing together — I have a presentation coming up too.", 'replies' => 0, 'reports' => 0, 'status' => 'visible', 'type' => 'top-level', 'posted' => 'Sep 13, 2026'],
-    ['id' => 'UKN-C-0108', 'post' => 'Can Someone Explain Arduino Interrupts With a Practical Example?', 'postId' => 4, 'author' => 10, 'text' => 'Debouncing with a small capacitor fixed this exact issue for me.', 'replies' => 0, 'reports' => 0, 'status' => 'visible', 'type' => 'top-level', 'posted' => 'Sep 13, 2026'],
-    ['id' => 'UKN-C-0109', 'post' => 'Best Resources for Learning UI/UX Design as a Beginner', 'postId' => 7, 'author' => 5, 'text' => 'The Google UX Design Certificate is a solid free-ish starting point.', 'replies' => 0, 'reports' => 0, 'status' => 'visible', 'type' => 'top-level', 'posted' => 'Sep 13, 2026'],
-    ['id' => 'UKN-C-0110', 'post' => "What's the Fastest Way to Get Comfortable With SQL Joins?", 'postId' => 8, 'author' => 7, 'text' => 'Drawing the tables out first is underrated advice — wish someone told me this earlier.', 'replies' => 0, 'reports' => 0, 'status' => 'visible', 'type' => 'top-level', 'posted' => 'Sep 12, 2026'],
-    ['id' => 'UKN-C-0111', 'post' => 'Need Help Understanding Database Normalization', 'postId' => 1, 'author' => 14, 'text' => 'This is useless. Just send me the completed assignment.', 'replies' => 0, 'reports' => 2, 'reportReasons' => ['Inappropriate / off-topic'], 'status' => 'visible', 'type' => 'top-level', 'posted' => 'Sep 13, 2026'],
-    ['id' => 'UKN-C-0112', 'post' => 'Anyone Want to Exchange Completed Assignment Files?', 'postId' => 1, 'author' => 15, 'text' => "DM me, I have last semester's files too.", 'replies' => 0, 'reports' => 2, 'reportReasons' => ['Spam', 'Academic integrity concern'], 'status' => 'hidden', 'type' => 'top-level', 'posted' => 'Sep 13, 2026'],
-    ['id' => 'UKN-C-0113', 'post' => 'What Is the Best Way to Practice Python Data Analysis?', 'postId' => 1, 'author' => 9, 'text' => "Following this — I'm stuck on the same thing.", 'replies' => 0, 'reports' => 0, 'status' => 'visible', 'type' => 'top-level', 'posted' => 'Sep 10, 2026'],
-    ['id' => 'UKN-C-0114', 'post' => 'Looking for a Study Partner for Database Systems', 'postId' => 1, 'author' => 11, 'text' => "I'm also looking for a study partner for this course!", 'replies' => 0, 'reports' => 0, 'status' => 'visible', 'type' => 'top-level', 'posted' => 'Sep 6, 2026'],
-    ['id' => 'UKN-C-0115', 'post' => 'Things I Learned After My First Group Project in DBMS Lab', 'postId' => 1, 'author' => 12, 'text' => 'Group projects in DBMS lab are rough — appreciate you sharing this.', 'replies' => 0, 'reports' => 0, 'status' => 'visible', 'type' => 'top-level', 'posted' => 'Aug 30, 2026'],
-    ['id' => 'UKN-C-0116', 'post' => 'Which MySQL Resources Actually Helped You Learn Joins?', 'postId' => 1, 'author' => 8, 'text' => "W3Schools' interactive SQL editor helped me a lot with joins.", 'replies' => 0, 'reports' => 0, 'status' => 'visible', 'type' => 'top-level', 'posted' => 'Aug 25, 2026'],
-    ['id' => 'UKN-C-0117', 'post' => 'Best Resources for Learning MySQL Joins?', 'postId' => 3, 'author' => 13, 'text' => 'Following, need this too for my capstone.', 'replies' => 0, 'reports' => 0, 'status' => 'visible', 'type' => 'top-level', 'posted' => 'Sep 9, 2026'],
-    ['id' => 'UKN-C-0118', 'post' => 'A Simple Way to Start Learning Python for Data Analysis', 'postId' => 2, 'author' => 16, 'text' => 'Bookmarking this for later, thank you!', 'replies' => 0, 'reports' => 0, 'status' => 'visible', 'type' => 'top-level', 'posted' => 'Sep 13, 2026'],
-];
 $statusLabels = ['visible' => 'Visible', 'hidden' => 'Hidden'];
 $statusClass = ['visible' => 'ukn-status-accent', 'hidden' => 'ukn-status-neutral'];
+$reasonLabels = [
+    'academic-integrity' => 'Academic integrity concern', 'off-topic' => 'Off-topic',
+    'spam' => 'Spam', 'inappropriate' => 'Inappropriate', 'harassment' => 'Harassment', 'other' => 'Other',
+];
+$displayId = static fn (int $id): string => 'UKN-C-' . str_pad((string) $id, 4, '0', STR_PAD_LEFT);
+
+$comments = [];
 $commentsById = [];
-foreach ($comments as $c) {
-    $commentsById[$c['id']] = $c;
+$totalCount = 0;
+$visibleCount = 0;
+$hiddenCount = 0;
+$reportedCount = 0;
+$commentsDbError = false;
+
+try {
+    $pdo = getDatabaseConnection();
+
+    $stmt = $pdo->query(
+        "SELECT c.id, c.parent_id, c.content, c.report_count AS reports, c.status, c.created_at,
+                u.id AS author_id, u.full_name AS author_name,
+                p.id AS post_id, p.title AS post_title,
+                (SELECT COUNT(*) FROM comments r WHERE r.parent_id = c.id) AS replies
+         FROM comments c
+         JOIN users u ON u.id = c.user_id
+         JOIN posts p ON p.id = c.post_id
+         ORDER BY c.created_at DESC"
+    );
+    $rows = $stmt->fetchAll();
+
+    if ($rows) {
+        $commentIds = array_column($rows, 'id');
+        $placeholders = implode(',', array_fill(0, count($commentIds), '?'));
+
+        $reportsStmt = $pdo->prepare(
+            "SELECT target_id, reason, description FROM reports
+             WHERE target_type = 'comment' AND target_id IN ($placeholders)
+             ORDER BY created_at DESC"
+        );
+        $reportsStmt->execute($commentIds);
+        $reasonsByComment = [];
+        foreach ($reportsStmt->fetchAll() as $row) {
+            $label = $row['description'] !== null && $row['description'] !== ''
+                ? $row['description']
+                : ($reasonLabels[$row['reason']] ?? ucfirst($row['reason']));
+            $reasonsByComment[$row['target_id']][] = $label;
+        }
+
+        foreach ($rows as $row) {
+            $reports = (int) $row['reports'];
+            $comment = [
+                'id' => $displayId((int) $row['id']),
+                'realId' => (int) $row['id'],
+                'post' => $row['post_title'],
+                'postId' => (int) $row['post_id'],
+                'author' => (int) $row['author_id'],
+                'authorName' => $row['author_name'],
+                'text' => $row['content'],
+                'replies' => (int) $row['replies'],
+                'reports' => $reports,
+                'reportReasons' => $reasonsByComment[$row['id']] ?? [],
+                'status' => $row['status'],
+                'type' => $row['parent_id'] !== null ? 'reply' : 'top-level',
+                'parent' => $row['parent_id'] !== null ? $displayId((int) $row['parent_id']) : null,
+                'posted' => date('M j, Y', strtotime($row['created_at'])),
+            ];
+            $comments[] = $comment;
+            $commentsById[$comment['id']] = $comment;
+
+            $totalCount++;
+            if ($comment['status'] === 'visible') {
+                $visibleCount++;
+            } else {
+                $hiddenCount++;
+            }
+            if ($reports > 0) {
+                $reportedCount++;
+            }
+        }
+    }
+} catch (Throwable $e) {
+    error_log('[UKN admin/comments] ' . $e->getMessage());
+    $commentsDbError = true;
+    $comments = [];
+    $commentsById = [];
 }
 require __DIR__ . '/includes/header.php';
 ?>
+<?php if ($commentsDbError): ?>
+  <?php ukn_error_state([
+      'title' => 'Unable to load comments.',
+      'message' => 'Something went wrong while loading this page. Please try again shortly.',
+  ]); ?>
+<?php else: ?>
 <div class="ukn-admin-stat-grid mb-4">
   <button type="button" class="ukn-admin-stat-btn" data-comment-summary-filter="status:">
-    <?php ukn_stat_card(['label' => 'Total Comments', 'value' => '4,862', 'icon' => 'chat_bubble']); ?>
+    <?php ukn_stat_card(['label' => 'Total Comments', 'value' => number_format($totalCount), 'icon' => 'chat_bubble']); ?>
   </button>
   <button type="button" class="ukn-admin-stat-btn" data-comment-summary-filter="status:visible">
-    <?php ukn_stat_card(['label' => 'Visible', 'value' => '4,831', 'icon' => 'visibility']); ?>
+    <?php ukn_stat_card(['label' => 'Visible', 'value' => number_format($visibleCount), 'icon' => 'visibility']); ?>
   </button>
   <button type="button" class="ukn-admin-stat-btn" data-comment-summary-filter="status:hidden">
-    <?php ukn_stat_card(['label' => 'Hidden', 'value' => '31', 'icon' => 'visibility_off']); ?>
+    <?php ukn_stat_card(['label' => 'Hidden', 'value' => number_format($hiddenCount), 'icon' => 'visibility_off']); ?>
   </button>
   <button type="button" class="ukn-admin-stat-btn" data-comment-summary-filter="reported:reported">
-    <?php ukn_stat_card(['label' => 'Reported', 'value' => '11', 'icon' => 'flag']); ?>
+    <?php ukn_stat_card(['label' => 'Reported', 'value' => number_format($reportedCount), 'icon' => 'flag']); ?>
   </button>
 </div>
 <div class="card mb-3">
@@ -110,7 +171,7 @@ require __DIR__ . '/includes/header.php';
       </thead>
       <tbody>
         <?php foreach ($comments as $c):
-            $author = ukn_admin_comment_author($users, $c['author']);
+            $author = ['id' => $c['author'], 'name' => $c['authorName']];
             $isVisible = $c['status'] === 'visible';
             $reportReasons = $c['reportReasons'] ?? [];
             $parent = $c['parent'] ?? null;
@@ -134,7 +195,7 @@ require __DIR__ . '/includes/header.php';
             data-comment-posted="<?= htmlspecialchars($c['posted']) ?>"
             data-comment-report-reasons="<?= htmlspecialchars(implode('|', $reportReasons)) ?>"
             data-comment-parent-id="<?= htmlspecialchars($parent ?? '') ?>"
-            data-comment-parent-author="<?= htmlspecialchars($parentComment ? ukn_admin_comment_author($users, $parentComment['author'])['name'] : '') ?>"
+            data-comment-parent-author="<?= htmlspecialchars($parentComment ? $parentComment['authorName'] : '') ?>"
             data-comment-parent-text="<?= htmlspecialchars($parentComment['text'] ?? '') ?>"
           >
             <td data-label="Comment" class="ukn-body-sm ukn-clamp-2" data-comment-cell="text"><?= htmlspecialchars($c['text']) ?></td>
@@ -192,7 +253,7 @@ require __DIR__ . '/includes/header.php';
       </tbody>
     </table>
   </div>
-  <div class="card-body" hidden data-comment-empty>
+  <div class="card-body"<?= $comments ? ' hidden' : '' ?> data-comment-empty>
     <?php ukn_empty_state([
         'icon' => 'chat_bubble',
         'title' => 'No comments found.',
@@ -206,6 +267,7 @@ require __DIR__ . '/includes/header.php';
     <div class="d-flex gap-1" data-comment-pagination-pages></div>
   </div>
 </div>
+<?php endif; ?>
 <div class="modal fade" id="commentDetailModal" tabindex="-1" aria-labelledby="commentDetailModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">

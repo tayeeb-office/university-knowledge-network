@@ -8,12 +8,10 @@ $currentUser = $currentUser ?? [
     'initials'   => 'NR',
     'meta'       => 'Learner · Computer Science',
 ];
-$notifications = $notifications ?? [
-    ['icon' => 'event_available', 'text' => 'Rahim Ahmed accepted your Python session request.', 'time' => '2 min ago', 'kind' => 'Session', 'unread' => true],
-    ['icon' => 'chat_bubble', 'text' => 'Sara Khan replied to your discussion.', 'time' => '10 min ago', 'kind' => 'Community', 'unread' => true],
-    ['icon' => 'person_add', 'text' => 'Hasan Mahmud followed you.', 'time' => '1 hr ago', 'kind' => 'Community', 'unread' => true],
-    ['icon' => 'check_circle', 'text' => 'Your JavaScript mentoring session has been completed.', 'time' => 'Yesterday', 'kind' => 'Session', 'unread' => false],
-];
+// index.php always computes real $notifications (from the `notifications` table) before
+// including this file, so this fallback only matters if header.php is ever included without
+// that upstream data already in scope — same pattern includes/notification-dropdown.php uses.
+$notifications = $notifications ?? [];
 $notificationCount = $notificationCount ?? count(array_filter($notifications, static fn (array $n): bool => !empty($n['unread'])));
 $showRightSidebar = $showRightSidebar ?? true;
 ?>

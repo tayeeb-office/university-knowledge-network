@@ -1,13 +1,14 @@
 <?php
-require_once __DIR__ . '/includes/users-data.php';
 require_once __DIR__ . '/../components/empty-state.php';
+require_once __DIR__ . '/../components/error-state.php';
 require_once __DIR__ . '/../components/stat-card.php';
+require_once __DIR__ . '/../backend/helpers/format.php';
+require_once __DIR__ . '/../backend/config/database.php';
 $adminActiveNav = 'reports';
 $adminPageTitle = 'Reports';
 $adminPageSub = 'Review reported users, posts and comments across the network.';
 $adminPageStyles = ['../assets/css/admin/tables.css', '../assets/css/admin/forms.css', '../assets/css/admin/reports.css'];
 $adminPageScripts = ['../assets/js/admin/reports.js'];
-$users = ukn_admin_mock_users();
 $roleLabels = ['learner' => 'Learner', 'mentor' => 'Mentor', 'dual' => 'Dual Role'];
 $userStatusLabels = ['active' => 'Active', 'inactive' => 'Inactive', 'suspended' => 'Suspended'];
 $reasonLabels = [
@@ -18,70 +19,9 @@ $reasonLabels = [
     'harassment' => 'Harassment / Conduct',
     'other' => 'Other',
 ];
-function ukn_admin_report_person(array $users, int $id): array
-{
-    $u = $users[$id];
-    return ['id' => $id, 'name' => $u['name'], 'department' => $u['department']];
-}
-$reports = [
-    ['id' => 'UKN-R-0201', 'type' => 'post', 'status' => 'pending', 'reporter' => 1, 'reasonSlug' => 'academic-integrity',
-        'description' => 'The post appears to encourage sharing completed assignment work.', 'reportedDisplay' => '22 min ago', 'reportedIso' => '2026-09-14',
-        'post' => ['adminId' => 'UKN-P-0014', 'publicId' => 1, 'title' => 'Anyone Want to Exchange Completed Assignment Files?', 'author' => 14, 'status' => 'visible', 'excerpt' => 'Looking to trade completed assignments from last semester to save time.']],
-    ['id' => 'UKN-R-0202', 'type' => 'comment', 'status' => 'pending', 'reporter' => 5, 'reasonSlug' => 'inappropriate',
-        'description' => "This comment doesn't add anything constructive and points back to the reported assignment-sharing post.", 'reportedDisplay' => '48 min ago', 'reportedIso' => '2026-09-14',
-        'comment' => ['adminId' => 'UKN-C-0111', 'text' => 'This is useless. Just send me the completed assignment.', 'author' => 14, 'status' => 'visible', 'postTitle' => 'Need Help Understanding Database Normalization', 'postId' => 1]],
-    ['id' => 'UKN-R-0203', 'type' => 'post', 'status' => 'pending', 'reporter' => 2, 'reasonSlug' => 'off-topic',
-        'description' => 'Not related to any specific skill or mentoring topic.', 'reportedDisplay' => '1 hr ago', 'reportedIso' => '2026-09-14',
-        'post' => ['adminId' => 'UKN-P-0014', 'publicId' => 1, 'title' => 'Anyone Want to Exchange Completed Assignment Files?', 'author' => 14, 'status' => 'visible', 'excerpt' => 'Looking to trade completed assignments from last semester to save time.']],
-    ['id' => 'UKN-R-0204', 'type' => 'user', 'status' => 'pending', 'reporter' => 9, 'reasonSlug' => 'spam',
-        'description' => 'Has posted unrelated promotional links in multiple comment threads.', 'reportedDisplay' => '3 hr ago', 'reportedIso' => '2026-09-14',
-        'user' => ['id' => 12]],
-    ['id' => 'UKN-R-0205', 'type' => 'post', 'status' => 'pending', 'reporter' => 11, 'reasonSlug' => 'spam',
-        'description' => 'Looks like a coordinated attempt to trade completed coursework.', 'reportedDisplay' => '5 hr ago', 'reportedIso' => '2026-09-14',
-        'post' => ['adminId' => 'UKN-P-0014', 'publicId' => 1, 'title' => 'Anyone Want to Exchange Completed Assignment Files?', 'author' => 14, 'status' => 'visible', 'excerpt' => 'Looking to trade completed assignments from last semester to save time.']],
-    ['id' => 'UKN-R-0206', 'type' => 'comment', 'status' => 'pending', 'reporter' => 7, 'reasonSlug' => 'academic-integrity',
-        'description' => 'Encourages other students to get the answer instead of doing the work.', 'reportedDisplay' => '6 hr ago', 'reportedIso' => '2026-09-14',
-        'comment' => ['adminId' => 'UKN-C-0111', 'text' => 'This is useless. Just send me the completed assignment.', 'author' => 14, 'status' => 'visible', 'postTitle' => 'Need Help Understanding Database Normalization', 'postId' => 1]],
-    ['id' => 'UKN-R-0207', 'type' => 'post', 'status' => 'pending', 'reporter' => 8, 'reasonSlug' => 'off-topic',
-        'description' => 'Very similar to another existing post asking the same question.', 'reportedDisplay' => 'Sep 13, 2026', 'reportedIso' => '2026-09-13',
-        'post' => ['adminId' => 'UKN-P-0013', 'publicId' => 3, 'title' => 'Best Resources for Learning MySQL Joins?', 'author' => 5, 'status' => 'visible', 'excerpt' => 'Looking for practice problems that go beyond simple INNER JOIN examples.']],
-    ['id' => 'UKN-R-0208', 'type' => 'post', 'status' => 'resolved', 'reporter' => 10, 'reasonSlug' => 'spam',
-        'description' => 'Promoting a personal side project unrelated to coursework or mentoring.', 'reportedDisplay' => 'Sep 12, 2026', 'reportedIso' => '2026-09-12',
-        'decision' => 'Content hidden', 'resolvedDisplay' => 'Sep 12, 2026',
-        'post' => ['adminId' => 'UKN-P-0015', 'publicId' => 1, 'title' => 'Check Out My New Side Project Website!', 'author' => 15, 'status' => 'hidden', 'excerpt' => 'Promoting a personal side project unrelated to coursework or mentoring.']],
-    ['id' => 'UKN-R-0209', 'type' => 'post', 'status' => 'resolved', 'reporter' => 9, 'reasonSlug' => 'spam',
-        'description' => 'Same project link posted across multiple discussion threads.', 'reportedDisplay' => 'Sep 12, 2026', 'reportedIso' => '2026-09-12',
-        'decision' => 'Content hidden', 'resolvedDisplay' => 'Sep 12, 2026',
-        'post' => ['adminId' => 'UKN-P-0015', 'publicId' => 1, 'title' => 'Check Out My New Side Project Website!', 'author' => 15, 'status' => 'hidden', 'excerpt' => 'Promoting a personal side project unrelated to coursework or mentoring.']],
-    ['id' => 'UKN-R-0210', 'type' => 'comment', 'status' => 'resolved', 'reporter' => 8, 'reasonSlug' => 'spam',
-        'description' => 'Offering to exchange completed assignment files.', 'reportedDisplay' => 'Sep 13, 2026', 'reportedIso' => '2026-09-13',
-        'decision' => 'Content hidden', 'resolvedDisplay' => 'Sep 13, 2026',
-        'comment' => ['adminId' => 'UKN-C-0112', 'text' => "DM me, I have last semester's files too.", 'author' => 15, 'status' => 'hidden', 'postTitle' => 'Anyone Want to Exchange Completed Assignment Files?', 'postId' => 1]],
-    ['id' => 'UKN-R-0211', 'type' => 'comment', 'status' => 'resolved', 'reporter' => 11, 'reasonSlug' => 'academic-integrity',
-        'description' => 'Encourages sharing of completed assignment files.', 'reportedDisplay' => 'Sep 13, 2026', 'reportedIso' => '2026-09-13',
-        'decision' => 'Content hidden', 'resolvedDisplay' => 'Sep 13, 2026',
-        'comment' => ['adminId' => 'UKN-C-0112', 'text' => "DM me, I have last semester's files too.", 'author' => 15, 'status' => 'hidden', 'postTitle' => 'Anyone Want to Exchange Completed Assignment Files?', 'postId' => 1]],
-    ['id' => 'UKN-R-0212', 'type' => 'user', 'status' => 'resolved', 'reporter' => 7, 'reasonSlug' => 'spam',
-        'description' => 'Multiple pieces of content promoted outside projects and encouraged assignment sharing.', 'reportedDisplay' => 'Sep 12, 2026', 'reportedIso' => '2026-09-12',
-        'decision' => 'User reviewed and suspended for policy violation.', 'resolvedDisplay' => 'Sep 12, 2026',
-        'user' => ['id' => 15]],
-    ['id' => 'UKN-R-0213', 'type' => 'post', 'status' => 'resolved', 'reporter' => 6, 'reasonSlug' => 'off-topic',
-        'description' => 'Seemed unrelated to a specific skill or mentoring request.', 'reportedDisplay' => 'Sep 13, 2026', 'reportedIso' => '2026-09-13',
-        'decision' => 'Manual review completed — a reminder about posting guidelines was shared with the author.', 'resolvedDisplay' => 'Sep 13, 2026',
-        'post' => ['adminId' => 'UKN-P-0005', 'publicId' => 5, 'title' => 'How Do You Improve Academic Presentation Skills?', 'author' => 3, 'status' => 'visible', 'excerpt' => 'My seminar presentations feel flat even when the research is solid.']],
-    ['id' => 'UKN-R-0214', 'type' => 'post', 'status' => 'dismissed', 'reporter' => 9, 'reasonSlug' => 'off-topic',
-        'description' => 'Seemed unrelated to a specific skill.', 'reportedDisplay' => 'Sep 13, 2026', 'reportedIso' => '2026-09-13',
-        'decision' => 'No action required — the post was relevant to the discussion after review.', 'resolvedDisplay' => 'Sep 13, 2026',
-        'post' => ['adminId' => 'UKN-P-0003', 'publicId' => 3, 'title' => 'Looking for a Public Speaking Practice Partner', 'author' => 6, 'status' => 'visible', 'excerpt' => 'Preparing for a case competition presentation and would love a few practice run-throughs.']],
-    ['id' => 'UKN-R-0215', 'type' => 'comment', 'status' => 'dismissed', 'reporter' => 11, 'reasonSlug' => 'off-topic',
-        'description' => 'Seemed like a duplicate reply.', 'reportedDisplay' => 'Sep 13, 2026', 'reportedIso' => '2026-09-13',
-        'decision' => 'No violation found.', 'resolvedDisplay' => 'Sep 13, 2026',
-        'comment' => ['adminId' => 'UKN-C-0107', 'text' => "I'd be interested in practicing together — I have a presentation coming up too.", 'author' => 3, 'status' => 'visible', 'postTitle' => 'Looking for a Public Speaking Practice Partner', 'postId' => 3]],
-    ['id' => 'UKN-R-0216', 'type' => 'user', 'status' => 'dismissed', 'reporter' => 10, 'reasonSlug' => 'spam',
-        'description' => 'Suspected inactive/spam account.', 'reportedDisplay' => 'Sep 13, 2026', 'reportedIso' => '2026-09-13',
-        'decision' => 'Account reviewed — no policy violation found; account appears simply inactive.', 'resolvedDisplay' => 'Sep 13, 2026',
-        'user' => ['id' => 13]],
-];
+$statusLabels = ['pending' => 'Pending', 'resolved' => 'Resolved', 'dismissed' => 'Dismissed'];
+$statusClass = ['pending' => 'ukn-status-neutral', 'resolved' => 'ukn-status-accent', 'dismissed' => 'ukn-status-neutral'];
+
 function ukn_report_target_key(array $r): string
 {
     if ($r['type'] === 'post') {
@@ -92,17 +32,173 @@ function ukn_report_target_key(array $r): string
     }
     return 'user:' . $r['user']['id'];
 }
+$displayPostId = static fn (int $id): string => 'UKN-P-' . str_pad((string) $id, 4, '0', STR_PAD_LEFT);
+$displayCommentId = static fn (int $id): string => 'UKN-C-' . str_pad((string) $id, 4, '0', STR_PAD_LEFT);
+
+$reports = [];
+$summary = ['total' => 0, 'pending' => 0, 'resolved' => 0, 'dismissed' => 0];
+$typeSummary = ['post' => 0, 'comment' => 0, 'user' => 0];
 $targetCounts = [];
-foreach ($reports as $r) {
-    $key = ukn_report_target_key($r);
-    $targetCounts[$key] = ($targetCounts[$key] ?? 0) + 1;
+$reportsDbError = false;
+
+try {
+    $pdo = getDatabaseConnection();
+
+    $stmt = $pdo->query(
+        "SELECT r.reference_code, r.target_type, r.target_id, r.reason, r.description,
+                r.status, r.reviewed_at, r.created_at,
+                ru.id AS reporter_id, ru.full_name AS reporter_name, rd.name AS reporter_department,
+                rv.full_name AS reviewer_name
+         FROM reports r
+         JOIN users ru ON ru.id = r.reporter_id
+         LEFT JOIN departments rd ON rd.id = ru.department_id
+         LEFT JOIN users rv ON rv.id = r.reviewed_by
+         ORDER BY r.created_at DESC"
+    );
+    $rawReports = $stmt->fetchAll();
+
+    $postIds = $commentIds = $userIds = [];
+    foreach ($rawReports as $row) {
+        if ($row['target_type'] === 'post') {
+            $postIds[] = (int) $row['target_id'];
+        } elseif ($row['target_type'] === 'comment') {
+            $commentIds[] = (int) $row['target_id'];
+        } else {
+            $userIds[] = (int) $row['target_id'];
+        }
+    }
+
+    $postsById = [];
+    if ($postIds) {
+        $placeholders = implode(',', array_fill(0, count(array_unique($postIds)), '?'));
+        $ps = $pdo->prepare(
+            "SELECT p.id, p.title, p.content, p.status, u.id AS author_id, u.full_name AS author_name
+             FROM posts p JOIN users u ON u.id = p.user_id
+             WHERE p.id IN ($placeholders)"
+        );
+        $ps->execute(array_values(array_unique($postIds)));
+        foreach ($ps->fetchAll() as $p) {
+            $postsById[(int) $p['id']] = $p;
+        }
+    }
+
+    $commentsById = [];
+    if ($commentIds) {
+        $placeholders = implode(',', array_fill(0, count(array_unique($commentIds)), '?'));
+        $cs = $pdo->prepare(
+            "SELECT c.id, c.content, c.status, c.post_id, u.id AS author_id, u.full_name AS author_name, p.title AS post_title
+             FROM comments c JOIN users u ON u.id = c.user_id JOIN posts p ON p.id = c.post_id
+             WHERE c.id IN ($placeholders)"
+        );
+        $cs->execute(array_values(array_unique($commentIds)));
+        foreach ($cs->fetchAll() as $c) {
+            $commentsById[(int) $c['id']] = $c;
+        }
+    }
+
+    $usersById = [];
+    if ($userIds) {
+        $placeholders = implode(',', array_fill(0, count(array_unique($userIds)), '?'));
+        $us = $pdo->prepare(
+            "SELECT u.id, u.full_name AS name, u.role, u.status, d.name AS department
+             FROM users u LEFT JOIN departments d ON d.id = u.department_id
+             WHERE u.id IN ($placeholders)"
+        );
+        $us->execute(array_values(array_unique($userIds)));
+        foreach ($us->fetchAll() as $u) {
+            $usersById[(int) $u['id']] = $u;
+        }
+    }
+
+    foreach ($rawReports as $row) {
+        $targetId = (int) $row['target_id'];
+        $type = $row['target_type'];
+        $entry = [
+            'id' => $row['reference_code'],
+            'type' => $type,
+            'status' => $row['status'],
+            'reporter' => [
+                'id' => (int) $row['reporter_id'],
+                'name' => $row['reporter_name'],
+                'department' => (string) ($row['reporter_department'] ?? ''),
+            ],
+            'reasonSlug' => $row['reason'],
+            'description' => (string) ($row['description'] ?? ''),
+            'reportedDisplay' => ukn_time_ago($row['created_at']),
+            'reportedIso' => date('Y-m-d', strtotime($row['created_at'])),
+        ];
+        if ($row['status'] !== 'pending') {
+            $entry['decision'] = 'Reviewed by ' . ($row['reviewer_name'] ?? 'an admin') . '. ' .
+                ($row['status'] === 'resolved' ? 'Report resolved.' : 'No further action required.');
+            $entry['resolvedDisplay'] = $row['reviewed_at'] ? date('M j, Y', strtotime($row['reviewed_at'])) : '';
+        }
+
+        if ($type === 'post') {
+            $p = $postsById[$targetId] ?? null;
+            $entry['post'] = $p ? [
+                'adminId' => $displayPostId((int) $p['id']),
+                'publicId' => (int) $p['id'],
+                'title' => $p['title'],
+                'author' => ['id' => (int) $p['author_id'], 'name' => $p['author_name']],
+                'status' => $p['status'],
+                'excerpt' => ukn_excerpt($p['content'], 160),
+            ] : [
+                'adminId' => $displayPostId($targetId), 'publicId' => $targetId, 'title' => '(post no longer available)',
+                'author' => ['id' => 0, 'name' => '—'], 'status' => 'hidden', 'excerpt' => '',
+            ];
+        } elseif ($type === 'comment') {
+            $c = $commentsById[$targetId] ?? null;
+            $entry['comment'] = $c ? [
+                'adminId' => $displayCommentId((int) $c['id']),
+                'text' => $c['content'],
+                'author' => ['id' => (int) $c['author_id'], 'name' => $c['author_name']],
+                'postTitle' => $c['post_title'],
+                'postId' => (int) $c['post_id'],
+                'status' => $c['status'],
+            ] : [
+                'adminId' => $displayCommentId($targetId), 'text' => '(comment no longer available)',
+                'author' => ['id' => 0, 'name' => '—'], 'postTitle' => '', 'postId' => 0, 'status' => 'hidden',
+            ];
+        } else {
+            $u = $usersById[$targetId] ?? null;
+            $entry['user'] = $u ? [
+                'id' => (int) $u['id'],
+                'name' => $u['name'],
+                'role' => $roleLabels[$u['role']] ?? ucfirst((string) $u['role']),
+                'department' => (string) ($u['department'] ?? ''),
+                'status' => $userStatusLabels[$u['status']] ?? ucfirst((string) $u['status']),
+            ] : [
+                'id' => $targetId, 'name' => '(user no longer available)', 'role' => '—', 'department' => '', 'status' => '—',
+            ];
+        }
+
+        $reports[] = $entry;
+        $summary['total']++;
+        if (isset($summary[$row['status']])) {
+            $summary[$row['status']]++;
+        }
+        if (isset($typeSummary[$type])) {
+            $typeSummary[$type]++;
+        }
+    }
+
+    foreach ($reports as $r) {
+        $key = ukn_report_target_key($r);
+        $targetCounts[$key] = ($targetCounts[$key] ?? 0) + 1;
+    }
+} catch (Throwable $e) {
+    error_log('[UKN admin/reports] ' . $e->getMessage());
+    $reportsDbError = true;
+    $reports = [];
 }
-$statusLabels = ['pending' => 'Pending', 'resolved' => 'Resolved', 'dismissed' => 'Dismissed'];
-$statusClass = ['pending' => 'ukn-status-neutral', 'resolved' => 'ukn-status-accent', 'dismissed' => 'ukn-status-neutral'];
-$summary = ['total' => 64, 'pending' => 8, 'resolved' => 49, 'dismissed' => 7];
-$typeSummary = ['post' => 31, 'comment' => 21, 'user' => 12];
 require __DIR__ . '/includes/header.php';
 ?>
+<?php if ($reportsDbError): ?>
+  <?php ukn_error_state([
+      'title' => 'Unable to load reports.',
+      'message' => 'Something went wrong while loading this page. Please try again shortly.',
+  ]); ?>
+<?php else: ?>
 <div class="ukn-admin-stat-grid mb-2">
   <button type="button" class="ukn-admin-stat-btn" data-report-summary-filter="status:">
     <?php ukn_stat_card(['label' => 'Total Reports', 'value' => number_format($summary['total']), 'icon' => 'flag']); ?>
@@ -187,7 +283,7 @@ require __DIR__ . '/includes/header.php';
       </thead>
       <tbody>
         <?php foreach ($reports as $r):
-            $reporter = ukn_admin_report_person($users, $r['reporter']);
+            $reporter = $r['reporter'];
             $contentReports = $targetCounts[ukn_report_target_key($r)];
             $decision = $r['decision'] ?? '';
             $resolvedDisplay = $r['resolvedDisplay'] ?? '';
@@ -197,32 +293,29 @@ require __DIR__ . '/includes/header.php';
             $userId = $userName = $userRole = $userDepartment = $userStatus = '';
             if ($r['type'] === 'post') {
                 $entityLabel = $r['post']['title'];
-                $author = ukn_admin_report_person($users, $r['post']['author']);
                 $postId = $r['post']['adminId'];
                 $postPublicId = $r['post']['publicId'];
                 $postTitle = $r['post']['title'];
-                $postAuthorId = $author['id'];
-                $postAuthorName = $author['name'];
+                $postAuthorId = $r['post']['author']['id'];
+                $postAuthorName = $r['post']['author']['name'];
                 $postStatus = $r['post']['status'];
                 $postExcerpt = $r['post']['excerpt'];
             } elseif ($r['type'] === 'comment') {
                 $entityLabel = $r['comment']['text'];
-                $author = ukn_admin_report_person($users, $r['comment']['author']);
                 $commentId = $r['comment']['adminId'];
                 $commentText = $r['comment']['text'];
-                $commentAuthorId = $author['id'];
-                $commentAuthorName = $author['name'];
+                $commentAuthorId = $r['comment']['author']['id'];
+                $commentAuthorName = $r['comment']['author']['name'];
                 $commentPostTitle = $r['comment']['postTitle'];
                 $commentPostId = $r['comment']['postId'];
                 $commentStatus = $r['comment']['status'];
             } else {
-                $target = $users[$r['user']['id']];
-                $entityLabel = $target['name'];
+                $entityLabel = $r['user']['name'];
                 $userId = $r['user']['id'];
-                $userName = $target['name'];
-                $userRole = $roleLabels[$target['role']];
-                $userDepartment = $target['department'];
-                $userStatus = $userStatusLabels[$target['status']];
+                $userName = $r['user']['name'];
+                $userRole = $r['user']['role'];
+                $userDepartment = $r['user']['department'];
+                $userStatus = $r['user']['status'];
             }
             $searchText = strtolower($r['id'] . ' ' . $reporter['name'] . ' ' . $reasonLabels[$r['reasonSlug']] . ' ' . $entityLabel . ' ' . $r['description']);
         ?>
@@ -266,7 +359,7 @@ require __DIR__ . '/includes/header.php';
           >
             <td data-label="Report ID" class="fw-bold"><?= htmlspecialchars($r['id']) ?></td>
             <td data-label="Type"><?= htmlspecialchars(ucfirst($r['type'])) ?></td>
-            <td data-label="Reported Entity" class="ukn-body-sm <?= $r['type'] === 'comment' ? 'ukn-clamp-2' : 'ukn-truncate' ?>"><?= htmlspecialchars($entityLabel) ?></td>
+            <td data-label="Reported Entity"><span class="ukn-body-sm<?= $r['type'] === 'comment' ? ' ukn-clamp-2' : ' d-block ukn-truncate' ?>"><?= htmlspecialchars($entityLabel) ?></span></td>
             <td data-label="Reporter"><a href="user-details.php?id=<?= $reporter['id'] ?>" aria-label="View <?= htmlspecialchars($reporter['name']) ?> in Admin"><?= htmlspecialchars($reporter['name']) ?></a></td>
             <td data-label="Reason" class="ukn-body-sm"><?= htmlspecialchars($reasonLabels[$r['reasonSlug']]) ?></td>
             <td data-label="Reports"><?= (int) $contentReports ?> <?= $contentReports === 1 ? 'report' : 'reports' ?></td>
@@ -282,7 +375,7 @@ require __DIR__ . '/includes/header.php';
       </tbody>
     </table>
   </div>
-  <div class="card-body" hidden data-report-empty>
+  <div class="card-body"<?= $reports ? ' hidden' : '' ?> data-report-empty>
     <?php ukn_empty_state([
         'icon' => 'flag',
         'title' => 'No reports found.',
@@ -304,6 +397,7 @@ require __DIR__ . '/includes/header.php';
     <div class="d-flex gap-1" data-report-pagination-pages></div>
   </div>
 </div>
+<?php endif; ?>
 <div class="modal fade" id="reportReviewModal" tabindex="-1" aria-labelledby="reportReviewModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
     <div class="modal-content">

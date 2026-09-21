@@ -15,6 +15,13 @@ $navRole = $currentUser['loggedIn']
 $otherRole = $currentUser['activeRole'] === 'mentor' ? 'Learner' : 'Mentor';
 $isDualRoleUser = $currentUser['loggedIn'] && $currentUser['dualRole'];
 $rolesToRender = $isDualRoleUser ? ['learner', 'mentor'] : [$navRole];
+// Real counts computed once in index.php (same values includes/left-sidebar.php uses),
+// so desktop and mobile navigation always show identical badges without re-querying.
+$badgeCounts = [
+    'learnerRequests' => $pendingRequestCount ?? 0,
+    'notifications' => $notificationCount ?? 0,
+    'sessions' => $upcomingSessionCount ?? 0,
+];
 ?>
 <div class="offcanvas offcanvas-start ukn-mobile-nav" tabindex="-1" id="uknMobileNav" aria-labelledby="uknMobileNavLabel">
   <div class="offcanvas-header">
@@ -36,7 +43,7 @@ $rolesToRender = $isDualRoleUser ? ['learner', 'mentor'] : [$navRole];
   <div class="offcanvas-body d-flex flex-column">
     <?php foreach ($rolesToRender as $roleKey): ?>
       <div<?= $isDualRoleUser ? ' data-role="' . htmlspecialchars($roleKey) . '"' . ($roleKey === $navRole ? '' : ' hidden') : '' ?>>
-        <?php foreach (ukn_nav_groups_for_role($roleKey) as $group): ?>
+        <?php foreach (ukn_nav_groups_for_role($roleKey, $badgeCounts) as $group): ?>
           <div class="ukn-nav-group">
             <span class="ukn-eyebrow ukn-nav-group__title"><?= htmlspecialchars($group['title']) ?></span>
             <?php foreach ($group['items'] as $item):

@@ -1,61 +1,107 @@
 <?php
-require_once __DIR__ . '/includes/users-data.php';
 require_once __DIR__ . '/../components/empty-state.php';
+require_once __DIR__ . '/../components/error-state.php';
 require_once __DIR__ . '/../components/stat-card.php';
+require_once __DIR__ . '/../backend/config/database.php';
 $adminActiveNav = 'sessions';
 $adminPageTitle = 'Sessions';
 $adminPageSub = 'Monitor mentoring sessions, requests and session status across the network.';
 $adminPageStyles = ['../assets/css/admin/tables.css', '../assets/css/admin/forms.css'];
 $adminPageScripts = ['../assets/js/admin/moderation.js'];
-$users = ukn_admin_mock_users();
-function ukn_admin_participant(array $users, int $id): array
-{
-    $u = $users[$id];
-    return ['id' => $id, 'name' => $u['name'], 'initials' => $u['initials'], 'department' => $u['department']];
-}
-$sessions = [
-    ['id' => 'UKN-S-1048', 'learner' => 1, 'mentor' => 2, 'skill' => 'Python', 'date' => 'September 18, 2026', 'dateSort' => '2026-09-18', 'time' => '7:00 PM', 'duration' => '60 minutes', 'status' => 'upcoming', 'message' => 'I need help understanding Python data analysis fundamentals and working with pandas.'],
-    ['id' => 'UKN-S-1049', 'learner' => 5, 'mentor' => 2, 'skill' => 'Database Design', 'date' => 'September 21, 2026', 'dateSort' => '2026-09-21', 'time' => '8:00 PM', 'duration' => '60 minutes', 'status' => 'pending', 'message' => 'Could we go over normalizing a schema with foreign keys?'],
-    ['id' => 'UKN-S-1050', 'learner' => 3, 'mentor' => 6, 'skill' => 'Public Speaking', 'date' => 'September 20, 2026', 'dateSort' => '2026-09-20', 'time' => '6:30 PM', 'duration' => '45 minutes', 'status' => 'upcoming', 'message' => null],
-    ['id' => 'UKN-S-1039', 'learner' => 1, 'mentor' => 2, 'skill' => 'Python', 'date' => 'September 8, 2026', 'dateSort' => '2026-09-08', 'time' => '7:00 PM', 'duration' => '60 minutes', 'status' => 'completed', 'rating' => 5.0, 'message' => null],
-    ['id' => 'UKN-S-1035', 'learner' => 5, 'mentor' => 7, 'skill' => 'MySQL', 'date' => 'September 5, 2026', 'dateSort' => '2026-09-05', 'time' => '8:00 PM', 'duration' => '60 minutes', 'status' => 'completed', 'rating' => null, 'message' => null],
-    ['id' => 'UKN-S-1028', 'learner' => 10, 'mentor' => 4, 'skill' => 'Arduino', 'date' => 'August 28, 2026', 'dateSort' => '2026-08-28', 'time' => '3:00 PM', 'duration' => '45 minutes', 'status' => 'cancelled', 'message' => 'Cancelled by learner — schedule clash with lab.'],
-    ['id' => 'UKN-S-1055', 'learner' => 13, 'mentor' => 6, 'skill' => 'Public Speaking', 'date' => 'September 15, 2026', 'dateSort' => '2026-09-15', 'time' => '6:00 PM', 'duration' => '60 minutes', 'status' => 'rejected', 'message' => null],
-    ['id' => 'UKN-S-1051', 'learner' => 9, 'mentor' => 2, 'skill' => 'Python', 'date' => 'September 22, 2026', 'dateSort' => '2026-09-22', 'time' => '5:00 PM', 'duration' => '45 minutes', 'status' => 'pending', 'message' => null],
-    ['id' => 'UKN-S-1052', 'learner' => 1, 'mentor' => 7, 'skill' => 'MySQL', 'date' => 'September 25, 2026', 'dateSort' => '2026-09-25', 'time' => '7:30 PM', 'duration' => '60 minutes', 'status' => 'upcoming', 'message' => null],
-    ['id' => 'UKN-S-1053', 'learner' => 11, 'mentor' => 8, 'skill' => 'Academic Writing', 'date' => 'September 19, 2026', 'dateSort' => '2026-09-19', 'time' => '5:30 PM', 'duration' => '30 minutes', 'status' => 'pending', 'message' => null],
-    ['id' => 'UKN-S-1029', 'learner' => 12, 'mentor' => 4, 'skill' => 'Arduino', 'date' => 'August 20, 2026', 'dateSort' => '2026-08-20', 'time' => '4:00 PM', 'duration' => '45 minutes', 'status' => 'completed', 'rating' => 4.6, 'message' => null],
-    ['id' => 'UKN-S-1030', 'learner' => 10, 'mentor' => 2, 'skill' => 'Data Analysis', 'date' => 'August 15, 2026', 'dateSort' => '2026-08-15', 'time' => '6:00 PM', 'duration' => '60 minutes', 'status' => 'completed', 'rating' => 4.5, 'message' => null],
-    ['id' => 'UKN-S-1040', 'learner' => 1, 'mentor' => 2, 'skill' => 'Data Analysis', 'date' => 'September 1, 2026', 'dateSort' => '2026-09-01', 'time' => '7:00 PM', 'duration' => '60 minutes', 'status' => 'completed', 'rating' => 4.8, 'message' => null],
-    ['id' => 'UKN-S-1041', 'learner' => 14, 'mentor' => 6, 'skill' => 'Digital Marketing', 'date' => 'September 10, 2026', 'dateSort' => '2026-09-10', 'time' => '6:00 PM', 'duration' => '30 minutes', 'status' => 'completed', 'rating' => 4.0, 'message' => null],
-    ['id' => 'UKN-S-1042', 'learner' => 3, 'mentor' => 8, 'skill' => 'Academic Writing', 'date' => 'September 23, 2026', 'dateSort' => '2026-09-23', 'time' => '5:00 PM', 'duration' => '45 minutes', 'status' => 'upcoming', 'message' => null],
-    ['id' => 'UKN-S-1060', 'learner' => 15, 'mentor' => 4, 'skill' => 'Arduino', 'date' => 'August 10, 2026', 'dateSort' => '2026-08-10', 'time' => '2:00 PM', 'duration' => '30 minutes', 'status' => 'cancelled', 'message' => 'Cancelled by mentor — unavailable.'],
-];
-$statusLabels = ['pending' => 'Pending', 'upcoming' => 'Upcoming', 'completed' => 'Completed', 'cancelled' => 'Cancelled', 'rejected' => 'Rejected'];
-$statusClass = ['pending' => 'ukn-status-neutral', 'upcoming' => 'ukn-status-accent', 'completed' => 'ukn-status-accent', 'cancelled' => 'ukn-status-neutral', 'rejected' => 'ukn-status-neutral'];
+
+$statusLabels = ['pending' => 'Pending', 'accepted' => 'Upcoming', 'completed' => 'Completed', 'cancelled' => 'Cancelled', 'rejected' => 'Rejected'];
+$statusClass = ['pending' => 'ukn-status-neutral', 'accepted' => 'ukn-status-accent', 'completed' => 'ukn-status-accent', 'cancelled' => 'ukn-status-neutral', 'rejected' => 'ukn-status-neutral'];
+// Matches the filter <select>'s option values exactly (accepted -> "upcoming"; every other
+// status's filter value is already identical to its raw DB enum value).
+$statusFilterValues = ['pending' => 'pending', 'accepted' => 'upcoming', 'completed' => 'completed', 'cancelled' => 'cancelled', 'rejected' => 'rejected'];
+
+$sessions = [];
 $skillOptions = [];
-foreach ($sessions as $s) {
-    $skillOptions[$s['skill']] = true;
+$statCounts = ['total' => 0, 'pending' => 0, 'accepted' => 0, 'completed' => 0, 'cancelled' => 0];
+$sessionsDbError = false;
+
+try {
+    $pdo = getDatabaseConnection();
+
+    $stmt = $pdo->query(
+        "SELECT ms.id, ms.reference_code, ms.scheduled_date, ms.scheduled_time, ms.duration_minutes,
+                ms.status, ms.request_message, ms.cancel_reason,
+                l.id AS learner_id, l.full_name AS learner_name, dl.name AS learner_department,
+                m.id AS mentor_id, m.full_name AS mentor_name, dm.name AS mentor_department,
+                sk.name AS skill, sr.overall AS rating
+         FROM mentoring_sessions ms
+         JOIN users l ON l.id = ms.learner_id
+         JOIN users m ON m.id = ms.mentor_id
+         JOIN skills sk ON sk.id = ms.skill_id
+         LEFT JOIN departments dl ON dl.id = l.department_id
+         LEFT JOIN departments dm ON dm.id = m.department_id
+         LEFT JOIN session_ratings sr ON sr.session_id = ms.id
+         ORDER BY ms.requested_at DESC"
+    );
+    $rows = $stmt->fetchAll();
+
+    $skillSet = [];
+    foreach ($rows as $row) {
+        $statCounts['total']++;
+        if (isset($statCounts[$row['status']])) {
+            $statCounts[$row['status']]++;
+        }
+        $skillSet[$row['skill']] = true;
+
+        $message = $row['status'] === 'cancelled' ? $row['cancel_reason'] : $row['request_message'];
+
+        $sessions[] = [
+            'id' => $row['reference_code'],
+            'learner' => [
+                'id' => (int) $row['learner_id'],
+                'name' => $row['learner_name'],
+                'department' => (string) ($row['learner_department'] ?? ''),
+            ],
+            'mentor' => [
+                'id' => (int) $row['mentor_id'],
+                'name' => $row['mentor_name'],
+                'department' => (string) ($row['mentor_department'] ?? ''),
+            ],
+            'skill' => $row['skill'],
+            'date' => date('F j, Y', strtotime($row['scheduled_date'])),
+            'dateSort' => $row['scheduled_date'],
+            'time' => date('g:i A', strtotime($row['scheduled_time'])),
+            'duration' => $row['duration_minutes'] . ' minutes',
+            'status' => $row['status'],
+            'message' => $message,
+            'rating' => $row['status'] === 'completed' && $row['rating'] !== null ? (float) $row['rating'] : null,
+        ];
+    }
+    $skillOptions = array_keys($skillSet);
+    sort($skillOptions);
+} catch (Throwable $e) {
+    error_log('[UKN admin/sessions] ' . $e->getMessage());
+    $sessionsDbError = true;
+    $sessions = [];
 }
-$skillOptions = array_keys($skillOptions);
-sort($skillOptions);
 require __DIR__ . '/includes/header.php';
 ?>
+<?php if ($sessionsDbError): ?>
+  <?php ukn_error_state([
+      'title' => 'Unable to load sessions.',
+      'message' => 'Something went wrong while loading this page. Please try again shortly.',
+  ]); ?>
+<?php else: ?>
 <div class="ukn-admin-stat-grid mb-4" data-session-summary>
   <button type="button" class="ukn-admin-stat-btn" data-session-summary-filter="">
-    <?php ukn_stat_card(['label' => 'Total Sessions', 'value' => '3,482', 'icon' => 'event']); ?>
+    <?php ukn_stat_card(['label' => 'Total Sessions', 'value' => number_format($statCounts['total']), 'icon' => 'event']); ?>
   </button>
   <button type="button" class="ukn-admin-stat-btn" data-session-summary-filter="pending">
-    <?php ukn_stat_card(['label' => 'Pending', 'value' => '36', 'icon' => 'hourglass_empty']); ?>
+    <?php ukn_stat_card(['label' => 'Pending', 'value' => number_format($statCounts['pending']), 'icon' => 'hourglass_empty']); ?>
   </button>
   <button type="button" class="ukn-admin-stat-btn" data-session-summary-filter="upcoming">
-    <?php ukn_stat_card(['label' => 'Upcoming', 'value' => '128', 'icon' => 'event_available']); ?>
+    <?php ukn_stat_card(['label' => 'Upcoming', 'value' => number_format($statCounts['accepted']), 'icon' => 'event_available']); ?>
   </button>
   <button type="button" class="ukn-admin-stat-btn" data-session-summary-filter="completed">
-    <?php ukn_stat_card(['label' => 'Completed', 'value' => '3,142', 'icon' => 'check_circle']); ?>
+    <?php ukn_stat_card(['label' => 'Completed', 'value' => number_format($statCounts['completed']), 'icon' => 'check_circle']); ?>
   </button>
   <button type="button" class="ukn-admin-stat-btn" data-session-summary-filter="cancelled">
-    <?php ukn_stat_card(['label' => 'Cancelled', 'value' => '176', 'icon' => 'cancel']); ?>
+    <?php ukn_stat_card(['label' => 'Cancelled', 'value' => number_format($statCounts['cancelled']), 'icon' => 'cancel']); ?>
   </button>
 </div>
 <div class="card mb-3">
@@ -117,16 +163,16 @@ require __DIR__ . '/includes/header.php';
       </thead>
       <tbody>
         <?php foreach ($sessions as $s):
-            $learner = ukn_admin_participant($users, $s['learner']);
-            $mentor = ukn_admin_participant($users, $s['mentor']);
-            $canCancel = in_array($s['status'], ['pending', 'upcoming'], true);
+            $learner = $s['learner'];
+            $mentor = $s['mentor'];
+            $canCancel = in_array($s['status'], ['pending', 'accepted'], true);
             $cancelLabel = $s['status'] === 'pending' ? 'Cancel Request' : 'Cancel Session';
         ?>
           <tr
             data-session-row
             data-session-id="<?= htmlspecialchars($s['id']) ?>"
             data-session-search="<?= htmlspecialchars(strtolower($s['id'] . ' ' . $learner['name'] . ' ' . $mentor['name'] . ' ' . $s['skill'])) ?>"
-            data-session-status="<?= htmlspecialchars($s['status']) ?>"
+            data-session-status="<?= htmlspecialchars($statusFilterValues[$s['status']] ?? $s['status']) ?>"
             data-session-skill="<?= htmlspecialchars(strtolower($s['skill'])) ?>"
             data-session-date-sort="<?= htmlspecialchars($s['dateSort']) ?>"
             data-session-learner-id="<?= $learner['id'] ?>"
@@ -140,7 +186,7 @@ require __DIR__ . '/includes/header.php';
             data-session-time="<?= htmlspecialchars($s['time']) ?>"
             data-session-duration="<?= htmlspecialchars($s['duration']) ?>"
             data-session-message="<?= htmlspecialchars($s['message'] ?? '') ?>"
-            data-session-rating="<?= htmlspecialchars(isset($s['rating']) ? number_format($s['rating'], 1) : '') ?>"
+            data-session-rating="<?= htmlspecialchars($s['rating'] !== null ? number_format($s['rating'], 1) : '') ?>"
           >
             <td data-label="Session ID" class="fw-bold"><?= htmlspecialchars($s['id']) ?></td>
             <td data-label="Learner">
@@ -189,7 +235,7 @@ require __DIR__ . '/includes/header.php';
       </tbody>
     </table>
   </div>
-  <div class="card-body" hidden data-session-empty>
+  <div class="card-body"<?= $sessions ? ' hidden' : '' ?> data-session-empty>
     <?php ukn_empty_state([
         'icon' => 'event_busy',
         'title' => 'No sessions found.',
@@ -243,4 +289,5 @@ require __DIR__ . '/includes/header.php';
     </div>
   </div>
 </div>
+<?php endif; ?>
 <?php require __DIR__ . '/includes/footer.php'; ?>

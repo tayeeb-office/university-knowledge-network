@@ -1,21 +1,157 @@
 <?php
-require_once __DIR__ . '/includes/users-data.php';
 require_once __DIR__ . '/../components/stat-card.php';
+require_once __DIR__ . '/../components/error-state.php';
+require_once __DIR__ . '/../backend/config/database.php';
+require_once __DIR__ . '/../backend/helpers/format.php';
 $adminActiveNav = 'users';
-$users = ukn_admin_mock_users();
-$requestedId = isset($_GET['id']) && is_string($_GET['id']) && ctype_digit($_GET['id']) ? (int) $_GET['id'] : null;
-$user = ($requestedId !== null && isset($users[$requestedId])) ? $users[$requestedId] : null;
+
+$requestedId = isset($_GET['id']) && ctype_digit((string) $_GET['id']) ? (int) $_GET['id'] : null;
+$user = null;
+$sessionsPreview = [];
+$activity = [];
+$userDetailsDbError = false;
+
+if ($requestedId !== null) {
+    try {
+        $pdo = getDatabaseConnection();
+
+        $userStmt = $pdo->prepare(
+            "SELECT u.id, u.full_name AS name, u.initials, u.email, u.university_id AS universityId,
+                    u.role, u.status, u.suspend_reason AS suspendReason, u.created_at, u.last_active_at,
+                    u.learning_points, u.mentor_points, u.avg_rating, u.sessions_as_learner,
+                    u.sessions_as_mentor, u.learners_helped, d.name AS department
+             FROM users u
+             LEFT JOIN departments d ON d.id = u.department_id
+             WHERE u.id = ?"
+        );
+        $userStmt->execute([$requestedId]);
+        $user = $userStmt->fetch();
+
+        if ($user !== false) {
+            $user['department'] = (string) ($user['department'] ?? '');
+            $user['joined'] = date('F j, Y', strtotime($user['created_at']));
+            $user['lastActive'] = $user['last_active_at'] ? ukn_time_ago($user['last_active_at']) : 'Never';
+            $isLearnerRole = in_array($user['role'], ['learner', 'dual'], true);
+            $isMentorRole = in_array($user['role'], ['mentor', 'dual'], true);
+
+            if ($isLearnerRole) {
+                $skillsStmt = $pdo->prepare(
+                    "SELECT s.name FROM user_skills us JOIN skills s ON s.id = us.skill_id
+                     WHERE us.user_id = ? AND us.skill_type = 'learning' ORDER BY s.name"
+                );
+                $skillsStmt->execute([$requestedId]);
+                $learnerSkills = $skillsStmt->fetchAll(PDO::FETCH_COLUMN);
+
+                $goalsStmt = $pdo->prepare(
+                    "SELECT COUNT(*) FROM learning_goals WHERE user_id = ? AND status = 'in-progress'"
+                );
+                $goalsStmt->execute([$requestedId]);
+
+                $postsStmt = $pdo->prepare("SELECT COUNT(*) FROM posts WHERE user_id = ?");
+                $postsStmt->execute([$requestedId]);
+
+                $user['learner'] = [
+                    'points' => (int) $user['learning_points'],
+                    'sessions' => (int) $user['sessions_as_learner'],
+                    'goals' => (int) $goalsStmt->fetchColumn(),
+                    'posts' => (int) $postsStmt->fetchColumn(),
+                    'skills' => $learnerSkills,
+                ];
+            }
+
+            if ($isMentorRole) {
+                $skillsStmt = $pdo->prepare(
+                    "SELECT s.name FROM user_skills us JOIN skills s ON s.id = us.skill_id
+                     WHERE us.user_id = ? AND us.skill_type = 'teaching' ORDER BY s.name"
+                );
+                $skillsStmt->execute([$requestedId]);
+                $mentorSkills = $skillsStmt->fetchAll(PDO::FETCH_COLUMN);
+
+                $user['mentor'] = [
+                    'points' => (int) $user['mentor_points'],
+                    'rating' => $user['avg_rating'] !== null ? (float) $user['avg_rating'] : 0.0,
+                    'sessions' => (int) $user['sessions_as_mentor'],
+                    'learnersHelped' => (int) $user['learners_helped'],
+                    'skills' => $mentorSkills,
+                ];
+            }
+
+            $sessionsStmt = $pdo->prepare(
+                "SELECT ms.status, ms.scheduled_date, sk.name AS skill,
+                        CASE WHEN ms.learner_id = ? THEN 'Learner' ELSE 'Mentor' END AS role_in_session,
+                        CASE WHEN ms.learner_id = ? THEN mu.full_name ELSE lu.full_name END AS participant
+                 FROM mentoring_sessions ms
+                 JOIN skills sk ON sk.id = ms.skill_id
+                 JOIN users lu ON lu.id = ms.learner_id
+                 JOIN users mu ON mu.id = ms.mentor_id
+                 WHERE ms.learner_id = ? OR ms.mentor_id = ?
+                 ORDER BY ms.scheduled_date DESC, ms.scheduled_time DESC
+                 LIMIT 5"
+            );
+            $sessionsStmt->execute([$requestedId, $requestedId, $requestedId, $requestedId]);
+            $sessionStatusLabels = [
+                'pending' => 'Pending', 'accepted' => 'Upcoming', 'completed' => 'Completed',
+                'rejected' => 'Rejected', 'cancelled' => 'Cancelled',
+            ];
+            $sessionsPreview = array_map(static function (array $row) use ($sessionStatusLabels): array {
+                return [
+                    'participant' => $row['participant'],
+                    'skill' => $row['skill'],
+                    'date' => date('M j, Y', strtotime($row['scheduled_date'])),
+                    'role' => $row['role_in_session'],
+                    'status' => $sessionStatusLabels[$row['status']] ?? ucfirst($row['status']),
+                ];
+            }, $sessionsStmt->fetchAll());
+
+            // No activity/audit-log table exists in the schema (see
+            // DATABASE_READ_INTEGRATION_PLAN.md §2.2 / batch 7). Reusing the real points
+            // ledger's human-readable `reason` text as a defensible activity feed, same
+            // approach already used on my-profile.php.
+            $activityIcons = [
+                'session' => 'event_available', 'rating' => 'star', 'goal' => 'flag',
+                'community' => 'forum', 'penalty' => 'cancel',
+            ];
+            $activityStmt = $pdo->prepare(
+                "SELECT category, reason, created_at FROM point_transactions
+                 WHERE user_id = ? ORDER BY created_at DESC LIMIT 4"
+            );
+            $activityStmt->execute([$requestedId]);
+            $activity = array_map(static function (array $row) use ($activityIcons): array {
+                return [
+                    'icon' => $activityIcons[$row['category']] ?? 'inbox',
+                    'text' => $row['reason'],
+                    'time' => ukn_time_ago($row['created_at']),
+                ];
+            }, $activityStmt->fetchAll());
+        }
+    } catch (Throwable $e) {
+        error_log('[UKN admin/user-details] ' . $e->getMessage());
+        $userDetailsDbError = true;
+        $user = null;
+    }
+}
+
 $adminPageTitle = $user ? $user['name'] : 'User Not Found';
 $adminPageSub = $user ? 'Admin management view for this user.' : '';
 $adminPageStyles = ['../assets/css/admin/tables.css'];
 $adminPageScripts = $user ? ['../assets/js/admin/users.js'] : [];
 require __DIR__ . '/includes/header.php';
+
+if ($userDetailsDbError) {
+    ukn_error_state([
+        'title' => 'Unable to load this user.',
+        'message' => 'Something went wrong while loading this account. Please try again shortly.',
+    ]);
+    require __DIR__ . '/includes/footer.php';
+    return;
+}
+
 if (!$user) {
     ?>
     <div class="ukn-state ukn-state--dashed">
       <span class="ms" aria-hidden="true">person_off</span>
       <div class="ukn-state__title">User Not Found</div>
-      <p class="ukn-state__text">This user id doesn't match any account in the current mock dataset.</p>
+      <p class="ukn-state__text">This user id doesn't match any account in the database.</p>
       <a href="users.php" class="btn btn-primary btn-sm">Back to Users</a>
     </div>
     <?php
@@ -26,48 +162,6 @@ $roleLabels = ['learner' => 'Learner', 'mentor' => 'Mentor', 'dual' => 'Learner 
 $statusLabels = ['active' => 'Active', 'inactive' => 'Inactive', 'suspended' => 'Suspended'];
 $statusClass = ['active' => 'ukn-status-accent', 'inactive' => 'ukn-status-neutral', 'suspended' => 'ukn-status-neutral'];
 $isSuspended = $user['status'] === 'suspended';
-function ukn_admin_user_sessions(int $id, array $user): array
-{
-    $known = [
-        1 => [
-            ['participant' => 'Rahim Ahmed', 'skill' => 'Python', 'date' => 'Sep 18, 2026', 'role' => 'Learner', 'status' => 'Upcoming'],
-            ['participant' => 'Rahim Ahmed', 'skill' => 'Python', 'date' => 'Sep 8, 2026', 'role' => 'Learner', 'status' => 'Completed'],
-        ],
-        2 => [
-            ['participant' => 'Nabila Rahman', 'skill' => 'Python', 'date' => 'Sep 8, 2026', 'role' => 'Mentor', 'status' => 'Completed'],
-            ['participant' => 'Tanvir Hossain', 'skill' => 'Data Analysis', 'date' => 'Sep 4, 2026', 'role' => 'Mentor', 'status' => 'Completed'],
-        ],
-        4 => [
-            ['participant' => 'Mahi Noor', 'skill' => 'Embedded Systems', 'date' => 'Aug 18, 2026', 'role' => 'Mentor', 'status' => 'Completed'],
-            ['participant' => 'Nabila Rahman', 'skill' => 'Arduino', 'date' => 'Aug 28, 2026', 'role' => 'Mentor', 'status' => 'Cancelled'],
-        ],
-    ];
-    if (isset($known[$id])) {
-        return $known[$id];
-    }
-    $isMentorSession = !empty($user['mentor']);
-    $skill = $isMentorSession ? ($user['mentor']['skills'][0] ?? 'General') : ($user['learner']['skills'][0] ?? 'General');
-    return [
-        ['participant' => $isMentorSession ? 'A learner' : 'A mentor', 'skill' => $skill, 'date' => 'Sep 5, 2026', 'role' => $isMentorSession ? 'Mentor' : 'Learner', 'status' => 'Completed'],
-    ];
-}
-function ukn_admin_user_activity(array $user): array
-{
-    $activity = [];
-    if (!empty($user['learner'])) {
-        $activity[] = ['icon' => 'event_available', 'text' => 'Completed a ' . $user['learner']['skills'][0] . ' learning session.', 'time' => '3 days ago'];
-        if (count($user['learner']['skills']) > 1) {
-            $activity[] = ['icon' => 'add_circle', 'text' => 'Added ' . end($user['learner']['skills']) . ' to Learning Skills.', 'time' => '2 weeks ago'];
-        }
-    }
-    if (!empty($user['mentor'])) {
-        $activity[] = ['icon' => 'event_available', 'text' => 'Completed a ' . $user['mentor']['skills'][0] . ' mentoring session.', 'time' => '4 days ago'];
-        $activity[] = ['icon' => 'star', 'text' => 'Received a ' . $user['mentor']['rating'] . '-star mentoring rating.', 'time' => '1 week ago'];
-    }
-    return $activity;
-}
-$sessionsPreview = ukn_admin_user_sessions($requestedId, $user);
-$activity = ukn_admin_user_activity($user);
 ?>
 <div class="card mb-4">
   <div class="card-body">
@@ -178,6 +272,7 @@ $activity = ukn_admin_user_activity($user);
         <h3 class="ukn-h4 mb-0">Recent Sessions</h3>
         <a href="sessions.php" class="ukn-body-sm">View All Sessions</a>
       </div>
+      <?php if ($sessionsPreview): ?>
       <div class="table-responsive">
         <table class="table ukn-admin-table">
           <thead>
@@ -196,6 +291,11 @@ $activity = ukn_admin_user_activity($user);
           </tbody>
         </table>
       </div>
+      <?php else: ?>
+      <div class="card-body">
+        <p class="ukn-body-sm ukn-text-muted mb-0">No sessions for this user yet.</p>
+      </div>
+      <?php endif; ?>
     </div>
     <div class="card">
       <div class="card-header"><h3 class="ukn-h4 mb-0">Recent Activity</h3></div>
