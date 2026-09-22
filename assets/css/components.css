@@ -1,6 +1,9 @@
 .btn{
   --bs-btn-border-radius: var(--ukn-radius-md);
   --bs-btn-font-size: .875rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   font-family: var(--ukn-font-serif);
   border-width: 1px;
 }

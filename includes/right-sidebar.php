@@ -234,7 +234,16 @@ if (!function_exists('ukn_sidebar_modules_for_context')) {
                         $popular[] = ['rank' => (string) ($i + 1), 'a' => $row['name'], 'b' => ((int) $row['mentors']) . ' mentors'];
                     }
                     if ($popular) {
-                        $modules[] = ['type' => 'ranked-list', 'title' => 'Popular Skills', 'action' => 'Browse All Skills', 'actionHref' => ukn_route_href('skills'), 'items' => $popular];
+                        $popularModule = ['type' => 'ranked-list', 'title' => 'Popular Skills', 'items' => $popular];
+                        // "Browse All Skills" would just reload the current page when already
+                        // on the skills directory itself; keep it for the other pages that
+                        // share this 'skills' context (learning-skills, teaching-skills,
+                        // skill-details — see index.php's $sidebarContextByPage).
+                        if (($_GET['page'] ?? '') !== 'skills') {
+                            $popularModule['action'] = 'Browse All Skills';
+                            $popularModule['actionHref'] = ukn_route_href('skills');
+                        }
+                        $modules[] = $popularModule;
                     }
 
                     // "Trending" = skills with the most mentoring-session requests in the last
@@ -477,7 +486,10 @@ if (!function_exists('ukn_sidebar_modules_for_context')) {
                         return ['label' => $row['reason'], 'value' => ($amount >= 0 ? '+' : '') . $amount, 'accent' => $amount >= 0];
                     }, $stmt->fetchAll());
                     if ($transactions) {
-                        $modules[] = ['type' => 'stat-rows', 'title' => 'Recent Transactions', 'action' => 'View full history', 'actionHref' => ukn_route_href('points'), 'items' => $transactions];
+                        // No action/actionHref: this context only renders on the points page
+                        // itself (see index.php's $sidebarContextByPage), so a "View full
+                        // history" link here would always point at the current page.
+                        $modules[] = ['type' => 'stat-rows', 'title' => 'Recent Transactions', 'items' => $transactions];
                     }
                     return $modules;
                 }
@@ -584,8 +596,9 @@ if (!function_exists('ukn_sidebar_modules_for_context')) {
                     return [[
                         'type' => 'stat-rows',
                         'title' => 'Your Standing',
-                        'action' => 'View Leaderboard',
-                        'actionHref' => ukn_route_href('leaderboard'),
+                        // No action/actionHref: this context only renders on the leaderboard
+                        // page itself (see index.php's $sidebarContextByPage), so a "View
+                        // Leaderboard" link here would always point at the current page.
                         'items' => array_values(array_filter([
                             ['label' => 'Your ' . ($isMentor ? 'mentor' : 'learning') . ' rank', 'value' => '#' . $myRank, 'accent' => true],
                             ['label' => 'Your ' . ($isMentor ? 'mentor' : 'learning') . ' points', 'value' => (string) $myPoints],
