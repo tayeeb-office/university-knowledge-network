@@ -1,12 +1,12 @@
 <?php
 $currentUser = $currentUser ?? [
-    'loggedIn'   => true,
-    'role'       => 'learner',
-    'dualRole'   => true,
-    'activeRole' => 'learner',
-    'name'       => 'Nabila Rahman',
-    'initials'   => 'NR',
-    'meta'       => 'Learner · Computer Science',
+    'loggedIn'   => false,
+    'role'       => 'visitor',
+    'dualRole'   => false,
+    'activeRole' => 'visitor',
+    'name'       => '',
+    'initials'   => '',
+    'meta'       => '',
 ];
 $activeRole = $currentUser['dualRole'] ? $currentUser['activeRole'] : $currentUser['role'];
 $roleLabel = ucfirst($activeRole);
@@ -51,6 +51,9 @@ $dashboardHref = $activeRole === 'mentor' ? 'index.php?page=mentor-dashboard' : 
 <a href="index.php?page=settings" class="dropdown-item">
   <span class="ms" aria-hidden="true">settings</span>Settings
 </a>
-<button type="button" class="dropdown-item">
-  <span class="ms" aria-hidden="true">logout</span>Log out
-</button>
+<form action="backend/auth/logout.php" method="post" class="m-0">
+  <?= function_exists('csrfField') ? csrfField() : '' ?>
+  <button type="submit" class="dropdown-item">
+    <span class="ms" aria-hidden="true">logout</span>Log out
+  </button>
+</form>

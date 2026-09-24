@@ -1,9 +1,13 @@
 <?php
+require_once __DIR__ . '/../../backend/helpers/auth.php';
+requireAdmin();
 $adminActiveNav = $adminActiveNav ?? '';
 $adminPageTitle = $adminPageTitle ?? 'Admin';
 $adminPageSub = $adminPageSub ?? '';
 $adminPageStyles = $adminPageStyles ?? [];
 $adminPageScripts = $adminPageScripts ?? [];
+$adminUser = getCurrentUser();
+$adminFlash = uknTakeFlash('flash_toast');
 $adminNavItems = [
     ['icon' => 'dashboard', 'label' => 'Dashboard', 'href' => 'dashboard.php', 'slug' => 'dashboard'],
     ['icon' => 'group', 'label' => 'Users', 'href' => 'users.php', 'slug' => 'users'],
@@ -69,9 +73,9 @@ $adminNavItems = [
         <span class="ukn-visually-hidden" data-theme-label>Theme: Light</span>
       </button>
       <div class="ukn-admin-identity">
-        <span class="ukn-avatar" aria-hidden="true">AU</span>
+        <span class="ukn-avatar" aria-hidden="true"><?= htmlspecialchars((string) ($adminUser['initials'] ?? '')) ?></span>
         <span class="ukn-admin-identity__text d-none d-md-block">
-          <span class="d-block fw-bold">Admin User</span>
+          <span class="d-block fw-bold"><?= htmlspecialchars((string) ($adminUser['full_name'] ?? '')) ?></span>
           <span class="d-block ukn-body-sm ukn-text-muted">Administrator</span>
         </span>
       </div>
@@ -101,3 +105,6 @@ $adminNavItems = [
           <?php endif; ?>
         </div>
       </div>
+      <?php if (is_array($adminFlash)): ?>
+        <div hidden data-flash-toast data-flash-type="<?= htmlspecialchars((string) ($adminFlash['type'] ?? '')) ?>"><?= htmlspecialchars((string) ($adminFlash['message'] ?? '')) ?></div>
+      <?php endif; ?>

@@ -265,53 +265,8 @@
     function postRows() {
       return Array.prototype.slice.call(tbody.querySelectorAll('tr[data-post-row]'));
     }
-    var deleteModal = document.getElementById('deleteConfirmationModal');
-    var pendingAction = null;
-    if (deleteModal) {
-      deleteModal.addEventListener('show.bs.modal', function (event) {
-        var trigger = event.relatedTarget;
-        pendingAction = null;
-        if (!trigger) {
-          return;
-        }
-        if (trigger.hasAttribute('data-post-hide')) {
-          pendingAction = { action: 'hide', row: trigger.closest('[data-post-row]') };
-        } else if (trigger.hasAttribute('data-post-restore')) {
-          pendingAction = { action: 'restore', row: trigger.closest('[data-post-row]') };
-        }
-      });
-    }
-    function setPostStatus(row, status) {
-      row.dataset.postStatus = status;
-      var badge = row.querySelector('[data-post-status-badge]');
-      if (badge) {
-        badge.textContent = status === 'visible' ? 'Visible' : 'Hidden';
-        badge.classList.remove('ukn-status-accent', 'ukn-status-neutral');
-        badge.classList.add(status === 'visible' ? 'ukn-status-accent' : 'ukn-status-neutral');
-      }
-      var hideBtn = row.querySelector('[data-post-hide]');
-      var restoreBtn = row.querySelector('[data-post-restore]');
-      if (hideBtn) { hideBtn.hidden = status !== 'visible'; }
-      if (restoreBtn) { restoreBtn.hidden = status === 'visible'; }
-      var detailModalEl = document.getElementById('postDetailModal');
-      if (detailModalEl && detailModalEl.dataset.currentPostId === row.getAttribute('data-post-id')) {
-        var statusEl = detailModalEl.querySelector('[data-post-detail="status"]');
-        if (statusEl) {
-          statusEl.textContent = status === 'visible' ? 'Visible' : 'Hidden';
-        }
-      }
-    }
-    document.addEventListener('click', function (event) {
-      if (!event.target.closest('[data-delete-confirm]') || !pendingAction) {
-        return;
-      }
-      var action = pendingAction;
-      pendingAction = null;
-      setPostStatus(action.row, action.action === 'hide' ? 'hidden' : 'visible');
-      if (typeof applyPostsView === 'function') {
-        applyPostsView();
-      }
-    });
+    // Step 49: Hide/Restore are real server forms submitted through the confirmation modal
+    // (data-delete-form); the page reloads with the stored status.
     var detailModal = document.getElementById('postDetailModal');
     if (detailModal) {
       detailModal.addEventListener('show.bs.modal', function (event) {
@@ -508,53 +463,8 @@
     function commentRows() {
       return Array.prototype.slice.call(tbody.querySelectorAll('tr[data-comment-row]'));
     }
-    var deleteModal = document.getElementById('deleteConfirmationModal');
-    var pendingAction = null;
-    if (deleteModal) {
-      deleteModal.addEventListener('show.bs.modal', function (event) {
-        var trigger = event.relatedTarget;
-        pendingAction = null;
-        if (!trigger) {
-          return;
-        }
-        if (trigger.hasAttribute('data-comment-hide')) {
-          pendingAction = { action: 'hide', row: trigger.closest('[data-comment-row]') };
-        } else if (trigger.hasAttribute('data-comment-restore')) {
-          pendingAction = { action: 'restore', row: trigger.closest('[data-comment-row]') };
-        }
-      });
-    }
-    function setCommentStatus(row, status) {
-      row.dataset.commentStatus = status;
-      var badge = row.querySelector('[data-comment-status-badge]');
-      if (badge) {
-        badge.textContent = status === 'visible' ? 'Visible' : 'Hidden';
-        badge.classList.remove('ukn-status-accent', 'ukn-status-neutral');
-        badge.classList.add(status === 'visible' ? 'ukn-status-accent' : 'ukn-status-neutral');
-      }
-      var hideBtn = row.querySelector('[data-comment-hide]');
-      var restoreBtn = row.querySelector('[data-comment-restore]');
-      if (hideBtn) { hideBtn.hidden = status !== 'visible'; }
-      if (restoreBtn) { restoreBtn.hidden = status === 'visible'; }
-      var detailModalEl = document.getElementById('commentDetailModal');
-      if (detailModalEl && detailModalEl.dataset.currentCommentId === row.getAttribute('data-comment-id')) {
-        var statusEl = detailModalEl.querySelector('[data-comment-detail="status"]');
-        if (statusEl) {
-          statusEl.textContent = status === 'visible' ? 'Visible' : 'Hidden';
-        }
-      }
-    }
-    document.addEventListener('click', function (event) {
-      if (!event.target.closest('[data-delete-confirm]') || !pendingAction) {
-        return;
-      }
-      var action = pendingAction;
-      pendingAction = null;
-      setCommentStatus(action.row, action.action === 'hide' ? 'hidden' : 'visible');
-      if (typeof applyCommentsView === 'function') {
-        applyCommentsView();
-      }
-    });
+    // Step 50: Hide/Restore are real server forms submitted through the confirmation modal
+    // (data-delete-form); the page reloads with the stored status.
     var detailModal = document.getElementById('commentDetailModal');
     if (detailModal) {
       detailModal.addEventListener('show.bs.modal', function (event) {

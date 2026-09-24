@@ -5,11 +5,6 @@ require_once __DIR__ . '/../../components/empty-state.php';
 require_once __DIR__ . '/../../components/error-state.php';
 require_once __DIR__ . '/../../backend/config/database.php';
 
-// TODO(auth): replace with the real session user id; mirrors index.php's own hardcoded
-// demo identity (Nabila Rahman, user id 1) until real sessions exist.
-if (!defined('UKN_DEMO_USER_ID')) {
-    define('UKN_DEMO_USER_ID', 1);
-}
 
 $summaryStats = [];
 $teachingSkills = [];
@@ -25,7 +20,7 @@ try {
          WHERE us.user_id = ? AND us.skill_type = 'teaching'
          ORDER BY s.name"
     );
-    $skillsStmt->execute([UKN_DEMO_USER_ID]);
+    $skillsStmt->execute([UKN_CURRENT_USER_ID]);
     $teachingSkills = array_map(static function (array $row): array {
         $row['sessions'] = (int) $row['sessions'];
         $row['rating'] = $row['rating'] !== null ? (float) $row['rating'] : null;
@@ -40,7 +35,7 @@ try {
     $userStmt = $pdo->prepare(
         "SELECT sessions_as_mentor, mentor_points, avg_rating FROM users WHERE id = ?"
     );
-    $userStmt->execute([UKN_DEMO_USER_ID]);
+    $userStmt->execute([UKN_CURRENT_USER_ID]);
     $user = $userStmt->fetch();
 
     $summaryStats = [

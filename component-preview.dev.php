@@ -188,8 +188,5 @@ $pageTitle = '[DEV] Component Preview · University Knowledge Network';
   <script src="assets/js/core/modal.js"></script>
   <script src="assets/js/core/sidebar.js"></script>
   <script src="assets/js/core/mobile-nav.js"></script>
-  <script src="assets/js/components/voting.js"></script>
-  <script src="assets/js/components/save-post.js"></script>
-  <script src="assets/js/components/follow.js"></script>
 </body>
 </html>

@@ -57,6 +57,7 @@
       group: 'nodes',
       data: {
         id: 'skill-' + n.id,
+        skillId: n.id,
         name: n.name,
         category: n.category,
         mentors: n.mentors,
@@ -64,6 +65,7 @@
         sessions: n.sessions,
         description: n.description,
         related: n.related,
+        topMentors: n.topMentors || [],
         skillDetailsHref: n.skillDetailsHref,
         findMentorsHref: n.findMentorsHref,
         size: nodeSize(n),
@@ -163,10 +165,11 @@
     panelEmpty.hidden = true;
     panelContent.hidden = false;
     var isCurrentLabel = isMentor ? 'Teaching' : 'Learning';
-    var toggleKind = isMentor ? 'teaching' : 'learning';
-    var toggleState = data.isCurrent ? 'added' : 'add';
-    var toggleIcon = data.isCurrent ? 'check' : 'add';
-    var toggleText = data.isCurrent ? isCurrentLabel : ('Add to ' + isCurrentLabel);
+    var mentorsHtml = (data.topMentors && data.topMentors.length)
+      ? data.topMentors.map(function (mentor) {
+          return '<li><a href="' + escapeHtml(mentor.href) + '">' + escapeHtml(mentor.name) + '</a></li>';
+        }).join('')
+      : '<li class="ukn-text-muted">No mentors teach this skill yet.</li>';
     var relatedHtml = (data.related && data.related.length)
       ? data.related.map(function (name) {
           return '<button type="button" class="ukn-tag-neutral" style="cursor:pointer" data-network-related-skill="' + escapeHtml(name) + '">' + escapeHtml(name) + '</button>';
@@ -187,15 +190,25 @@
       '</div>' +
       '<div class="ukn-eyebrow mb-2">Related Skills</div>' +
       '<div class="d-flex flex-wrap gap-2 mb-3">' + relatedHtml + '</div>' +
+      '<div class="ukn-eyebrow mb-2">Mentors</div>' +
+      '<ul class="ukn-body-sm ps-3 mb-3">' + mentorsHtml + '</ul>' +
       '<div class="d-flex flex-column gap-2">' +
         '<a href="' + escapeHtml(data.skillDetailsHref) + '" class="btn btn-primary btn-sm">View Skill Details</a>' +
-        '<button type="button" class="btn btn-outline-primary btn-sm" data-skill-toggle="' + toggleKind + '" data-state="' + toggleState + '">' +
-          '<span class="ms" aria-hidden="true">' + toggleIcon + '</span> ' +
-          '<span data-skill-toggle-label>' + escapeHtml(toggleText) + '</span>' +
-        '</button>' +
+        '<div data-network-panel-toggle></div>' +
         (!isMentor ? '<a href="' + escapeHtml(data.findMentorsHref) + '" class="btn btn-outline-secondary btn-sm">Find Mentors</a>' : '') +
         '<button type="button" class="btn btn-link btn-sm p-0 text-start" data-network-clear-selection>Clear Selection</button>' +
       '</div>';
+    // Add/remove uses the same server form (with CSRF token) rendered for this skill in the list below.
+    var toggleSlot = panelContent.querySelector('[data-network-panel-toggle]');
+    var sourceForm = document.querySelector('[data-list-node-id="' + Number(data.skillId) + '"] [data-network-toggle] form');
+    if (toggleSlot && sourceForm) {
+      var form = sourceForm.cloneNode(true);
+      form.classList.remove('d-inline-flex');
+      form.classList.add('d-grid');
+      toggleSlot.appendChild(form);
+    } else if (toggleSlot) {
+      toggleSlot.remove();
+    }
   }
   function renderEdgePanel(edge) {
     if (!panelContent || !panelEmpty) {

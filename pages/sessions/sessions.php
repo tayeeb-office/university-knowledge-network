@@ -4,11 +4,6 @@ require_once __DIR__ . '/../../components/empty-state.php';
 require_once __DIR__ . '/../../components/error-state.php';
 require_once __DIR__ . '/../../backend/config/database.php';
 
-// TODO(auth): replace with the real session user id; mirrors index.php's own hardcoded
-// demo identity (Nabila Rahman, user id 1) until real sessions exist.
-if (!defined('UKN_DEMO_USER_ID')) {
-    define('UKN_DEMO_USER_ID', 1);
-}
 
 $sessionView = $sessionView ?? 'sessions';
 $activeRole = !empty($currentUser['dualRole']) ? ($currentUser['activeRole'] ?? 'learner') : ($currentUser['role'] ?? 'learner');
@@ -29,6 +24,8 @@ $mapSessionRow = static function (array $row, string $counterpartyRoute): array 
         'status' => $row['status'],
         'message' => $row['request_message'],
         'detailsHref' => ukn_route_href('session-details') . '&id=' . $row['id'],
+        // Learner-profile counterparty = the viewer is the mentor, and vice versa.
+        'viewer' => $counterpartyRoute === 'learner-profile' ? 'mentor' : 'learner',
     ];
 };
 
@@ -46,7 +43,7 @@ if ($sessionView === 'requests'):
              WHERE ms.mentor_id = ? AND ms.status IN ('pending', 'accepted', 'rejected')
              ORDER BY ms.scheduled_date DESC, ms.scheduled_time DESC"
         );
-        $stmt->execute([UKN_DEMO_USER_ID]);
+        $stmt->execute([UKN_CURRENT_USER_ID]);
         $requests = array_map(
             static fn (array $row) => $mapSessionRow($row, 'learner-profile'),
             $stmt->fetchAll()
@@ -114,7 +111,7 @@ if ($sessionView === 'requests'):
                  WHERE ms.mentor_id = ? AND ms.status IN ('accepted', 'completed', 'cancelled')
                  ORDER BY ms.scheduled_date DESC, ms.scheduled_time DESC"
             );
-            $stmt->execute([UKN_DEMO_USER_ID]);
+            $stmt->execute([UKN_CURRENT_USER_ID]);
             $sessions = array_map(static function (array $row) use ($mapSessionRow) {
                 $row['request_message'] = $row['status'] === 'cancelled' ? $row['cancel_reason'] : $row['request_message'];
                 $mapped = $mapSessionRow($row, 'learner-profile');
@@ -131,10 +128,10 @@ if ($sessionView === 'requests'):
                  JOIN users m ON m.id = ms.mentor_id
                  JOIN skills sk ON sk.id = ms.skill_id
                  LEFT JOIN session_ratings sr ON sr.session_id = ms.id
-                 WHERE ms.learner_id = ? AND ms.status IN ('accepted', 'completed', 'cancelled')
+                 WHERE ms.learner_id = ? AND ms.status IN ('pending', 'accepted', 'completed', 'cancelled', 'rejected')
                  ORDER BY ms.scheduled_date DESC, ms.scheduled_time DESC"
             );
-            $stmt->execute([UKN_DEMO_USER_ID]);
+            $stmt->execute([UKN_CURRENT_USER_ID]);
             $sessions = array_map(static function (array $row) use ($mapSessionRow) {
                 $row['request_message'] = $row['status'] === 'cancelled' ? $row['cancel_reason'] : $row['request_message'];
                 $mapped = $mapSessionRow($row, 'mentor-profile');
@@ -155,6 +152,11 @@ if ($sessionView === 'requests'):
         ['id' => 'completed', 'label' => 'Completed'],
         ['id' => 'cancelled', 'label' => 'Cancelled'],
     ];
+    if (!$isMentor) {
+        // Learners also track the requests they sent (mentors see these under Learner Requests).
+        array_unshift($tabs, ['id' => 'pending', 'label' => 'Pending']);
+        $tabs[] = ['id' => 'rejected', 'label' => 'Rejected'];
+    }
     $defaultTab = 'upcoming';
     ?>
     <div class="ukn-page-header">

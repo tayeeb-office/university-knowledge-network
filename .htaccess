@@ -1,0 +1,36 @@
+# Phase J (J3/J4): HTTP security headers and web-access rules for the whole application.
+# Entry points reachable from the browser: index.php, admin/*.php, backend/<feature>/*.php
+# (POST actions) and assets/. Include-only folders carry their own "Require all denied".
+
+# No directory listings (docs/, uploads/, assets/ subfolders, ...).
+Options -Indexes
+
+# Repository metadata, database dumps/patches, notes and tooling files are never served.
+RedirectMatch 404 "/\.(git|svn|hg)(/|$)"
+<FilesMatch "(^\.|\.(sql|md|sh|log|ini|bak|dist|lock|env|txt)$)">
+    Require all denied
+</FilesMatch>
+
+<IfModule mod_headers.c>
+    # MIME sniffing off; the app is never framed (clickjacking); no full URLs leak cross-site;
+    # powerful browser features the app does not use are disabled.
+    Header always set X-Content-Type-Options "nosniff"
+    Header always set X-Frame-Options "DENY"
+    Header always set Referrer-Policy "strict-origin-when-cross-origin"
+    Header always set Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=(), usb=(), interest-cohort=()"
+
+    # CSP matched to what the app actually loads (see the Phase J report):
+    #  - scripts: own files + jsDelivr (Bootstrap, Chart.js, Cytoscape). No inline scripts or
+    #    eval exist, so none are allowed.
+    #  - styles: own files, jsDelivr (Bootstrap CSS), Google Fonts CSS; 'unsafe-inline' only
+    #    because a few templates use style="" attributes (progress bars) and libraries set
+    #    inline styles on their own elements.
+    #  - fonts: Google Fonts files; images: own files, data: (CSS noise textures) and blob:
+    #    (the profile-photo preview uses URL.createObjectURL for the chosen file).
+    #  - forms may only post to this origin; no plugins; no <base> hijacking; no framing.
+    Header always set Content-Security-Policy "default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
+
+    # Do not advertise the PHP version.
+    Header always unset X-Powered-By
+    Header unset X-Powered-By
+</IfModule>

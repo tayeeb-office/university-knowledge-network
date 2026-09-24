@@ -3,7 +3,9 @@
 <div class="modal fade" id="createPostModal" tabindex="-1" aria-labelledby="createPostModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
     <div class="modal-content">
-      <form data-mock-form="post" data-success-message="Post created successfully." novalidate>
+      <form action="backend/posts/create.php" method="post" data-validated-form novalidate>
+        <?= function_exists('csrfField') ? csrfField() : '' ?>
+        <?= function_exists('uknReturnToField') ? uknReturnToField() : '' ?>
         <div class="modal-header">
           <h2 class="modal-title ukn-h3" id="createPostModalLabel">Create Post</h2>
           <button type="button" class="btn-icon" data-bs-dismiss="modal" aria-label="Close">
@@ -20,7 +22,7 @@
           </div>
           <div class="ukn-form-group">
             <label for="createPostContent" class="form-label">Post Content <span class="ukn-text-danger" aria-hidden="true">*</span></label>
-            <textarea class="form-control ukn-textarea-lg" id="createPostContent" name="content" placeholder="What did you learn, or what are you stuck on?" data-validate="required"></textarea>
+            <textarea class="form-control ukn-textarea-lg" id="createPostContent" name="content" maxlength="10000" placeholder="What did you learn, or what are you stuck on?" data-validate="required"></textarea>
             <div class="ukn-field-message is-invalid" data-error-for="content" hidden>
               <span class="ms" aria-hidden="true">error</span>Add some content before publishing.
             </div>

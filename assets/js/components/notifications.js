@@ -13,7 +13,7 @@
       return true;
     }
     if (filter === 'unread') {
-      return item.classList.contains('is-unread');
+      return item.classList.contains('is-unread') || !!item.querySelector('.is-unread');
     }
     return item.getAttribute('data-notification-category') === filter;
   }
@@ -46,14 +46,5 @@
     });
     applyFilter();
   });
-  document.addEventListener('click', function (event) {
-    if (!event.target.closest('[data-action="mark-all-read"]')) {
-      return;
-    }
-    var tabCount = document.querySelector('[data-notification-tab-count]');
-    if (tabCount) {
-      tabCount.textContent = '';
-    }
-    applyFilter();
-  });
+  // "Mark all as read" is a real form (backend/notifications/mark-all-read.php).
 })();

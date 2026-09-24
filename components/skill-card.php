@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/skill-toggle.php';
 if (!function_exists('ukn_skill_card')) {
     function ukn_skill_card(array $skill, array $options = []): void
     {
@@ -10,6 +11,9 @@ if (!function_exists('ukn_skill_card')) {
             ];
             $pct = max(0, min(100, (int) $skill['progress']));
             $kindLabel = $variant === 'teaching' ? 'Teaching' : 'Learning';
+            $skillId = (int) ($skill['id'] ?? 0);
+            $removeFormId = 'skillRemoveForm-' . $variant . '-' . $skillId;
+            $levels = ['Beginner', 'Intermediate', 'Advanced'];
             ?>
             <div class="card ukn-card-marked-left mb-3" data-skill-name="<?= htmlspecialchars($skill['name']) ?>">
               <div class="card-body">
@@ -38,17 +42,36 @@ if (!function_exists('ukn_skill_card')) {
                     data-delete-title="Remove <?= htmlspecialchars($skill['name']) ?> from <?= $kindLabel ?> Skills?"
                     data-delete-message="This removes it from your <?= strtolower($kindLabel) ?> skills list. You can add it again later."
                     data-delete-confirm-label="Remove"
-                    data-success-message="<?= htmlspecialchars($skill['name']) ?> removed from <?= $kindLabel ?> Skills."
-                    data-remove-skill-card
+                    data-delete-form="<?= $removeFormId ?>"
                   ><?= htmlspecialchars($skill['removeLabel']) ?></button>
+                  <form action="backend/skills/update.php" method="post" class="d-inline-flex align-items-center gap-2 m-0 ms-auto">
+                    <?= function_exists('csrfField') ? csrfField() : '' ?>
+                    <?= function_exists('uknReturnToField') ? uknReturnToField() : '' ?>
+                    <input type="hidden" name="type" value="<?= $variant ?>">
+                    <input type="hidden" name="skill_id" value="<?= $skillId ?>">
+                    <label class="ukn-visually-hidden" for="skillLevel-<?= $variant ?>-<?= $skillId ?>"><?= htmlspecialchars($skill['name']) ?> level</label>
+                    <select class="form-select form-select-sm w-auto" id="skillLevel-<?= $variant ?>-<?= $skillId ?>" name="proficiency" required>
+                      <?php if (!$skill['level']): ?><option value="" selected disabled>Set level</option><?php endif; ?>
+                      <?php foreach ($levels as $level): ?>
+                        <option value="<?= $level ?>"<?= $skill['level'] === $level ? ' selected' : '' ?>><?= $level ?></option>
+                      <?php endforeach; ?>
+                    </select>
+                    <button type="submit" class="btn btn-outline-secondary btn-sm">Update</button>
+                  </form>
                 </div>
+                <form id="<?= $removeFormId ?>" action="backend/skills/remove.php" method="post" hidden>
+                  <?= function_exists('csrfField') ? csrfField() : '' ?>
+                  <?= function_exists('uknReturnToField') ? uknReturnToField() : '' ?>
+                  <input type="hidden" name="type" value="<?= $variant ?>">
+                  <input type="hidden" name="skill_id" value="<?= $skillId ?>">
+                </form>
               </div>
             </div>
             <?php
             return;
         }
         $skill += [
-            'category' => '', 'mentors' => null, 'learners' => null,
+            'id' => 0, 'category' => '', 'mentors' => null, 'learners' => null,
             'description' => null, 'href' => '#', 'learningState' => null, 'teachingState' => null,
         ];
         ?>
@@ -68,21 +91,11 @@ if (!function_exists('ukn_skill_card')) {
           </div>
           <div class="d-flex gap-2 flex-wrap">
             <a href="<?= htmlspecialchars($skill['href']) ?>" class="btn btn-outline-secondary btn-sm">Explore</a>
-            <?php if ($skill['learningState'] !== null):
-              $isAdded = $skill['learningState'] === 'added';
-            ?>
-              <button type="button" class="btn btn-sm <?= $isAdded ? 'btn-outline-secondary' : 'btn-outline-primary' ?>" data-skill-toggle="learning" data-state="<?= $isAdded ? 'added' : 'add' ?>">
-                <span class="ms" aria-hidden="true"><?= $isAdded ? 'check' : 'add' ?></span>
-                <span data-skill-toggle-label><?= $isAdded ? 'Learning' : 'Add to Learning' ?></span>
-              </button>
+            <?php if ($skill['learningState'] !== null): ?>
+              <?php ukn_skill_toggle_form((int) $skill['id'], 'learning', $skill['learningState'] === 'added'); ?>
             <?php endif; ?>
-            <?php if ($skill['teachingState'] !== null):
-              $isTeaching = $skill['teachingState'] === 'added';
-            ?>
-              <button type="button" class="btn btn-sm <?= $isTeaching ? 'btn-outline-secondary' : 'btn-outline-primary' ?>" data-skill-toggle="teaching" data-state="<?= $isTeaching ? 'added' : 'add' ?>">
-                <span class="ms" aria-hidden="true"><?= $isTeaching ? 'check' : 'add' ?></span>
-                <span data-skill-toggle-label><?= $isTeaching ? 'Teaching' : 'Add to Teaching' ?></span>
-              </button>
+            <?php if ($skill['teachingState'] !== null): ?>
+              <?php ukn_skill_toggle_form((int) $skill['id'], 'teaching', $skill['teachingState'] === 'added'); ?>
             <?php endif; ?>
           </div>
         </div>

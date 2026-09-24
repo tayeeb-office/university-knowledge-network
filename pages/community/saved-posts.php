@@ -4,12 +4,8 @@ require_once __DIR__ . '/../../components/empty-state.php';
 require_once __DIR__ . '/../../components/error-state.php';
 require_once __DIR__ . '/../../backend/config/database.php';
 require_once __DIR__ . '/../../backend/helpers/format.php';
+require_once __DIR__ . '/../../backend/helpers/community.php';
 
-// TODO(auth): replace with the real session user id; mirrors index.php's own hardcoded
-// demo identity (Nabila Rahman, user id 1) until real sessions exist.
-if (!defined('UKN_DEMO_USER_ID')) {
-    define('UKN_DEMO_USER_ID', 1);
-}
 
 $savedPosts = [];
 $savedPostsDbError = false;
@@ -28,7 +24,7 @@ try {
          WHERE sp.user_id = ? AND p.status = 'visible'
          ORDER BY sp.created_at DESC"
     );
-    $postsStmt->execute([UKN_DEMO_USER_ID]);
+    $postsStmt->execute([UKN_CURRENT_USER_ID]);
     $savedPosts = $postsStmt->fetchAll();
 
     if ($savedPosts) {
@@ -55,9 +51,10 @@ try {
             $post['href'] = 'index.php?page=post-details&id=' . $post['id'];
             $post['authorHref'] = ukn_route_href($post['role'] === 'Mentor' ? 'mentor-profile' : 'learner-profile') . '&id=' . $post['author_id'];
             $post['saved'] = true;
-            $post['isOwner'] = ((int) $post['author_id'] === UKN_DEMO_USER_ID);
+            $post['isOwner'] = ((int) $post['author_id'] === UKN_CURRENT_USER_ID);
         }
         unset($post);
+        $savedPosts = uknDecoratePosts($savedPosts);
     }
 } catch (Throwable $e) {
     error_log('[UKN saved-posts] ' . $e->getMessage());

@@ -1,17 +1,15 @@
 <?php
 require_once __DIR__ . '/backend/config/database.php';
 require_once __DIR__ . '/backend/helpers/format.php';
-
-// TODO(auth): replace with the real session user id; mirrors this file's own hardcoded
-// demo identity (Nabila Rahman, user id 1) until real sessions exist.
-if (!defined('UKN_DEMO_USER_ID')) {
-    define('UKN_DEMO_USER_ID', 1);
-}
+require_once __DIR__ . '/backend/helpers/session.php';
+require_once __DIR__ . '/backend/helpers/csrf.php';
+require_once __DIR__ . '/backend/helpers/auth.php';
 
 $routes = [
     'home'              => ['file' => 'pages/home.php', 'title' => 'Home'],
     'login'             => ['file' => 'pages/auth/login.php', 'title' => 'Log In'],
     'register'          => ['file' => 'pages/auth/register.php', 'title' => 'Register'],
+    'verify-email'      => ['file' => 'pages/auth/verify-email.php', 'title' => 'Verify Email'],
     'learner-dashboard' => ['file' => 'pages/dashboard/learner-dashboard.php', 'title' => 'Learner Dashboard'],
     'mentor-dashboard'  => ['file' => 'pages/dashboard/mentor-dashboard.php', 'title' => 'Mentor Dashboard'],
     'my-profile'        => ['file' => 'pages/profile/my-profile.php', 'title' => 'My Profile'],
@@ -62,6 +60,31 @@ $sidebarContextByPage = [
     'learner-profile'   => 'profile',
     'mentor-profile'    => 'profile',
 ];
+// Who may open each route; anything not listed is public. 'login' = any logged-in user;
+// 'learner' / 'mentor' = logged in AND currently acting in that role (the active role,
+// not just the capability — a dual-role user switches to reach the other side).
+$routeAccess = [
+    'learner-dashboard' => 'learner',
+    'recommendations'   => 'learner',
+    'learning-skills'   => 'learner',
+    'learning-goals'    => 'learner',
+    'mentor-dashboard'  => 'mentor',
+    'learner-requests'  => 'mentor',
+    'teaching-skills'   => 'mentor',
+    'availability'      => 'mentor',
+    'ratings'           => 'mentor',
+    'my-profile'        => 'login',
+    'edit-profile'      => 'login',
+    'sessions'          => 'login',
+    'session-details'   => 'login',
+    'points'            => 'login',
+    'my-posts'          => 'login',
+    'saved-posts'       => 'login',
+    'notifications'     => 'login',
+    'leaderboard'       => 'login',
+    'skill-network'     => 'login',
+    'settings'          => 'login',
+];
 
 $requestedPage = (isset($_GET['page']) && is_string($_GET['page'])) ? $_GET['page'] : 'home';
 $page = array_key_exists($requestedPage, $routes) ? $requestedPage : '404';
@@ -69,26 +92,79 @@ $route = $routes[$page];
 if ($page === '404') {
     http_response_code(404);
 }
-$currentUser = [
-    'loggedIn'   => true,
-    'role'       => 'learner',
-    'dualRole'   => true,
-    'activeRole' => 'learner',
-    'name'       => 'Nabila Rahman',
-    'initials'   => 'NR',
-    'meta'       => 'Learner · Computer Science',
-];
-$authOnlyPages = ['login', 'register'];
-if (in_array($page, $authOnlyPages, true)) {
+// Route guards (before any output or page query). Guests are sent to login and brought
+// back afterwards; a logged-in user in the wrong active role gets the 403 page in place.
+$access = $routeAccess[$page] ?? 'public';
+if ($access !== 'public') {
+    requireLogin();
+    if (($access === 'learner' || $access === 'mentor') && getCurrentActiveRole() !== $access) {
+        $page = '403';
+        $route = $routes['403'];
+    }
+}
+if ($page === '403') {
+    http_response_code(403);
+}
+// Current user: server session → user id → users row (getCurrentUser()). Guests get the
+// visitor shape the shared includes already understand.
+$authUser = getCurrentUser();
+if ($authUser !== null) {
+    $dbRole = $authUser['role'];
+    $activeRole = getCurrentActiveRole();
+    $currentUser = [
+        'loggedIn'   => true,
+        'id'         => (int) $authUser['id'],
+        'email'      => $authUser['email'],
+        'isAdmin'    => !empty($authUser['is_admin']),
+        'isLearner'  => uknUserCanActAs($authUser, 'learner'),
+        'isMentor'   => uknUserCanActAs($authUser, 'mentor'),
+        'role'       => $dbRole === 'mentor' ? 'mentor' : 'learner',
+        'dualRole'   => $dbRole === 'dual',
+        'activeRole' => $activeRole,
+        'name'       => $authUser['full_name'],
+        'initials'   => $authUser['initials'],
+        'department' => (string) ($authUser['department_name'] ?? ''),
+        'meta'       => ucfirst($activeRole) . ($authUser['department_name'] ? ' · ' . $authUser['department_name'] : ''),
+    ];
+} else {
     $currentUser = [
         'loggedIn'   => false,
+        'id'         => 0,
+        'email'      => '',
+        'isAdmin'    => false,
+        'isLearner'  => false,
+        'isMentor'   => false,
         'role'       => 'visitor',
         'dualRole'   => false,
         'activeRole' => 'visitor',
         'name'       => '',
         'initials'   => '',
+        'department' => '',
         'meta'       => '',
     ];
+}
+// Id every page's "my …" queries use; 0 for guests (matches no rows).
+define('UKN_CURRENT_USER_ID', $currentUser['id']);
+
+if (in_array($page, ['login', 'register'], true)) {
+    redirectIfLoggedIn();
+}
+// Email verification link (?page=verify-email&token=…). Handled before any output so the
+// response carries a real status code; pages/auth/verify-email.php renders $verificationResult.
+if ($page === 'verify-email') {
+    require_once __DIR__ . '/backend/helpers/verification.php';
+    $verificationResult = 'invalid';
+    $tokenHash = uknHashVerificationToken($_GET['token'] ?? null);
+    if ($tokenHash !== null) {
+        try {
+            $verificationResult = (new User(getDatabaseConnection()))->verifyEmailByTokenHash($tokenHash);
+        } catch (Throwable $e) {
+            error_log('[UKN verify-email] ' . $e->getMessage());
+            $verificationResult = 'error';
+        }
+    }
+    $verificationStatusCodes = ['verified' => 200, 'invalid' => 400, 'expired' => 410, 'error' => 500];
+    http_response_code($verificationStatusCodes[$verificationResult]);
 }
 $activeNav = $page;
 
@@ -106,12 +182,13 @@ if (!empty($currentUser['loggedIn'])) {
         $pdo = getDatabaseConnection();
 
         $notifStmt = $pdo->prepare(
-            "SELECT icon, message, type, is_read, link_url, created_at
+            "SELECT id, icon, message, type, is_read, link_url, created_at
              FROM notifications WHERE user_id = ? ORDER BY created_at DESC LIMIT 5"
         );
-        $notifStmt->execute([UKN_DEMO_USER_ID]);
+        $notifStmt->execute([UKN_CURRENT_USER_ID]);
         $notifications = array_map(static function (array $row) use ($kindLabels): array {
             return [
+                'id' => (int) $row['id'],
                 'icon' => $row['icon'],
                 'text' => $row['message'],
                 'time' => ukn_time_ago($row['created_at']),
@@ -122,11 +199,11 @@ if (!empty($currentUser['loggedIn'])) {
         }, $notifStmt->fetchAll());
 
         $countStmt = $pdo->prepare("SELECT COUNT(*) FROM notifications WHERE user_id = ? AND is_read = 0");
-        $countStmt->execute([UKN_DEMO_USER_ID]);
+        $countStmt->execute([UKN_CURRENT_USER_ID]);
         $notificationCount = (int) $countStmt->fetchColumn();
 
         $pendingStmt = $pdo->prepare("SELECT COUNT(*) FROM mentoring_sessions WHERE mentor_id = ? AND status = 'pending'");
-        $pendingStmt->execute([UKN_DEMO_USER_ID]);
+        $pendingStmt->execute([UKN_CURRENT_USER_ID]);
         $pendingRequestCount = (int) $pendingStmt->fetchColumn();
 
         // Left-sidebar/mobile-nav "Sessions" badge (learner nav item only, see
@@ -136,7 +213,7 @@ if (!empty($currentUser['loggedIn'])) {
             "SELECT COUNT(*) FROM mentoring_sessions
              WHERE learner_id = ? AND status = 'accepted' AND scheduled_date >= CURDATE()"
         );
-        $upcomingStmt->execute([UKN_DEMO_USER_ID]);
+        $upcomingStmt->execute([UKN_CURRENT_USER_ID]);
         $upcomingSessionCount = (int) $upcomingStmt->fetchColumn();
     } catch (Throwable $e) {
         error_log('[UKN index] ' . $e->getMessage());
@@ -190,11 +267,14 @@ $sessionView = $route['session_view'] ?? null;
   <link rel="stylesheet" href="assets/css/pages/network.css">
   <link rel="stylesheet" href="assets/css/pages/errors.css">
 </head>
-<body>
+<body<?= $currentUser['loggedIn'] ? ' data-active-role="' . htmlspecialchars($currentUser['activeRole']) . '"' : '' ?>>
   <?php include __DIR__ . '/includes/header.php'; ?>
 
   <?php include __DIR__ . '/' . $route['file']; ?>
   <?php include __DIR__ . '/includes/footer.php'; ?>
+  <?php $flashToast = uknTakeFlash('flash_toast'); if (is_array($flashToast)): ?>
+    <div hidden data-flash-toast data-flash-type="<?= htmlspecialchars((string) $flashToast['type']) ?>"><?= htmlspecialchars((string) $flashToast['message']) ?></div>
+  <?php endif; ?>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/cytoscape@3.30.2/dist/cytoscape.min.js"></script>
@@ -208,9 +288,6 @@ $sessionView = $route['session_view'] ?? null;
   <script src="assets/js/core/modal.js"></script>
   <script src="assets/js/core/sidebar.js"></script>
   <script src="assets/js/core/mobile-nav.js"></script>
-  <script src="assets/js/components/voting.js"></script>
-  <script src="assets/js/components/save-post.js"></script>
-  <script src="assets/js/components/follow.js"></script>
   <script src="assets/js/components/comments.js"></script>
   <script src="assets/js/components/notifications.js"></script>
   <script src="assets/js/pages/home.js"></script>

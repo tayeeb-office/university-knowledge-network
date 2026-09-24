@@ -116,6 +116,7 @@ $stars = static function (float $value): string {
     return str_repeat('★', max(0, min(5, $rounded))) . str_repeat('☆', 5 - max(0, min(5, $rounded)));
 };
 $requestMentor = $mentor === false ? [] : [
+    'id' => (int) $mentor['id'],
     'name' => $mentor['name'], 'initials' => $mentor['initials'], 'department' => $mentor['department'],
     'skill' => $mentor['skills'][0]['name'] ?? '', 'rating' => $mentor['rating'], 'skillOptions' => $mentor['skillOptions'],
 ];

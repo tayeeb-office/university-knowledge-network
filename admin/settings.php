@@ -1,4 +1,6 @@
 <?php
+require_once __DIR__ . '/../backend/helpers/auth.php';
+requireAdmin();
 $adminActiveNav = 'settings';
 $adminPageTitle = 'Admin Settings';
 $adminPageSub = 'Configure frontend administration preferences for the University Knowledge Network.';

@@ -3,11 +3,6 @@ require_once __DIR__ . '/../components/notification-item.php';
 require_once __DIR__ . '/../backend/config/database.php';
 require_once __DIR__ . '/../backend/helpers/format.php';
 
-// TODO(auth): replace with the real session user id; mirrors index.php's own hardcoded
-// demo identity (Nabila Rahman, user id 1) until real sessions exist.
-if (!defined('UKN_DEMO_USER_ID')) {
-    define('UKN_DEMO_USER_ID', 1);
-}
 
 $kindLabels = ['session' => 'Session', 'community' => 'Community', 'rating' => 'Rating', 'system' => 'System'];
 
@@ -20,12 +15,13 @@ if (!isset($notifications)) {
     try {
         $pdo = getDatabaseConnection();
         $stmt = $pdo->prepare(
-            "SELECT icon, message, type, is_read, link_url, created_at
+            "SELECT id, icon, message, type, is_read, link_url, created_at
              FROM notifications WHERE user_id = ? ORDER BY created_at DESC LIMIT 5"
         );
-        $stmt->execute([UKN_DEMO_USER_ID]);
+        $stmt->execute([UKN_CURRENT_USER_ID]);
         $notifications = array_map(static function (array $row) use ($kindLabels): array {
             return [
+                'id' => (int) $row['id'],
                 'icon' => $row['icon'],
                 'text' => $row['message'],
                 'time' => ukn_time_ago($row['created_at']),
@@ -45,7 +41,7 @@ if (!isset($notificationCount)) {
     try {
         $pdo = $pdo ?? getDatabaseConnection();
         $countStmt = $pdo->prepare("SELECT COUNT(*) FROM notifications WHERE user_id = ? AND is_read = 0");
-        $countStmt->execute([UKN_DEMO_USER_ID]);
+        $countStmt->execute([UKN_CURRENT_USER_ID]);
         $notificationCount = (int) $countStmt->fetchColumn();
     } catch (Throwable $e) {
         error_log('[UKN notification-dropdown] ' . $e->getMessage());
@@ -61,14 +57,18 @@ $unreadCount = $notificationCount;
       <span class="ukn-text-accent" data-notification-unread-count>· <?= (int) $unreadCount ?> new</span>
     <?php endif; ?>
   </span>
-  <button
-    type="button"
-    class="border-0 bg-transparent p-0 ukn-body-sm text-decoration-underline"
-    data-action="mark-all-read"
-    <?= $unreadCount === 0 ? 'disabled' : '' ?>
-  >
-    Mark all as read
-  </button>
+  <form action="backend/notifications/mark-all-read.php" method="post" class="m-0">
+    <?= function_exists('csrfField') ? csrfField() : '' ?>
+    <?= function_exists('uknReturnToField') ? uknReturnToField() : '' ?>
+    <button
+      type="submit"
+      class="border-0 bg-transparent p-0 ukn-body-sm text-decoration-underline"
+      data-action="mark-all-read"
+      <?= $unreadCount === 0 ? 'disabled' : '' ?>
+    >
+      Mark all as read
+    </button>
+  </form>
 </div>
 <div class="ukn-dropdown-panel__list">
   <?php foreach ($notifications as $n): ?>

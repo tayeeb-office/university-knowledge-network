@@ -4,6 +4,8 @@ SET time_zone = '+00:00';
 
 
 SET FOREIGN_KEY_CHECKS = 0;
+DROP VIEW IF EXISTS mentor_rating_summary;
+DROP TABLE IF EXISTS login_attempts;
 DROP TABLE IF EXISTS reports;
 DROP TABLE IF EXISTS notifications;
 DROP TABLE IF EXISTS point_transactions;
@@ -49,6 +51,9 @@ CREATE TABLE users (
     email               VARCHAR(160) NOT NULL,
     university_id       VARCHAR(30)  NOT NULL,
     password_hash       VARCHAR(255) NOT NULL,
+    email_verified_at       DATETIME NULL,
+    verification_token_hash CHAR(64) NULL COMMENT 'SHA-256 hex of the emailed token; cleared once used',
+    verification_expires_at DATETIME NULL,
     department_id       SMALLINT UNSIGNED NULL,
 
     role                ENUM('learner','mentor','dual') NOT NULL DEFAULT 'learner',
@@ -77,6 +82,7 @@ CREATE TABLE users (
     PRIMARY KEY (id),
     UNIQUE KEY uq_users_email (email),
     UNIQUE KEY uq_users_university_id (university_id),
+    UNIQUE KEY uq_users_verification_token (verification_token_hash),
     KEY idx_users_department (department_id),
     KEY idx_users_role_status (role, status),
     KEY idx_users_full_name (full_name),
@@ -246,6 +252,7 @@ CREATE TABLE learning_goals (
     user_id      INT UNSIGNED NOT NULL,
     skill_id     SMALLINT UNSIGNED NULL,
     title        VARCHAR(160) NOT NULL,
+    description  VARCHAR(500) NULL,
     progress     TINYINT UNSIGNED NOT NULL DEFAULT 0,
     target_date  DATE NULL,
     status       ENUM('in-progress','completed') NOT NULL DEFAULT 'in-progress',
@@ -585,3 +592,31 @@ CREATE TABLE reports (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 
+
+-- ---------------------------------------------------------------------------
+-- login_attempts (Phase J, J1) — login throttling, shared across sessions.
+-- One row per throttle key: SHA-256 of "scope|value" (email, email+IP, IP), so no
+-- raw email or IP is stored. Also in database/patches/add-login-throttling.sql.
+-- ---------------------------------------------------------------------------
+CREATE TABLE login_attempts (
+    throttle_key       CHAR(64)     NOT NULL,
+    attempts           INT UNSIGNED NOT NULL DEFAULT 0,
+    window_started_at  DATETIME     NOT NULL,
+    updated_at         DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+    PRIMARY KEY (throttle_key),
+    KEY idx_login_attempts_window (window_started_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ---------------------------------------------------------------------------
+-- mentor_rating_summary (Phase K) — reusable VIEW over session_ratings.
+-- One row per rated mentor: average overall rating (1 decimal, as displayed) and the
+-- number of reviews. Used by the Leaderboard (Top Mentors) and Search (mentor results).
+-- Also in database/patches/add-mentor-rating-summary-view.sql.
+-- ---------------------------------------------------------------------------
+CREATE SQL SECURITY INVOKER VIEW mentor_rating_summary AS
+SELECT sr.mentor_id,
+       ROUND(AVG(sr.overall), 1) AS avg_rating,
+       COUNT(*)                  AS total_reviews
+FROM session_ratings sr
+GROUP BY sr.mentor_id;

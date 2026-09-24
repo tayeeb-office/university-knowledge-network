@@ -15,6 +15,12 @@ if (!function_exists('ukn_post_card')) {
             'python' => 1, 'mysql' => 2, 'react' => 3, 'ui/ux design' => 4, 'data analysis' => 5,
             'public speaking' => 6, 'database design' => 7, 'arduino' => 8, 'academic writing' => 9, 'digital marketing' => 10,
         ];
+        // Vote / save / delete are real POST forms (backend/posts/*.php). The buttons stay where
+        // they are and point at hidden forms via the HTML form="" attribute.
+        $postId = (int) ($post['id'] ?? 0);
+        $formAttr = static fn (string $kind): string => $postId > 0
+            ? 'type="submit" form="' . $kind . 'Post-' . $postId . '"'
+            : 'type="button"';
         $searchText = strtolower($post['title'] . ' ' . $post['author'] . ' ' . implode(' ', $post['tags']));
         $skillsAttr = strtolower(implode('|', $post['tags']));
         ?>
@@ -27,11 +33,11 @@ if (!function_exists('ukn_post_card')) {
           data-post-skills="<?= htmlspecialchars($skillsAttr) ?>"
         >
           <div class="ukn-vote-rail">
-            <button type="button" class="ukn-vote-btn is-up<?= $upClass ?>" data-vote-up aria-label="Upvote this post" aria-pressed="<?= $post['voteState'] === 1 ? 'true' : 'false' ?>">
+            <button <?= $formAttr('vote') ?> name="value" value="1" class="ukn-vote-btn is-up<?= $upClass ?>" data-vote-up aria-label="Upvote this post" aria-pressed="<?= $post['voteState'] === 1 ? 'true' : 'false' ?>">
               <span class="ms" aria-hidden="true">arrow_upward</span>
             </button>
             <span class="ukn-vote-score" data-vote-score data-vote-base="<?= (int) $post['score'] ?>"><?= (int) $post['score'] ?></span>
-            <button type="button" class="ukn-vote-btn is-down<?= $downClass ?>" data-vote-down aria-label="Downvote this post" aria-pressed="<?= $post['voteState'] === -1 ? 'true' : 'false' ?>">
+            <button <?= $formAttr('vote') ?> name="value" value="-1" class="ukn-vote-btn is-down<?= $downClass ?>" data-vote-down aria-label="Downvote this post" aria-pressed="<?= $post['voteState'] === -1 ? 'true' : 'false' ?>">
               <span class="ms" aria-hidden="true">arrow_downward</span>
             </button>
           </div>
@@ -84,7 +90,9 @@ if (!function_exists('ukn_post_card')) {
                 </a>
               <?php endif; ?>
               <button
-                type="button"
+                <?= $formAttr('save') ?>
+                name="action"
+                value="<?= $post['saved'] ? 'unsave' : 'save' ?>"
                 class="btn-ghost<?= $post['saved'] ? ' is-active' : '' ?>"
                 data-save-post
                 data-saved="<?= $post['saved'] ? 'true' : 'false' ?>"
@@ -110,7 +118,7 @@ if (!function_exists('ukn_post_card')) {
                         data-bs-target="#editPostModal"
                         data-edit-post-id="<?= htmlspecialchars((string) ($post['id'] ?? '')) ?>"
                         data-edit-post-title="<?= htmlspecialchars($post['title']) ?>"
-                        data-edit-post-content="<?= htmlspecialchars($post['excerpt']) ?>"
+                        data-edit-post-content="<?= htmlspecialchars($post['content'] ?? $post['excerpt']) ?>"
                         data-edit-post-skills="<?= htmlspecialchars(implode('|', $post['tags'])) ?>"
                       >
                         <span class="ms" aria-hidden="true">edit</span>Edit post
@@ -124,8 +132,8 @@ if (!function_exists('ukn_post_card')) {
                         data-bs-target="#deleteConfirmationModal"
                         data-delete-title="<?= htmlspecialchars('Delete “' . $post['title'] . '”?') ?>"
                         data-delete-message="The post and its comments, votes and references will be removed. This action cannot be undone."
-                        data-success-message="Post deleted."
-                        data-remove-post-card
+                        data-delete-confirm-label="Delete"
+                        data-delete-form="deletePost-<?= $postId ?>"
                       >
                         <span class="ms" aria-hidden="true">delete</span>Delete post
                       </button>
@@ -135,6 +143,15 @@ if (!function_exists('ukn_post_card')) {
               <?php endif; ?>
             </div>
           </div>
+          <?php if ($postId > 0): ?>
+            <?php foreach (['vote' => 'vote', 'save' => 'save'] + (!empty($post['isOwner']) ? ['delete' => 'delete'] : []) as $kind => $endpoint): ?>
+              <form id="<?= $kind ?>Post-<?= $postId ?>" action="backend/posts/<?= $endpoint ?>.php" method="post" hidden>
+                <?= function_exists('csrfField') ? csrfField() : '' ?>
+                <?= function_exists('uknReturnToField') ? uknReturnToField() : '' ?>
+                <input type="hidden" name="post_id" value="<?= $postId ?>">
+              </form>
+            <?php endforeach; ?>
+          <?php endif; ?>
         </article>
         <?php
     }

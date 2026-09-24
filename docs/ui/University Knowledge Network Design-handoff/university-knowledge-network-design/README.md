@@ -1,9 +1,3 @@
-# CODING AGENTS: READ THIS FIRST
-
-This is a **handoff bundle** from Claude Design (claude.ai/design).
-
-A user mocked up designs in HTML/CSS/JS using an AI design tool, then exported this bundle so a coding agent can implement the designs for real.
-
 ## What you should do — IMPORTANT
 
 **Read `university-knowledge-network-design/project/UKN App.dc.html` in full.** The user had this file open when they triggered the handoff, so it's almost certainly the primary design they want built. Read it top to bottom — don't skim. Then **follow its imports**: open every file it pulls in (shared components, CSS, scripts) so you understand how the pieces fit together before you start implementing.

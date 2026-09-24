@@ -7,11 +7,6 @@ require_once __DIR__ . '/../../components/empty-state.php';
 require_once __DIR__ . '/../../components/error-state.php';
 require_once __DIR__ . '/../../backend/config/database.php';
 
-// TODO(auth): replace with the real session user id; mirrors index.php's own hardcoded
-// demo identity (Nabila Rahman, user id 1) until real sessions exist.
-if (!defined('UKN_DEMO_USER_ID')) {
-    define('UKN_DEMO_USER_ID', 1);
-}
 
 $learnerStats = [];
 $learnerGoals = [];
@@ -27,27 +22,27 @@ try {
     $pdo = getDatabaseConnection();
 
     $userStmt = $pdo->prepare("SELECT learning_points, sessions_as_learner FROM users WHERE id = ?");
-    $userStmt->execute([UKN_DEMO_USER_ID]);
+    $userStmt->execute([UKN_CURRENT_USER_ID]);
     $user = $userStmt->fetch();
 
     $monthSumStmt = $pdo->prepare(
         "SELECT COALESCE(SUM(amount), 0) FROM point_transactions
          WHERE user_id = ? AND point_type = 'learning' AND created_at >= DATE_FORMAT(NOW(), '%Y-%m-01')"
     );
-    $monthSumStmt->execute([UKN_DEMO_USER_ID]);
+    $monthSumStmt->execute([UKN_CURRENT_USER_ID]);
     $learningMonth = (int) $monthSumStmt->fetchColumn();
 
     $upcomingCountStmt = $pdo->prepare(
         "SELECT COUNT(*) FROM mentoring_sessions
          WHERE learner_id = ? AND status = 'accepted' AND scheduled_date >= CURDATE()"
     );
-    $upcomingCountStmt->execute([UKN_DEMO_USER_ID]);
+    $upcomingCountStmt->execute([UKN_CURRENT_USER_ID]);
     $upcomingCount = (int) $upcomingCountStmt->fetchColumn();
 
     $learningSkillCountStmt = $pdo->prepare(
         "SELECT COUNT(*) FROM user_skills WHERE user_id = ? AND skill_type = 'learning'"
     );
-    $learningSkillCountStmt->execute([UKN_DEMO_USER_ID]);
+    $learningSkillCountStmt->execute([UKN_CURRENT_USER_ID]);
 
     $learnerStats = [
         ['label' => 'Learning Points', 'value' => (string) ($user['learning_points'] ?? 0), 'icon' => 'military_tech',
@@ -58,13 +53,13 @@ try {
     ];
 
     $goalsStmt = $pdo->prepare(
-        "SELECT lg.title, s.name AS skill, lg.progress, lg.target_date
+        "SELECT lg.id, lg.title, s.name AS skill, lg.progress, lg.target_date
          FROM learning_goals lg LEFT JOIN skills s ON s.id = lg.skill_id
          WHERE lg.user_id = ? AND lg.status = 'in-progress'
          ORDER BY lg.target_date ASC
          LIMIT 2"
     );
-    $goalsStmt->execute([UKN_DEMO_USER_ID]);
+    $goalsStmt->execute([UKN_CURRENT_USER_ID]);
     $learnerGoals = array_map(static function (array $row): array {
         $row['targetDate'] = $row['target_date'] ? date('F Y', strtotime($row['target_date'])) : '';
         return $row;
@@ -80,10 +75,12 @@ try {
          ORDER BY ms.scheduled_date, ms.scheduled_time
          LIMIT 2"
     );
-    $sessionsStmt->execute([UKN_DEMO_USER_ID]);
+    $sessionsStmt->execute([UKN_CURRENT_USER_ID]);
     $learnerSessions = array_map(static function (array $row): array {
         $timestamp = strtotime($row['scheduled_date'] . ' ' . $row['scheduled_time']);
         return [
+            'id' => (int) $row['id'],
+            'viewer' => 'learner',
             'counterparty' => $row['counterparty'],
             'counterpartyInitials' => $row['counterpartyInitials'],
             'skill' => $row['skill'],
@@ -109,7 +106,7 @@ try {
          ORDER BY u.avg_rating DESC, u.sessions_as_mentor DESC
          LIMIT 3"
     );
-    $mentorStmt->execute([UKN_DEMO_USER_ID]);
+    $mentorStmt->execute([UKN_CURRENT_USER_ID]);
     $recommendedMentors = $mentorStmt->fetchAll();
 
     if ($recommendedMentors) {
@@ -140,7 +137,7 @@ try {
          WHERE us.user_id = ? AND us.skill_type = 'learning'
          ORDER BY s.name"
     );
-    $learningSkillsStmt->execute([UKN_DEMO_USER_ID]);
+    $learningSkillsStmt->execute([UKN_CURRENT_USER_ID]);
     $learningSkills = $learningSkillsStmt->fetchAll(PDO::FETCH_COLUMN);
 
     // Sessions completed per month, last 6 calendar months. Depends on the seed data's
@@ -153,7 +150,7 @@ try {
          WHERE learner_id = ? AND status = 'completed' AND completed_at IS NOT NULL
          GROUP BY ym"
     );
-    $monthlyStmt->execute([UKN_DEMO_USER_ID]);
+    $monthlyStmt->execute([UKN_CURRENT_USER_ID]);
     $monthlyCounts = array_column($monthlyStmt->fetchAll(), 'c', 'ym');
     $ariaParts = [];
     for ($i = 5; $i >= 0; $i--) {

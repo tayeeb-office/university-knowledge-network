@@ -55,7 +55,7 @@
     return valid;
   }
   document.addEventListener('input', function (event) {
-    var form = event.target.closest('[data-mock-form], [data-mock-auth-form]');
+    var form = event.target.closest('[data-mock-form], [data-auth-form], [data-validated-form]');
     var field = event.target;
     if (!form || !field.matches('[data-validate]')) {
       return;
@@ -66,7 +66,7 @@
     }
   });
   document.addEventListener('change', function (event) {
-    var form = event.target.closest('[data-mock-form], [data-mock-auth-form]');
+    var form = event.target.closest('[data-mock-form], [data-auth-form], [data-validated-form]');
     if (!form || (event.target.type !== 'radio' && event.target.type !== 'checkbox')) {
       return;
     }

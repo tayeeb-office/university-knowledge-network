@@ -1,0 +1,4 @@
+# Phase J (J4): include-only / non-public files. index.php and the action endpoints load them
+# from disk; they are never requested by the browser directly.
+Require all denied
+

@@ -1,14 +1,19 @@
 <?php
 require_once __DIR__ . '/../../components/error-state.php';
 require_once __DIR__ . '/../../components/empty-state.php';
+require_once __DIR__ . '/../../components/skill-toggle.php';
 require_once __DIR__ . '/../../backend/config/database.php';
+require_once __DIR__ . '/../../backend/helpers/skills.php';
 
 $activeRole = !empty($currentUser['dualRole']) ? ($currentUser['activeRole'] ?? 'learner') : ($currentUser['role'] ?? 'learner');
 $isMentor = $activeRole === 'mentor';
-// TODO(auth): read from the logged-in user's own user_skills rows once a real session exists.
-$learningSkills = ['Python', 'MySQL', 'Data Analysis'];
-$teachingSkills = ['Python', 'Database Design', 'Data Analysis'];
-$currentSkills = $isMentor ? $teachingSkills : $learningSkills;
+$mySkills = uknCurrentUserSkills();
+$currentSkillIds = $isMentor ? $mySkills['teaching'] : $mySkills['learning']; // id => name
+$toggleKind = $isMentor ? 'teaching' : 'learning';
+$canToggleSkills = !empty($currentUser['loggedIn']);
+// Step 44 limits: the graph stays readable and the embedded JSON small.
+$networkMaxSkills = 200;
+$networkMentorsPerSkill = 5;
 
 $nodes = [];
 $edges = [];
@@ -17,36 +22,77 @@ $networkDbError = false;
 try {
     $pdo = getDatabaseConnection();
 
+    // Nodes: active skills. Mentor/learner counts come from user_skills (teaching/learning),
+    // completed sessions from mentoring_sessions — grouped once, no per-skill queries.
     $nodeStmt = $pdo->query(
         "SELECT s.id, s.name, sc.name AS category, s.description,
-                (SELECT COUNT(*) FROM user_skills WHERE skill_id = s.id AND skill_type = 'teaching') AS mentors,
-                (SELECT COUNT(*) FROM user_skills WHERE skill_id = s.id AND skill_type = 'learning') AS learners,
-                (SELECT COUNT(*) FROM mentoring_sessions WHERE skill_id = s.id AND status = 'completed') AS sessions
+                COALESCE(us.mentors, 0) AS mentors, COALESCE(us.learners, 0) AS learners,
+                COALESCE(ms.sessions, 0) AS sessions
          FROM skills s
          JOIN skill_categories sc ON sc.id = s.category_id
+         LEFT JOIN (SELECT skill_id,
+                           SUM(skill_type = 'teaching') AS mentors,
+                           SUM(skill_type = 'learning') AS learners
+                    FROM user_skills GROUP BY skill_id) us ON us.skill_id = s.id
+         LEFT JOIN (SELECT skill_id, COUNT(*) AS sessions
+                    FROM mentoring_sessions WHERE status = 'completed' GROUP BY skill_id) ms ON ms.skill_id = s.id
          WHERE s.status = 'active'
-         ORDER BY s.id"
+         ORDER BY s.id
+         LIMIT {$networkMaxSkills}"
     );
     $nodes = array_map(static function (array $row): array {
         $row['id'] = (int) $row['id'];
+        $row['description'] = (string) ($row['description'] ?? '');
         $row['mentors'] = (int) $row['mentors'];
         $row['learners'] = (int) $row['learners'];
         $row['sessions'] = (int) $row['sessions'];
         return $row;
     }, $nodeStmt->fetchAll());
+    $nodeIds = array_fill_keys(array_column($nodes, 'id'), true);
 
+    // Edges: the curated skill_relations table only, between two active skills.
     $edgeStmt = $pdo->query(
-        "SELECT source_skill_id AS source, target_skill_id AS target, strength, reason
-         FROM skill_relations"
+        "SELECT sr.source_skill_id AS source, sr.target_skill_id AS target, sr.strength, sr.reason
+         FROM skill_relations sr
+         JOIN skills a ON a.id = sr.source_skill_id AND a.status = 'active'
+         JOIN skills b ON b.id = sr.target_skill_id AND b.status = 'active'
+         ORDER BY sr.id"
     );
-    $edges = array_map(static function (array $row): array {
+    foreach ($edgeStmt->fetchAll() as $row) {
         $row['source'] = (int) $row['source'];
         $row['target'] = (int) $row['target'];
-        return $row;
-    }, $edgeStmt->fetchAll());
+        if (isset($nodeIds[$row['source']], $nodeIds[$row['target']])) {
+            $edges[] = $row;
+        }
+    }
+
+    // Who teaches each skill (user_skills 'teaching', active mentors), top few per skill in
+    // one windowed query — shown in the selected-skill panel.
+    $mentorStmt = $pdo->query(
+        "SELECT skill_id, id, name FROM (
+             SELECT us.skill_id, u.id, u.full_name AS name,
+                    ROW_NUMBER() OVER (PARTITION BY us.skill_id
+                                       ORDER BY us.sessions_count DESC, us.proficiency DESC, u.full_name, u.id) AS rn
+             FROM user_skills us
+             JOIN users u ON u.id = us.user_id
+             WHERE us.skill_type = 'teaching' AND u.status = 'active' AND u.role IN ('mentor', 'dual')
+         ) ranked
+         WHERE rn <= {$networkMentorsPerSkill}
+         ORDER BY skill_id, rn"
+    );
+    $mentorsBySkill = [];
+    foreach ($mentorStmt->fetchAll() as $row) {
+        $mentorsBySkill[(int) $row['skill_id']][] = [
+            'name' => $row['name'],
+            'href' => ukn_route_href('mentor-profile') . '&id=' . (int) $row['id'],
+        ];
+    }
 } catch (Throwable $e) {
     error_log('[UKN skill-network] ' . $e->getMessage());
     $networkDbError = true;
+    $nodes = [];
+    $edges = [];
+    $mentorsBySkill = [];
 }
 
 $nodesById = [];
@@ -60,11 +106,14 @@ foreach ($edges as $edge) {
 }
 foreach ($nodes as &$node) {
     $node['related'] = $relatedNames[$node['id']];
+    $node['topMentors'] = $mentorsBySkill[$node['id']] ?? [];
     $node['skillDetailsHref'] = ukn_route_href('skill-details') . '&id=' . $node['id'];
     $node['findMentorsHref'] = ukn_route_href('find-mentors') . '&skill=' . rawurlencode(strtolower($node['name']));
-    $node['isCurrent'] = in_array($node['name'], $currentSkills, true);
+    $node['isCurrent'] = isset($currentSkillIds[$node['id']]);
 }
 unset($node);
+// JSON for data-* attributes: hex-escape markup characters, then HTML-escape for the attribute.
+$networkJsonFlags = JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_INVALID_UTF8_SUBSTITUTE;
 $categories = array_values(array_unique(array_column($nodes, 'category')));
 sort($categories);
 $joinWithAnd = static function (array $items): string {
@@ -121,8 +170,8 @@ $joinWithAnd = static function (array $items): string {
     <div class="ukn-network-graph-wrap">
       <div
         id="skill-network-graph"
-        data-network-nodes="<?= htmlspecialchars(json_encode($nodes)) ?>"
-        data-network-edges="<?= htmlspecialchars(json_encode($edges)) ?>"
+        data-network-nodes="<?= htmlspecialchars((string) json_encode($nodes, $networkJsonFlags)) ?>"
+        data-network-edges="<?= htmlspecialchars((string) json_encode($edges, $networkJsonFlags)) ?>"
         data-is-mentor="<?= $isMentor ? '1' : '0' ?>"
         role="img"
         aria-label="Interactive diagram of how skills in the network relate to each other. A full text list of the same skills and relationships follows below."
@@ -176,7 +225,12 @@ $joinWithAnd = static function (array $items): string {
               <?php endif; ?>
             </p>
             <div class="ukn-body-sm ukn-text-muted mb-3"><?= $node['mentors'] ?> mentors &middot; <?= $node['learners'] ?> learners</div>
-            <a href="<?= htmlspecialchars($node['skillDetailsHref']) ?>" class="btn btn-outline-secondary btn-sm">View Skill</a>
+            <div class="d-flex flex-wrap gap-2">
+              <a href="<?= htmlspecialchars($node['skillDetailsHref']) ?>" class="btn btn-outline-secondary btn-sm">View Skill</a>
+              <?php if ($canToggleSkills): ?>
+                <div class="d-inline-flex" data-network-toggle><?php ukn_skill_toggle_form((int) $node['id'], $toggleKind, $node['isCurrent']); ?></div>
+              <?php endif; ?>
+            </div>
           </div>
         </div>
       </div>

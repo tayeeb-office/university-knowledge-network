@@ -1,4 +1,7 @@
 <?php
+require_once __DIR__ . '/../backend/helpers/auth.php';
+requireAdmin();
+require_once __DIR__ . '/../backend/helpers/csrf.php';
 require_once __DIR__ . '/../components/empty-state.php';
 require_once __DIR__ . '/../components/error-state.php';
 require_once __DIR__ . '/../components/stat-card.php';
@@ -30,11 +33,12 @@ try {
     $stmt = $pdo->query(
         "SELECT c.id, c.parent_id, c.content, c.report_count AS reports, c.status, c.created_at,
                 u.id AS author_id, u.full_name AS author_name,
-                p.id AS post_id, p.title AS post_title,
-                (SELECT COUNT(*) FROM comments r WHERE r.parent_id = c.id) AS replies
+                p.id AS post_id, p.title AS post_title, COALESCE(r.n, 0) AS replies
          FROM comments c
          JOIN users u ON u.id = c.user_id
          JOIN posts p ON p.id = c.post_id
+         LEFT JOIN (SELECT parent_id, COUNT(*) AS n FROM comments WHERE parent_id IS NOT NULL GROUP BY parent_id) r
+                ON r.parent_id = c.id
          ORDER BY c.created_at DESC"
     );
     $rows = $stmt->fetchAll();
@@ -206,6 +210,12 @@ require __DIR__ . '/includes/header.php';
             <td data-label="Status"><span class="ukn-status <?= $statusClass[$c['status']] ?>" data-comment-status-badge><?= htmlspecialchars($statusLabels[$c['status']]) ?></span></td>
             <td data-label="Posted"><?= htmlspecialchars($c['posted']) ?></td>
             <td data-label="Actions">
+              <form action="../backend/admin/comments/status.php" method="post" id="commentStatus-<?= (int) $c['realId'] ?>" hidden>
+                <?= csrfField() ?>
+                <?= uknReturnToField() ?>
+                <input type="hidden" name="comment_id" value="<?= (int) $c['realId'] ?>">
+                <input type="hidden" name="status" value="<?= $isVisible ? 'hidden' : 'visible' ?>">
+              </form>
               <div class="d-flex gap-1 justify-content-md-end">
                 <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#commentDetailModal" data-comment-view>View</button>
                 <div class="dropdown">
@@ -219,27 +229,17 @@ require __DIR__ . '/includes/header.php';
                         class="dropdown-item"
                         data-bs-toggle="modal"
                         data-bs-target="#deleteConfirmationModal"
-                        data-comment-hide
-                        <?= $isVisible ? '' : 'hidden' ?>
+                        data-delete-form="commentStatus-<?= (int) $c['realId'] ?>"
+                        <?php if ($isVisible): ?>
                         data-delete-title="Hide Comment?"
-                        data-delete-message="Hide this comment from <?= htmlspecialchars($author['name']) ?> in demo mode? This is a demo action — no participants will be notified and no backend data will be changed."
+                        data-delete-message="<?= htmlspecialchars('Hide this comment from ' . $author['name'] . '? It is no longer shown on the post' . ($c['type'] === 'top-level' && $c['replies'] > 0 ? ', and neither are its ' . $c['replies'] . ' ' . ($c['replies'] === 1 ? 'reply' : 'replies') : '') . '. Nothing is deleted and it can be restored.') ?>"
                         data-delete-confirm-label="Hide Comment"
-                        data-success-message="Comment hidden in demo mode."
-                      >Hide</button>
-                    </li>
-                    <li>
-                      <button
-                        type="button"
-                        class="dropdown-item"
-                        data-bs-toggle="modal"
-                        data-bs-target="#deleteConfirmationModal"
-                        data-comment-restore
-                        <?= $isVisible ? 'hidden' : '' ?>
+                        <?php else: ?>
                         data-delete-title="Restore Comment?"
-                        data-delete-message="Restore this comment from <?= htmlspecialchars($author['name']) ?> so it's visible again? This is a demo action only."
+                        data-delete-message="Restore this comment from <?= htmlspecialchars($author['name']) ?> so it's visible again?"
                         data-delete-confirm-label="Restore Comment"
-                        data-success-message="Comment restored in demo mode."
-                      >Restore</button>
+                        <?php endif; ?>
+                      ><?= $isVisible ? 'Hide' : 'Restore' ?></button>
                     </li>
                     <?php if ($c['reports'] > 0): ?>
                       <li><a class="dropdown-item" href="reports.php">Review Reports</a></li>

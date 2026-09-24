@@ -1,39 +1,60 @@
 <?php
-$departments = [
-    'Computer Science', 'Electrical Engineering', 'Business Administration',
-    'English', 'Economics', 'Civil Engineering', 'Architecture',
-];
+require_once __DIR__ . '/../../components/error-state.php';
+// Active departments from the database (Step 45: admins manage this list); the backend
+// validates the choice against the same active rows.
+$departments = [];
+try {
+    require_once __DIR__ . '/../../backend/config/database.php';
+    $departments = getDatabaseConnection()
+        ->query("SELECT name FROM departments WHERE status = 'active' ORDER BY id")
+        ->fetchAll(PDO::FETCH_COLUMN);
+} catch (Throwable $e) {
+    error_log('[UKN register] ' . $e->getMessage());
+}
+// Server-side validation results from backend/auth/register.php (one-time session values).
+$registerErrors = (array) uknTakeFlash('register_errors', []);
+$registerOld = (array) uknTakeFlash('register_old', []);
+$errorFor = static fn (string $key): ?string => isset($registerErrors[$key]) ? (string) $registerErrors[$key] : null;
+$hiddenUnless = static fn (string $key): string => $errorFor($key) === null ? ' hidden' : '';
+$invalidIf = static fn (string $key): string => $errorFor($key) === null ? '' : ' is-invalid';
+$oldValue = static fn (string $key): string => htmlspecialchars((string) ($registerOld[$key] ?? ''));
 ?>
 <div class="ukn-container-narrow">
   <div class="card ukn-auth-card">
     <div class="card-body">
       <h1 class="mb-0">Create Your Account</h1>
       <p class="ukn-auth-card__sub">Join the University Knowledge Network to learn, teach and connect.</p>
-      <form data-mock-auth-form="register" data-success-message="Account registration form completed successfully. Demo mode only." novalidate>
+      <?php if ($errorFor('form') !== null): ?>
+        <div class="mb-3"><?php ukn_error_state(['title' => $errorFor('form')]); ?></div>
+      <?php endif; ?>
+      <form data-auth-form="register" action="backend/auth/register.php" method="post" novalidate>
+        <?= csrfField() ?>
         <div class="ukn-form-group">
           <label for="registerName" class="form-label">Full Name</label>
           <input
             type="text"
-            class="form-control"
+            class="form-control<?= $invalidIf('full_name') ?>"
             id="registerName"
             name="fullName"
             placeholder="Nabila Rahman"
             autocomplete="name"
+            value="<?= $oldValue('fullName') ?>"
             data-validate="required"
           >
-          <div class="ukn-field-message is-invalid" data-error-for="fullName" hidden>
-            <span class="ms" aria-hidden="true">error</span>Please enter your full name.
+          <div class="ukn-field-message is-invalid" data-error-for="fullName"<?= $hiddenUnless('full_name') ?>>
+            <span class="ms" aria-hidden="true">error</span><?= htmlspecialchars($errorFor('full_name') ?? 'Please enter your full name.') ?>
           </div>
         </div>
         <div class="ukn-form-group">
           <label for="registerEmail" class="form-label">University Email</label>
           <input
             type="email"
-            class="form-control"
+            class="form-control<?= $invalidIf('email') ?>"
             id="registerEmail"
             name="email"
             placeholder="name@university.edu"
             autocomplete="email"
+            value="<?= $oldValue('email') ?>"
             data-validate="required email"
           >
           <div
@@ -41,36 +62,37 @@ $departments = [
             data-error-for="email"
             data-message-required="Please enter your university email."
             data-message-email="Enter a valid email address."
-            hidden
+            <?= $hiddenUnless('email') ?>
           >
-            <span class="ms" aria-hidden="true">error</span><span data-message-text>Please enter your university email.</span>
+            <span class="ms" aria-hidden="true">error</span><span data-message-text><?= htmlspecialchars($errorFor('email') ?? 'Please enter your university email.') ?></span>
           </div>
         </div>
         <div class="ukn-form-group">
           <label for="registerUniversityId" class="form-label">University ID</label>
           <input
             type="text"
-            class="form-control"
+            class="form-control<?= $invalidIf('university_id') ?>"
             id="registerUniversityId"
             name="universityId"
             placeholder="e.g. 0112310123"
             autocomplete="off"
+            value="<?= $oldValue('universityId') ?>"
             data-validate="required"
           >
-          <div class="ukn-field-message is-invalid" data-error-for="universityId" hidden>
-            <span class="ms" aria-hidden="true">error</span>Please enter your University ID.
+          <div class="ukn-field-message is-invalid" data-error-for="universityId"<?= $hiddenUnless('university_id') ?>>
+            <span class="ms" aria-hidden="true">error</span><?= htmlspecialchars($errorFor('university_id') ?? 'Please enter your University ID.') ?>
           </div>
         </div>
         <div class="ukn-form-group">
           <label for="registerDepartment" class="form-label">Department</label>
-          <select class="form-select" id="registerDepartment" name="department" data-validate="required">
-            <option value="" selected disabled>Select your department</option>
+          <select class="form-select<?= $invalidIf('department') ?>" id="registerDepartment" name="department" data-validate="required">
+            <option value="" <?= ($registerOld['department'] ?? '') === '' ? 'selected ' : '' ?>disabled>Select your department</option>
             <?php foreach ($departments as $department): ?>
-              <option value="<?= htmlspecialchars($department) ?>"><?= htmlspecialchars($department) ?></option>
+              <option value="<?= htmlspecialchars($department) ?>"<?= ($registerOld['department'] ?? '') === $department ? ' selected' : '' ?>><?= htmlspecialchars($department) ?></option>
             <?php endforeach; ?>
           </select>
-          <div class="ukn-field-message is-invalid" data-error-for="department" hidden>
-            <span class="ms" aria-hidden="true">error</span>Please select your department.
+          <div class="ukn-field-message is-invalid" data-error-for="department"<?= $hiddenUnless('department') ?>>
+            <span class="ms" aria-hidden="true">error</span><?= htmlspecialchars($errorFor('department') ?? 'Please select your department.') ?>
           </div>
         </div>
         <div class="ukn-form-group">
@@ -78,7 +100,7 @@ $departments = [
           <div class="ukn-password-field">
             <input
               type="password"
-              class="form-control"
+              class="form-control<?= $invalidIf('password') ?>"
               id="registerPassword"
               name="password"
               placeholder="At least 8 characters"
@@ -94,8 +116,8 @@ $departments = [
             <span class="ukn-strength__track"><span class="ukn-strength__bar"></span></span>
             <span class="ukn-strength__label" data-password-strength-label>Weak</span>
           </div>
-          <div class="ukn-field-message is-invalid" data-error-for="password" hidden>
-            <span class="ms" aria-hidden="true">error</span>Please create a password.
+          <div class="ukn-field-message is-invalid" data-error-for="password"<?= $hiddenUnless('password') ?>>
+            <span class="ms" aria-hidden="true">error</span><?= htmlspecialchars($errorFor('password') ?? 'Please create a password.') ?>
           </div>
         </div>
         <div class="ukn-form-group">
@@ -103,7 +125,7 @@ $departments = [
           <div class="ukn-password-field">
             <input
               type="password"
-              class="form-control"
+              class="form-control<?= $invalidIf('confirm_password') ?>"
               id="registerConfirmPassword"
               name="confirmPassword"
               placeholder="Re-enter your password"
@@ -120,9 +142,9 @@ $departments = [
             data-error-for="confirmPassword"
             data-message-required="Please confirm your password."
             data-message-mismatch="Passwords do not match."
-            hidden
+            <?= $hiddenUnless('confirm_password') ?>
           >
-            <span class="ms" aria-hidden="true">error</span><span data-message-text>Please confirm your password.</span>
+            <span class="ms" aria-hidden="true">error</span><span data-message-text><?= htmlspecialchars($errorFor('confirm_password') ?? 'Please confirm your password.') ?></span>
           </div>
         </div>
         <div class="ukn-form-group" data-validate-group="required" data-group-name="terms">
@@ -130,16 +152,13 @@ $departments = [
             <input type="checkbox" class="form-check-input" id="registerTerms" name="terms">
             <label class="form-check-label" for="registerTerms">I agree to the <a href="#">Terms</a> and <a href="#">Privacy Policy</a>.</label>
           </div>
-          <div class="ukn-field-message is-invalid" data-error-for="terms" hidden>
-            <span class="ms" aria-hidden="true">error</span>You must agree to the Terms and Privacy Policy to continue.
+          <div class="ukn-field-message is-invalid" data-error-for="terms"<?= $hiddenUnless('terms') ?>>
+            <span class="ms" aria-hidden="true">error</span><?= htmlspecialchars($errorFor('terms') ?? 'You must agree to the Terms and Privacy Policy to continue.') ?>
           </div>
         </div>
         <button type="submit" class="btn btn-primary w-100">Create Account</button>
       </form>
       <p class="ukn-auth-card__footer">Already have an account? <a href="index.php?page=login">Login</a></p>
-      <p class="ukn-auth-card__footer" data-continue-to-login hidden>
-        <span class="ms" aria-hidden="true">check_circle</span> Registered (demo only) — <a href="index.php?page=login">Continue to Login</a>
-      </p>
     </div>
   </div>
 </div>

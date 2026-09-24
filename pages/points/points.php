@@ -5,11 +5,6 @@ require_once __DIR__ . '/../../components/empty-state.php';
 require_once __DIR__ . '/../../components/error-state.php';
 require_once __DIR__ . '/../../backend/config/database.php';
 
-// TODO(auth): replace with the real session user id; mirrors index.php's own hardcoded
-// demo identity (Nabila Rahman, user id 1) until real sessions exist.
-if (!defined('UKN_DEMO_USER_ID')) {
-    define('UKN_DEMO_USER_ID', 1);
-}
 
 $activeRole = !empty($currentUser['dualRole']) ? ($currentUser['activeRole'] ?? 'learner') : ($currentUser['role'] ?? 'learner');
 $isMentor = $activeRole === 'mentor';
@@ -37,7 +32,7 @@ try {
     $pdo = getDatabaseConnection();
 
     $userStmt = $pdo->prepare("SELECT learning_points, mentor_points FROM users WHERE id = ?");
-    $userStmt->execute([UKN_DEMO_USER_ID]);
+    $userStmt->execute([UKN_CURRENT_USER_ID]);
     $user = $userStmt->fetch();
     $learningPoints = (int) ($user['learning_points'] ?? 0);
     $mentorPoints = (int) ($user['mentor_points'] ?? 0);
@@ -46,9 +41,9 @@ try {
         "SELECT COALESCE(SUM(amount), 0) FROM point_transactions
          WHERE user_id = ? AND point_type = ? AND created_at >= DATE_FORMAT(NOW(), '%Y-%m-01')"
     );
-    $monthSumStmt->execute([UKN_DEMO_USER_ID, 'learning']);
+    $monthSumStmt->execute([UKN_CURRENT_USER_ID, 'learning']);
     $learningMonth = (int) $monthSumStmt->fetchColumn();
-    $monthSumStmt->execute([UKN_DEMO_USER_ID, 'mentor']);
+    $monthSumStmt->execute([UKN_CURRENT_USER_ID, 'mentor']);
     $mentorMonth = (int) $monthSumStmt->fetchColumn();
 
     $rankStmt = $pdo->prepare(
@@ -56,7 +51,7 @@ try {
          WHERE status = 'active' AND (learning_points + mentor_points) >
                (SELECT learning_points + mentor_points FROM users WHERE id = ?)"
     );
-    $rankStmt->execute([UKN_DEMO_USER_ID]);
+    $rankStmt->execute([UKN_CURRENT_USER_ID]);
     $rank = (int) $rankStmt->fetchColumn();
 
     $totalUsersStmt = $pdo->query("SELECT COUNT(*) FROM users WHERE status = 'active'");
@@ -71,9 +66,9 @@ try {
     );
     $thisMonthStart = date('Y-m-01');
     $lastMonthStart = date('Y-m-01', strtotime('-1 month'));
-    $rangeStmt->execute([UKN_DEMO_USER_ID, $thisMonthStart, date('Y-m-d', strtotime('+1 month', strtotime($thisMonthStart)))]);
+    $rangeStmt->execute([UKN_CURRENT_USER_ID, $thisMonthStart, date('Y-m-d', strtotime('+1 month', strtotime($thisMonthStart)))]);
     $thisMonthTotal = (int) $rangeStmt->fetchColumn();
-    $rangeStmt->execute([UKN_DEMO_USER_ID, $lastMonthStart, $thisMonthStart]);
+    $rangeStmt->execute([UKN_CURRENT_USER_ID, $lastMonthStart, $thisMonthStart]);
     $lastMonthTotal = (int) $rangeStmt->fetchColumn();
     if ($lastMonthTotal !== 0) {
         $growthPct = (int) round((($thisMonthTotal - $lastMonthTotal) / abs($lastMonthTotal)) * 100);
@@ -109,7 +104,7 @@ try {
          WHERE pt.user_id = ? AND pt.point_type = ?
          ORDER BY pt.created_at DESC"
     );
-    $transactionsStmt->execute([UKN_DEMO_USER_ID, $isMentor ? 'mentor' : 'learning']);
+    $transactionsStmt->execute([UKN_CURRENT_USER_ID, $isMentor ? 'mentor' : 'learning']);
     $transactions = array_map(static function (array $row) use ($activityIcons, $isMentor): array {
         return [
             'amount' => (int) $row['amount'],

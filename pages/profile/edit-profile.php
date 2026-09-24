@@ -4,11 +4,6 @@ require_once __DIR__ . '/../../backend/config/database.php';
 
 $activeRole = !empty($currentUser['dualRole']) ? ($currentUser['activeRole'] ?? 'learner') : ($currentUser['role'] ?? 'learner');
 $isMentor = $activeRole === 'mentor';
-// TODO(auth): replace with the real session user id; mirrors index.php's own hardcoded
-// demo identity (Nabila Rahman, user id 1) until real sessions exist.
-if (!defined('UKN_DEMO_USER_ID')) {
-    define('UKN_DEMO_USER_ID', 1);
-}
 
 $years = ['1st Year', '2nd Year', '3rd Year', '4th Year'];
 $departments = [];
@@ -34,7 +29,7 @@ try {
          FROM users u LEFT JOIN departments d ON d.id = u.department_id
          WHERE u.id = ?"
     );
-    $userStmt->execute([UKN_DEMO_USER_ID]);
+    $userStmt->execute([UKN_CURRENT_USER_ID]);
     $user = $userStmt->fetch();
 
     if ($user !== false) {
@@ -49,7 +44,7 @@ try {
              WHERE us.user_id = ? AND us.skill_type = ?
              ORDER BY s.name"
         );
-        $skillsStmt->execute([UKN_DEMO_USER_ID, $isMentor ? 'teaching' : 'learning']);
+        $skillsStmt->execute([UKN_CURRENT_USER_ID, $isMentor ? 'teaching' : 'learning']);
         $currentSkills = $skillsStmt->fetchAll(PDO::FETCH_COLUMN);
     }
 
@@ -60,6 +55,17 @@ try {
     error_log('[UKN edit-profile] ' . $e->getMessage());
     $editProfileDbError = true;
 }
+// After a failed save (backend/profile/update.php), show the errors and keep what was typed.
+$profileErrors = (array) uknTakeFlash('profile_errors', []);
+$profileOld = (array) uknTakeFlash('profile_old', []);
+if ($profileOld !== []) {
+    $currentName = (string) ($profileOld['name'] ?? $currentName);
+    $currentDepartment = (string) ($profileOld['department'] ?? $currentDepartment);
+    $currentYear = (string) ($profileOld['year'] ?? $currentYear);
+    $currentBio = (string) ($profileOld['bio'] ?? $currentBio);
+    $currentSkills = array_values(array_filter(array_map('trim', explode('|', (string) ($profileOld['skills'] ?? ''))), 'strlen'));
+}
+$profileErrorFor = static fn (string $key): ?string => isset($profileErrors[$key]) ? (string) $profileErrors[$key] : null;
 ?>
 <div class="ukn-page-header">
   <div>
@@ -77,13 +83,17 @@ try {
   <div class="col-lg-8">
     <div class="card">
       <div class="card-body">
-        <form id="editProfileForm" data-profile-form data-success-message="Profile updated successfully. Demo mode only." novalidate>
+        <?php if ($profileErrorFor('form') !== null): ?>
+          <div class="mb-3"><?php ukn_error_state(['title' => $profileErrorFor('form')]); ?></div>
+        <?php endif; ?>
+        <form id="editProfileForm" data-profile-form action="backend/profile/update.php" method="post" novalidate>
+          <?= csrfField() ?>
           <div class="ukn-form-row">
             <div class="ukn-form-group">
               <label for="editProfileName" class="form-label">Full Name <span class="ukn-text-danger" aria-hidden="true">*</span></label>
-              <input type="text" class="form-control" id="editProfileName" name="name" value="<?= htmlspecialchars($currentName) ?>" data-validate="required">
-              <div class="ukn-field-message is-invalid" data-error-for="name" hidden>
-                <span class="ms" aria-hidden="true">error</span>Please enter your full name.
+              <input type="text" class="form-control<?= $profileErrorFor('name') !== null ? ' is-invalid' : '' ?>" id="editProfileName" name="name" maxlength="120" value="<?= htmlspecialchars($currentName) ?>" data-validate="required">
+              <div class="ukn-field-message is-invalid" data-error-for="name"<?= $profileErrorFor('name') === null ? ' hidden' : '' ?>>
+                <span class="ms" aria-hidden="true">error</span><?= htmlspecialchars($profileErrorFor('name') ?? 'Please enter your full name.') ?>
               </div>
             </div>
             <div class="ukn-form-group">
@@ -100,23 +110,30 @@ try {
                   <option value="<?= htmlspecialchars($dept) ?>" <?= $dept === $currentDepartment ? 'selected' : '' ?>><?= htmlspecialchars($dept) ?></option>
                 <?php endforeach; ?>
               </select>
-              <div class="ukn-field-message is-invalid" data-error-for="department" hidden>
-                <span class="ms" aria-hidden="true">error</span>Choose a department.
+              <div class="ukn-field-message is-invalid" data-error-for="department"<?= $profileErrorFor('department') === null ? ' hidden' : '' ?>>
+                <span class="ms" aria-hidden="true">error</span><?= htmlspecialchars($profileErrorFor('department') ?? 'Choose a department.') ?>
               </div>
             </div>
             <div class="ukn-form-group">
               <label for="editProfileYear" class="form-label">Year of Study</label>
               <select class="form-select" id="editProfileYear" name="year">
+                <?php if ($currentYear === ''): ?><option value="" selected>Not specified</option><?php endif; ?>
                 <?php foreach ($years as $year): ?>
                   <option value="<?= htmlspecialchars($year) ?>" <?= $year === $currentYear ? 'selected' : '' ?>><?= htmlspecialchars($year) ?></option>
                 <?php endforeach; ?>
               </select>
+              <?php if ($profileErrorFor('year') !== null): ?>
+                <div class="ukn-field-message is-invalid"><span class="ms" aria-hidden="true">error</span><?= htmlspecialchars($profileErrorFor('year')) ?></div>
+              <?php endif; ?>
             </div>
           </div>
           <div class="ukn-form-group">
             <label for="editProfileBio" class="form-label">Bio</label>
-            <textarea class="form-control" id="editProfileBio" name="bio" maxlength="300" data-bio-char-input><?= htmlspecialchars($currentBio) ?></textarea>
-            <div class="ukn-body-sm mt-1"><span data-bio-char-count><?= strlen($currentBio) ?></span> / 300 characters</div>
+            <textarea class="form-control<?= $profileErrorFor('bio') !== null ? ' is-invalid' : '' ?>" id="editProfileBio" name="bio" maxlength="300" data-bio-char-input><?= htmlspecialchars($currentBio) ?></textarea>
+            <div class="ukn-body-sm mt-1"><span data-bio-char-count><?= mb_strlen($currentBio, 'UTF-8') ?></span> / 300 characters</div>
+            <?php if ($profileErrorFor('bio') !== null): ?>
+              <div class="ukn-field-message is-invalid"><span class="ms" aria-hidden="true">error</span><?= htmlspecialchars($profileErrorFor('bio')) ?></div>
+            <?php endif; ?>
           </div>
           <div class="ukn-form-group">
             <label for="editProfileSkillInput" class="form-label"><?= htmlspecialchars($skillsLabel) ?></label>
@@ -134,6 +151,9 @@ try {
               <?php endforeach; ?>
             </datalist>
             <input type="hidden" name="skills" data-skill-value value="<?= htmlspecialchars(implode('|', $currentSkills)) ?>">
+            <?php if ($profileErrorFor('skills') !== null): ?>
+              <div class="ukn-field-message is-invalid"><span class="ms" aria-hidden="true">error</span><?= htmlspecialchars($profileErrorFor('skills')) ?></div>
+            <?php endif; ?>
           </div>
           <?php if ($isMentor): ?>
             <div class="ukn-form-group mb-0">
@@ -156,7 +176,7 @@ try {
     <div class="card">
       <div class="card-body text-center">
         <div class="ukn-eyebrow mb-3">Profile Photo</div>
-        <span class="ukn-avatar ukn-avatar-photo" aria-hidden="true" data-photo-preview data-photo-initials="<?= htmlspecialchars($currentUser['initials'] ?? 'NR') ?>"><?= htmlspecialchars($currentUser['initials'] ?? 'NR') ?></span>
+        <span class="ukn-avatar ukn-avatar-photo" aria-hidden="true" data-photo-preview data-photo-initials="<?= htmlspecialchars($currentUser['initials'] ?? '') ?>"><?= htmlspecialchars($currentUser['initials'] ?? '') ?></span>
         <input type="file" accept="image/*" hidden data-photo-input>
         <button type="button" class="btn btn-outline-secondary btn-sm w-100 mt-3" data-photo-upload-trigger>Upload New Photo</button>
         <button type="button" class="btn btn-outline-danger btn-sm w-100 mt-2" data-photo-remove-trigger>Remove Photo</button>

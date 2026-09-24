@@ -1,4 +1,7 @@
 <?php
+require_once __DIR__ . '/../backend/helpers/auth.php';
+requireAdmin();
+require_once __DIR__ . '/../backend/helpers/csrf.php';
 require_once __DIR__ . '/../components/empty-state.php';
 require_once __DIR__ . '/../components/error-state.php';
 require_once __DIR__ . '/../components/stat-card.php';
@@ -224,6 +227,12 @@ require __DIR__ . '/includes/header.php';
             <td data-label="Status"><span class="ukn-status <?= $statusClass[$p['status']] ?>" data-post-status-badge><?= htmlspecialchars($statusLabels[$p['status']]) ?></span></td>
             <td data-label="Posted"><?= htmlspecialchars($p['posted']) ?></td>
             <td data-label="Actions">
+              <form action="../backend/admin/posts/status.php" method="post" id="postStatus-<?= (int) $p['publicId'] ?>" hidden>
+                <?= csrfField() ?>
+                <?= uknReturnToField() ?>
+                <input type="hidden" name="post_id" value="<?= (int) $p['publicId'] ?>">
+                <input type="hidden" name="status" value="<?= $isVisible ? 'hidden' : 'visible' ?>">
+              </form>
               <div class="d-flex gap-1 justify-content-md-end">
                 <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#postDetailModal" data-post-view>View</button>
                 <div class="dropdown">
@@ -237,27 +246,17 @@ require __DIR__ . '/includes/header.php';
                         class="dropdown-item"
                         data-bs-toggle="modal"
                         data-bs-target="#deleteConfirmationModal"
-                        data-post-hide
-                        <?= $isVisible ? '' : 'hidden' ?>
+                        data-delete-form="postStatus-<?= (int) $p['publicId'] ?>"
+                        <?php if ($isVisible): ?>
                         data-delete-title="Hide Post?"
-                        data-delete-message="Hide &ldquo;<?= htmlspecialchars($p['title']) ?>&rdquo; from the community in demo mode? This is a demo action — no participants will be notified and no backend data will be changed."
+                        data-delete-message="Hide &ldquo;<?= htmlspecialchars($p['title']) ?>&rdquo; from the community? It disappears from feeds, search and its own page; its comments, votes, saves and reports are kept, and it can be restored."
                         data-delete-confirm-label="Hide Post"
-                        data-success-message="Post hidden in demo mode."
-                      >Hide</button>
-                    </li>
-                    <li>
-                      <button
-                        type="button"
-                        class="dropdown-item"
-                        data-bs-toggle="modal"
-                        data-bs-target="#deleteConfirmationModal"
-                        data-post-restore
-                        <?= $isVisible ? 'hidden' : '' ?>
+                        <?php else: ?>
                         data-delete-title="Restore Post?"
-                        data-delete-message="Restore &ldquo;<?= htmlspecialchars($p['title']) ?>&rdquo; so it's visible to the community again? This is a demo action only."
+                        data-delete-message="Restore &ldquo;<?= htmlspecialchars($p['title']) ?>&rdquo; so it's visible to the community again?"
                         data-delete-confirm-label="Restore Post"
-                        data-success-message="Post restored in demo mode."
-                      >Restore</button>
+                        <?php endif; ?>
+                      ><?= $isVisible ? 'Hide' : 'Restore' ?></button>
                     </li>
                     <?php if ($p['reports'] > 0): ?>
                       <li><a class="dropdown-item" href="reports.php">Review Reports</a></li>

@@ -1,4 +1,6 @@
 <?php
+require_once __DIR__ . '/../backend/helpers/auth.php';
+requireAdmin();
 require_once __DIR__ . '/../components/stat-card.php';
 require_once __DIR__ . '/../components/error-state.php';
 require_once __DIR__ . '/../backend/helpers/format.php';

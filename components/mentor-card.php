@@ -6,11 +6,16 @@ if (!function_exists('ukn_mentor_card')) {
             'initials' => '?', 'department' => '', 'primarySkill' => '', 'otherSkills' => [],
             'rating' => null, 'sessions' => null, 'points' => null, 'availability' => '',
             'profileHref' => '#', 'match' => null, 'matchLabel' => null, 'skillOptions' => null,
+            'id' => null, 'score' => null, 'reasons' => [],
         ];
         $isRecommendation = ($options['variant'] ?? 'default') === 'recommendation';
         $requestSkillOptions = $mentor['skillOptions'] ?? array_values(array_filter(array_merge([$mentor['primarySkill']], $mentor['otherSkills'])));
+        $recommendationAttrs = $isRecommendation && $mentor['id'] !== null
+            ? ' data-recommendation-mentor="' . (int) $mentor['id'] . '"'
+                . ($mentor['score'] !== null ? ' data-recommendation-score="' . number_format((float) $mentor['score'], 2, '.', '') . '"' : '')
+            : '';
         ?>
-        <div class="card ukn-card-interactive mb-3">
+        <div class="card ukn-card-interactive mb-3"<?= $recommendationAttrs ?>>
           <div class="card-body">
             <div class="d-flex gap-3 align-items-start">
               <span class="ukn-avatar ukn-avatar-lg flex-shrink-0" aria-hidden="true"><?= htmlspecialchars($mentor['initials']) ?></span>
@@ -34,6 +39,13 @@ if (!function_exists('ukn_mentor_card')) {
               $isBest = $mentor['matchLabel'] === 'Best Match';
             ?>
               <span class="ukn-status <?= $isBest ? 'ukn-status-accent' : 'ukn-status-neutral' ?> mt-3 d-inline-flex"><?= htmlspecialchars($mentor['matchLabel']) ?></span>
+            <?php endif; ?>
+            <?php if ($isRecommendation && $mentor['reasons']): ?>
+              <ul class="ukn-body-sm mt-3 mb-0 ps-3" data-recommendation-reasons>
+                <?php foreach ($mentor['reasons'] as $reason): ?>
+                  <li><?= htmlspecialchars($reason) ?></li>
+                <?php endforeach; ?>
+              </ul>
             <?php endif; ?>
             <?php if ($mentor['otherSkills']): ?>
               <div class="d-flex flex-wrap gap-2 my-3">
@@ -67,6 +79,7 @@ if (!function_exists('ukn_mentor_card')) {
                 class="btn btn-primary btn-sm flex-fill"
                 data-bs-toggle="modal"
                 data-bs-target="#sessionRequestModal"
+                data-request-mentor-id="<?= $mentor['id'] !== null ? (int) $mentor['id'] : '' ?>"
                 data-request-name="<?= htmlspecialchars($mentor['name']) ?>"
                 data-request-initials="<?= htmlspecialchars($mentor['initials']) ?>"
                 data-request-department="<?= htmlspecialchars($mentor['department']) ?>"

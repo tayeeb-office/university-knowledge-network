@@ -1,16 +1,12 @@
 <?php
 require_once __DIR__ . '/../../components/error-state.php';
 require_once __DIR__ . '/../../components/empty-state.php';
+require_once __DIR__ . '/../../components/session-card.php';
 require_once __DIR__ . '/../../backend/config/database.php';
 require_once __DIR__ . '/../../backend/helpers/format.php';
 
 $activeRole = !empty($currentUser['dualRole']) ? ($currentUser['activeRole'] ?? 'learner') : ($currentUser['role'] ?? 'learner');
 $isMentorView = $activeRole === 'mentor';
-// TODO(auth): replace with the real session user id; mirrors index.php's own hardcoded
-// demo identity (Nabila Rahman, user id 1) until real sessions exist.
-if (!defined('UKN_DEMO_USER_ID')) {
-    define('UKN_DEMO_USER_ID', 1);
-}
 
 $requestedId = isset($_GET['id']) && is_numeric($_GET['id']) ? (int) $_GET['id'] : 0;
 $session = false;
@@ -39,19 +35,16 @@ try {
     // Access control: only a participant in the session (learner or mentor) may view it,
     // not just anyone who guesses an id (see DATABASE_READ_INTEGRATION_PLAN.md §2.5).
     $stmt = $pdo->prepare($selectBase . "AND ms.id = ?");
-    $stmt->execute([UKN_DEMO_USER_ID, UKN_DEMO_USER_ID, $requestedId]);
+    $stmt->execute([UKN_CURRENT_USER_ID, UKN_CURRENT_USER_ID, $requestedId]);
+    // A missing id, a non-existent id and someone else's session all show "Session not found".
     $session = $stmt->fetch();
 
-    if ($session === false) {
-        // No matching/accessible session for the requested id: fall back to the demo
-        // user's most recently requested session, mirroring the page's previous
-        // "always show something" mock behaviour.
-        $stmt = $pdo->prepare($selectBase . "ORDER BY ms.requested_at DESC LIMIT 1");
-        $stmt->execute([UKN_DEMO_USER_ID, UKN_DEMO_USER_ID]);
-        $session = $stmt->fetch();
-    }
-
     if ($session !== false) {
+        // Actions depend on the viewer's side in *this* session, and are offered only while
+        // their active role matches that side (the endpoints enforce the same rule).
+        $viewerSide = (int) $session['mentor_id'] === UKN_CURRENT_USER_ID ? 'mentor' : 'learner';
+        $canActOnSession = $viewerSide === $activeRole;
+        $isMentorView = $viewerSide === 'mentor';
         $displayStatus = $session['status'] === 'accepted' ? 'upcoming' : $session['status'];
 
         $skillsStmt = $pdo->prepare(
@@ -196,33 +189,46 @@ if ($session !== false) {
           </div>
         <?php endif; ?>
         <div class="d-flex gap-2 flex-wrap mt-3" data-session-actions>
-          <?php if ($session['status'] === 'pending' && $isMentorView): ?>
-            <button type="button" class="btn btn-primary btn-sm" data-session-accept>Accept Request</button>
+          <?php if ($session['status'] === 'pending' && $isMentorView && $canActOnSession): ?>
+            <?php ukn_session_action_form($session['id'], 'accept', null, 'Accept Request'); ?>
             <button
               type="button" class="btn btn-outline-danger btn-sm"
               data-bs-toggle="modal" data-bs-target="#deleteConfirmationModal"
               data-delete-title="Reject this request?"
-              data-delete-message="The learner will be notified that this request was not accepted."
-              data-delete-confirm-label="Reject" data-success-message="Session request rejected."
-              data-reject-session
+              data-delete-message="The learner will see that this request was not accepted."
+              data-delete-confirm-label="Reject"
+              data-delete-form="sessionReject-<?= $session['id'] ?>"
             >Reject Request</button>
-          <?php elseif ($session['status'] === 'upcoming'): ?>
+            <?php ukn_session_action_form($session['id'], 'reject', 'sessionReject-' . $session['id']); ?>
+          <?php elseif ($session['status'] === 'pending' && !$isMentorView && $canActOnSession): ?>
+            <button
+              type="button" class="btn btn-outline-danger btn-sm"
+              data-bs-toggle="modal" data-bs-target="#deleteConfirmationModal"
+              data-delete-title="Cancel this request?"
+              data-delete-message="The mentor will no longer see this request."
+              data-delete-confirm-label="Cancel Request"
+              data-delete-form="sessionCancel-<?= $session['id'] ?>"
+            >Cancel Request</button>
+            <?php ukn_session_action_form($session['id'], 'cancel', 'sessionCancel-' . $session['id']); ?>
+          <?php elseif ($session['status'] === 'upcoming' && $canActOnSession): ?>
             <?php if ($isMentorView): ?>
-              <button type="button" class="btn btn-primary btn-sm" data-session-mark-complete>Mark Session Complete</button>
+              <?php ukn_session_action_form($session['id'], 'complete', null, 'Mark Session Complete'); ?>
             <?php endif; ?>
             <button
               type="button" class="btn btn-outline-danger btn-sm"
               data-bs-toggle="modal" data-bs-target="#deleteConfirmationModal"
               data-delete-title="Cancel Session?"
-              data-delete-message="Are you sure you want to cancel this session?"
-              data-delete-confirm-label="Cancel Session" data-success-message="Session cancelled."
-              data-cancel-session
+              data-delete-message="Are you sure you want to cancel this session? Cancelling within 6 hours of the start costs 10 points."
+              data-delete-confirm-label="Cancel Session"
+              data-delete-form="sessionCancel-<?= $session['id'] ?>"
             >Cancel Session</button>
+            <?php ukn_session_action_form($session['id'], 'cancel', 'sessionCancel-' . $session['id']); ?>
           <?php elseif ($session['status'] === 'completed' && !$isMentorView): ?>
-            <?php if ($session['ratingStatus'] === 'unrated'): ?>
+            <?php if ($session['ratingStatus'] === 'unrated' && $canActOnSession): ?>
               <button
                 type="button" class="btn btn-primary btn-sm"
                 data-bs-toggle="modal" data-bs-target="#ratingModal"
+                data-rating-session-id="<?= (int) $session['id'] ?>"
                 data-rating-mentor="<?= htmlspecialchars($session['mentor']['name']) ?>"
                 data-rating-skill="<?= htmlspecialchars($session['skill']) ?>"
                 data-rating-date="<?= htmlspecialchars($session['date']) ?>"

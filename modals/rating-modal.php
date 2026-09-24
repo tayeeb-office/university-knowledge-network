@@ -1,7 +1,6 @@
 <?php
-$ratingSession = $ratingSession ?? [
-    'mentor' => 'Rahim Ahmed', 'skill' => 'Python', 'date' => '12 September',
-];
+// Filled per trigger by modal.js (data-rating-* attributes); saved by backend/sessions/rate.php.
+$ratingSession = ($ratingSession ?? []) + ['mentor' => '', 'skill' => '', 'date' => ''];
 $ratingCategories = [
     ['name' => 'rating_teaching', 'label' => 'Teaching Quality', 'required' => false],
     ['name' => 'rating_communication', 'label' => 'Communication', 'required' => false],
@@ -12,7 +11,10 @@ $ratingCategories = [
 <div class="modal fade" id="ratingModal" tabindex="-1" aria-labelledby="ratingModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
     <div class="modal-content">
-      <form data-mock-form="rating" data-success-message="Rating submitted successfully." novalidate>
+      <form action="backend/sessions/rate.php" method="post" data-validated-form novalidate>
+        <?= function_exists('csrfField') ? csrfField() : '' ?>
+        <?= function_exists('uknReturnToField') ? uknReturnToField() : '' ?>
+        <input type="hidden" name="session_id" value="" data-rating-session-id-input>
         <div class="modal-header">
           <h2 class="modal-title ukn-h3" id="ratingModalLabel">Rate Your Session</h2>
           <button type="button" class="btn-icon" data-bs-dismiss="modal" aria-label="Close">
@@ -49,7 +51,7 @@ $ratingCategories = [
           <?php endforeach; ?>
           <div class="ukn-form-group mb-0">
             <label for="ratingReview" class="form-label">Written Review</label>
-            <textarea class="form-control ukn-textarea-lg" id="ratingReview" name="review" placeholder="Share what was helpful about this session..."></textarea>
+            <textarea class="form-control ukn-textarea-lg" id="ratingReview" name="review" maxlength="2000" placeholder="Share what was helpful about this session..."></textarea>
           </div>
         </div>
         <div class="modal-footer">

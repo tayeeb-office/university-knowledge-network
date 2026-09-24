@@ -1,4 +1,7 @@
 <?php
+require_once __DIR__ . '/../backend/helpers/auth.php';
+requireAdmin();
+require_once __DIR__ . '/../backend/helpers/csrf.php';
 require_once __DIR__ . '/../components/empty-state.php';
 require_once __DIR__ . '/../components/error-state.php';
 require_once __DIR__ . '/../components/stat-card.php';
@@ -132,8 +135,10 @@ require __DIR__ . '/includes/header.php';
       </thead>
       <tbody>
         <?php foreach ($users as $id => $user):
+            $id = (int) $id;
             $sessions = (int) $user['sessions_as_learner'] + (int) $user['sessions_as_mentor'];
             $isSuspended = $user['status'] === 'suspended';
+            $isSelf = $id === (int) getCurrentUser()['id'];
         ?>
           <tr
             data-user-row
@@ -165,6 +170,13 @@ require __DIR__ . '/includes/header.php';
             <td data-label="Joined"><?= htmlspecialchars($user['joined']) ?></td>
             <td data-label="Sessions"><?= (int) $sessions ?></td>
             <td data-label="Actions">
+              <?php if ($isSuspended && !$isSelf): ?>
+                <form action="../backend/admin/users/restore.php" method="post" id="userRestore-<?= $id ?>" hidden>
+                  <?= csrfField() ?>
+                  <?= uknReturnToField() ?>
+                  <input type="hidden" name="user_id" value="<?= $id ?>">
+                </form>
+              <?php endif; ?>
               <div class="d-flex gap-1 justify-content-md-end">
                 <a href="user-details.php?id=<?= $id ?>" class="btn btn-outline-secondary btn-sm">View</a>
                 <div class="dropdown">
@@ -172,34 +184,33 @@ require __DIR__ . '/includes/header.php';
                     <span class="ms" aria-hidden="true">more_vert</span>
                   </button>
                   <ul class="dropdown-menu dropdown-menu-end">
+                    <?php if ($isSelf): ?>
+                    <li><span class="dropdown-item-text ukn-body-sm ukn-text-muted">This is your account</span></li>
+                    <?php elseif ($isSuspended): ?>
                     <li>
                       <button
                         type="button"
                         class="dropdown-item"
                         data-bs-toggle="modal"
                         data-bs-target="#deleteConfirmationModal"
-                        data-suspend-user
-                        <?= $isSuspended ? 'hidden' : '' ?>
-                        data-delete-title="Suspend <?= htmlspecialchars($user['name']) ?>?"
-                        data-delete-message="This is a frontend demo. The account status will only change in the current mock state."
-                        data-delete-confirm-label="Suspend User"
-                        data-success-message="User suspended in demo mode."
-                      >Suspend</button>
-                    </li>
-                    <li>
-                      <button
-                        type="button"
-                        class="dropdown-item"
-                        data-bs-toggle="modal"
-                        data-bs-target="#deleteConfirmationModal"
-                        data-restore-user
-                        <?= $isSuspended ? '' : 'hidden' ?>
+                        data-delete-form="userRestore-<?= $id ?>"
                         data-delete-title="Restore <?= htmlspecialchars($user['name']) ?>?"
-                        data-delete-message="This is a frontend demo. The account status will only change in the current mock state."
+                        data-delete-message="The account becomes active again and the suspend reason is cleared."
                         data-delete-confirm-label="Restore User"
-                        data-success-message="User restored in demo mode."
                       >Restore</button>
                     </li>
+                    <?php else: ?>
+                    <li>
+                      <button
+                        type="button"
+                        class="dropdown-item"
+                        data-bs-toggle="modal"
+                        data-bs-target="#suspendUserModal"
+                        data-suspend-user-id="<?= $id ?>"
+                        data-suspend-user-name="<?= htmlspecialchars($user['name']) ?>"
+                      >Suspend</button>
+                    </li>
+                    <?php endif; ?>
                   </ul>
                 </div>
               </div>
@@ -225,4 +236,5 @@ require __DIR__ . '/includes/header.php';
 </div>
 <?php endif; ?>
 
+<?php require __DIR__ . '/includes/suspend-user-modal.php'; ?>
 <?php require __DIR__ . '/includes/footer.php'; ?>

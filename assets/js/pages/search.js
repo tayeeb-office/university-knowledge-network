@@ -11,7 +11,8 @@
   document.querySelectorAll('[data-search-empty]').forEach(function (el) {
     emptyStates[el.getAttribute('data-search-empty')] = el;
   });
-  var query = new URLSearchParams(window.location.search).get('q') || '';
+  // The server-normalised query (trimmed, length-capped), not the raw URL value.
+  var query = summary ? (summary.getAttribute('data-search-query') || '') : '';
   var typeLabel = { all: 'result', skill: 'skill', mentor: 'mentor', learner: 'learner', post: 'post' };
   function applyFilter(type) {
     var visibleCount = 0;

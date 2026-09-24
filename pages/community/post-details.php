@@ -4,6 +4,53 @@ require_once __DIR__ . '/../../components/error-state.php';
 require_once __DIR__ . '/../../components/empty-state.php';
 require_once __DIR__ . '/../../backend/config/database.php';
 require_once __DIR__ . '/../../backend/helpers/format.php';
+require_once __DIR__ . '/../../backend/helpers/community.php';
+
+// Edit / delete controls for your own comments and replies (backend/comments/*.php).
+$commentOwnerControls = static function (array $item): void {
+    if (empty($item['isOwner'])) {
+        return;
+    }
+    $id = (int) $item['id'];
+    ?>
+    <button type="button" class="btn-ghost" data-comment-edit-toggle>Edit</button>
+    <button
+      type="button" class="btn-ghost ukn-text-danger"
+      data-bs-toggle="modal" data-bs-target="#deleteConfirmationModal"
+      data-delete-title="Delete this comment?"
+      data-delete-message="Your comment and any replies to it will be removed."
+      data-delete-confirm-label="Delete"
+      data-delete-form="deleteComment-<?= $id ?>"
+    >Delete</button>
+    <?php
+};
+$commentOwnerForms = static function (array $item): void {
+    if (empty($item['isOwner'])) {
+        return;
+    }
+    $id = (int) $item['id'];
+    ?>
+    <form data-comment-edit-form action="backend/comments/update.php" method="post" hidden class="mt-3" novalidate>
+      <?= csrfField() ?>
+      <?= uknReturnToField() ?>
+      <input type="hidden" name="comment_id" value="<?= $id ?>">
+      <label class="ukn-visually-hidden" for="editComment-<?= $id ?>">Edit your comment</label>
+      <textarea class="form-control form-control-sm" id="editComment-<?= $id ?>" name="content" maxlength="<?= UKN_COMMENT_MAX ?>"><?= htmlspecialchars($item['text']) ?></textarea>
+      <div class="ukn-field-message is-invalid mt-1" data-reply-error hidden>
+        <span class="ms" aria-hidden="true">error</span>Write something before saving.
+      </div>
+      <div class="d-flex gap-2 mt-2">
+        <button type="button" class="btn btn-outline-secondary btn-sm" data-reply-cancel>Cancel</button>
+        <button type="submit" class="btn btn-primary btn-sm">Save</button>
+      </div>
+    </form>
+    <form id="deleteComment-<?= $id ?>" action="backend/comments/delete.php" method="post" hidden>
+      <?= csrfField() ?>
+      <?= uknReturnToField() ?>
+      <input type="hidden" name="comment_id" value="<?= $id ?>">
+    </form>
+    <?php
+};
 
 $requestedId = isset($_GET['id']) && is_numeric($_GET['id']) ? (int) $_GET['id'] : 0;
 $post = false;
@@ -22,15 +69,8 @@ try {
 
     $stmt = $pdo->prepare($selectBase . "AND p.id = ?");
     $stmt->execute([$requestedId]);
+    // A missing, deleted or hidden post shows "Post not found" (no fallback to another post).
     $post = $stmt->fetch();
-
-    if ($post === false) {
-        // No matching/visible post for the requested id: fall back to the most recent
-        // visible post, mirroring the page's previous "always show something" mock behaviour.
-        $stmt = $pdo->prepare($selectBase . "ORDER BY p.created_at DESC LIMIT 1");
-        $stmt->execute();
-        $post = $stmt->fetch();
-    }
 
     if ($post !== false) {
         $postId = (int) $post['id'];
@@ -40,9 +80,9 @@ try {
         $post['role'] = ukn_role_label($post['role']);
         $post['time'] = ukn_time_ago($post['created_at']);
         $post['authorHref'] = ukn_route_href($post['role'] === 'Mentor' ? 'mentor-profile' : 'learner-profile') . '&id=' . $post['author_id'];
-        // TODO(auth): ownership/saved state need the current session user; not determinable yet.
-        $post['isOwner'] = false;
-        $post['saved'] = false;
+        $post['content'] = $post['excerpt'];
+        // Viewer's own vote / saved / owner state.
+        $post = uknDecoratePosts([$post])[0];
 
         $tagsStmt = $pdo->prepare(
             "SELECT s.name FROM post_skills ps JOIN skills s ON s.id = ps.skill_id WHERE ps.post_id = ?"
@@ -69,6 +109,8 @@ try {
             $isMentorAuthor = in_array($row['role'], ['mentor', 'dual'], true);
             $replies = array_map(static function (array $reply) {
                 return [
+                    'id' => (int) $reply['id'],
+                    'isOwner' => UKN_CURRENT_USER_ID > 0 && (int) $reply['author_id'] === UKN_CURRENT_USER_ID,
                     'author' => $reply['author'],
                     'initials' => $reply['initials'],
                     'role' => ukn_role_label($reply['role']),
@@ -77,6 +119,8 @@ try {
                 ];
             }, $byParent[$row['id']] ?? []);
             return [
+                'id' => (int) $row['id'],
+                'isOwner' => UKN_CURRENT_USER_ID > 0 && (int) $row['author_id'] === UKN_CURRENT_USER_ID,
                 'author' => $row['author'],
                 'initials' => $row['initials'],
                 'role' => ukn_role_label($row['role']),
@@ -113,12 +157,18 @@ try {
   <div class="card mb-3" id="comments">
     <div class="card-body">
       <h2 class="ukn-h4 mb-3"><span data-comments-heading-count><?= (int) $post['comments'] ?></span> Comments</h2>
-      <form data-comment-form novalidate>
-        <div class="ukn-cluster align-items-start" data-comment-composer data-current-user-name="<?= htmlspecialchars($currentUser['name'] ?? 'Nabila Rahman') ?>" data-current-user-initials="<?= htmlspecialchars($currentUser['initials'] ?? 'NR') ?>">
-          <span class="ukn-avatar flex-shrink-0" aria-hidden="true"><?= htmlspecialchars($currentUser['initials'] ?? 'NR') ?></span>
+      <?php if (empty($currentUser['loggedIn'])): ?>
+        <p class="ukn-body-sm mb-0"><a href="<?= htmlspecialchars(ukn_route_href('login')) ?>">Log in</a> to join the discussion.</p>
+      <?php else: ?>
+      <form data-comment-form action="backend/comments/create.php" method="post" novalidate>
+        <?= csrfField() ?>
+        <?= uknReturnToField() ?>
+        <input type="hidden" name="post_id" value="<?= (int) $post['id'] ?>">
+        <div class="ukn-cluster align-items-start" data-comment-composer data-current-user-name="<?= htmlspecialchars($currentUser['name'] ?? '') ?>" data-current-user-initials="<?= htmlspecialchars($currentUser['initials'] ?? '') ?>">
+          <span class="ukn-avatar flex-shrink-0" aria-hidden="true"><?= htmlspecialchars($currentUser['initials'] ?? '') ?></span>
           <div class="flex-fill ukn-min-w-0">
             <label for="newCommentText" class="ukn-visually-hidden">Add to the discussion</label>
-            <textarea class="form-control" id="newCommentText" placeholder="Add to the discussion..."></textarea>
+            <textarea class="form-control" id="newCommentText" name="content" maxlength="<?= UKN_COMMENT_MAX ?>" placeholder="Add to the discussion..."></textarea>
             <div class="ukn-field-message is-invalid mt-1" data-comment-error hidden>
               <span class="ms" aria-hidden="true">error</span>Write a comment before posting.
             </div>
@@ -128,6 +178,7 @@ try {
           </div>
         </div>
       </form>
+      <?php endif; ?>
     </div>
   </div>
   <div data-comments-list>
@@ -145,12 +196,21 @@ try {
             </div>
             <p class="ukn-body-sm mb-2"><?= htmlspecialchars($comment['text']) ?></p>
             <div class="d-flex align-items-center gap-3 flex-wrap">
-              <button type="button" class="btn-ghost" data-comment-reply-toggle>Reply</button>
+              <?php if (!empty($currentUser['loggedIn'])): ?>
+                <button type="button" class="btn-ghost" data-comment-reply-toggle>Reply</button>
+              <?php endif; ?>
               <button type="button" class="btn-ghost" data-comment-report>Report</button>
+              <?php $commentOwnerControls($comment); ?>
             </div>
-            <form data-reply-form hidden class="mt-3" novalidate>
-              <label class="ukn-visually-hidden">Reply to <?= htmlspecialchars($comment['author']) ?></label>
-              <textarea class="form-control form-control-sm" placeholder="Write a reply..."></textarea>
+            <?php $commentOwnerForms($comment); ?>
+            <?php if (!empty($currentUser['loggedIn'])): ?>
+            <form data-reply-form action="backend/comments/create.php" method="post" hidden class="mt-3" novalidate>
+              <?= csrfField() ?>
+              <?= uknReturnToField() ?>
+              <input type="hidden" name="post_id" value="<?= (int) $post['id'] ?>">
+              <input type="hidden" name="parent_id" value="<?= (int) $comment['id'] ?>">
+              <label class="ukn-visually-hidden" for="replyTo-<?= (int) $comment['id'] ?>">Reply to <?= htmlspecialchars($comment['author']) ?></label>
+              <textarea class="form-control form-control-sm" id="replyTo-<?= (int) $comment['id'] ?>" name="content" maxlength="<?= UKN_COMMENT_MAX ?>" placeholder="Write a reply..."></textarea>
               <div class="ukn-field-message is-invalid mt-1" data-reply-error hidden>
                 <span class="ms" aria-hidden="true">error</span>Write a reply before posting.
               </div>
@@ -159,6 +219,7 @@ try {
                 <button type="submit" class="btn btn-primary btn-sm">Reply</button>
               </div>
             </form>
+            <?php endif; ?>
           </div>
         </div>
         <div data-replies-list class="mt-2">
@@ -174,6 +235,10 @@ try {
                   </div>
                 </div>
                 <p class="ukn-body-sm mb-0"><?= htmlspecialchars($reply['text']) ?></p>
+                <?php if (!empty($reply['isOwner'])): ?>
+                  <div class="d-flex align-items-center gap-3 flex-wrap mt-2"><?php $commentOwnerControls($reply); ?></div>
+                  <?php $commentOwnerForms($reply); ?>
+                <?php endif; ?>
               </div>
             </div>
           <?php endforeach; ?>

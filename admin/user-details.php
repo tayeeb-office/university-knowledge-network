@@ -1,4 +1,7 @@
 <?php
+require_once __DIR__ . '/../backend/helpers/auth.php';
+requireAdmin();
+require_once __DIR__ . '/../backend/helpers/csrf.php';
 require_once __DIR__ . '/../components/stat-card.php';
 require_once __DIR__ . '/../components/error-state.php';
 require_once __DIR__ . '/../backend/config/database.php';
@@ -162,6 +165,7 @@ $roleLabels = ['learner' => 'Learner', 'mentor' => 'Mentor', 'dual' => 'Learner 
 $statusLabels = ['active' => 'Active', 'inactive' => 'Inactive', 'suspended' => 'Suspended'];
 $statusClass = ['active' => 'ukn-status-accent', 'inactive' => 'ukn-status-neutral', 'suspended' => 'ukn-status-neutral'];
 $isSuspended = $user['status'] === 'suspended';
+$isSelf = (int) $requestedId === (int) getCurrentUser()['id'];
 ?>
 <div class="card mb-4">
   <div class="card-body">
@@ -178,30 +182,34 @@ $isSuspended = $user['status'] === 'suspended';
       </div>
       <div class="d-flex flex-column gap-2 flex-shrink-0">
         <a href="users.php" class="btn btn-outline-secondary btn-sm">Back to Users</a>
-        <button
-          type="button"
-          class="btn btn-outline-danger btn-sm"
-          data-bs-toggle="modal"
-          data-bs-target="#deleteConfirmationModal"
-          data-suspend-user
-          <?= $isSuspended ? 'hidden' : '' ?>
-          data-delete-title="Suspend <?= htmlspecialchars($user['name']) ?>?"
-          data-delete-message="This is a frontend demo. The account status will only change in the current mock state."
-          data-delete-confirm-label="Suspend User"
-          data-success-message="User suspended in demo mode."
-        >Suspend User</button>
-        <button
-          type="button"
-          class="btn btn-primary btn-sm"
-          data-bs-toggle="modal"
-          data-bs-target="#deleteConfirmationModal"
-          data-restore-user
-          <?= $isSuspended ? '' : 'hidden' ?>
-          data-delete-title="Restore <?= htmlspecialchars($user['name']) ?>?"
-          data-delete-message="This is a frontend demo. The account status will only change in the current mock state."
-          data-delete-confirm-label="Restore User"
-          data-success-message="User restored in demo mode."
-        >Restore User</button>
+        <?php if ($isSelf): ?>
+          <span class="ukn-body-sm ukn-text-muted">This is your account</span>
+        <?php elseif ($isSuspended): ?>
+          <form action="../backend/admin/users/restore.php" method="post" id="userRestore-<?= $requestedId ?>" hidden>
+            <?= csrfField() ?>
+            <?= uknReturnToField() ?>
+            <input type="hidden" name="user_id" value="<?= $requestedId ?>">
+          </form>
+          <button
+            type="button"
+            class="btn btn-primary btn-sm"
+            data-bs-toggle="modal"
+            data-bs-target="#deleteConfirmationModal"
+            data-delete-form="userRestore-<?= $requestedId ?>"
+            data-delete-title="Restore <?= htmlspecialchars($user['name']) ?>?"
+            data-delete-message="The account becomes active again and the suspend reason is cleared."
+            data-delete-confirm-label="Restore User"
+          >Restore User</button>
+        <?php else: ?>
+          <button
+            type="button"
+            class="btn btn-outline-danger btn-sm"
+            data-bs-toggle="modal"
+            data-bs-target="#suspendUserModal"
+            data-suspend-user-id="<?= $requestedId ?>"
+            data-suspend-user-name="<?= htmlspecialchars($user['name']) ?>"
+          >Suspend User</button>
+        <?php endif; ?>
       </div>
     </div>
   </div>
@@ -315,4 +323,5 @@ $isSuspended = $user['status'] === 'suspended';
     </div>
   </div>
 </div>
+<?php require __DIR__ . '/includes/suspend-user-modal.php'; ?>
 <?php require __DIR__ . '/includes/footer.php'; ?>

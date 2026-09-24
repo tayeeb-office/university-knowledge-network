@@ -4,6 +4,7 @@ require_once __DIR__ . '/../components/empty-state.php';
 require_once __DIR__ . '/../components/error-state.php';
 require_once __DIR__ . '/../backend/config/database.php';
 require_once __DIR__ . '/../backend/helpers/format.php';
+require_once __DIR__ . '/../backend/helpers/community.php';
 
 $communityPosts = [];
 $homeDbError = false;
@@ -47,10 +48,10 @@ try {
             $post['excerpt'] = ukn_excerpt($post['content']);
             $post['href'] = 'index.php?page=post-details&id=' . $post['id'];
             $post['authorHref'] = ukn_route_href($post['role'] === 'Mentor' ? 'mentor-profile' : 'learner-profile') . '&id=' . $post['author_id'];
-            // TODO(auth): ownership/following need the current session user; not determinable yet.
-            $post['isOwner'] = false;
         }
         unset($post);
+        // Viewer's own vote / saved / owner state (two batched queries).
+        $communityPosts = uknDecoratePosts($communityPosts);
     }
 } catch (Throwable $e) {
     error_log('[UKN home] ' . $e->getMessage());

@@ -8,40 +8,6 @@
   function reportRows() {
     return Array.prototype.slice.call(tbody.querySelectorAll('tr[data-report-row]'));
   }
-  var statValueEls = {
-    pending: document.querySelector('[data-report-stat="pending"] .ukn-display'),
-    resolved: document.querySelector('[data-report-stat="resolved"] .ukn-display'),
-    dismissed: document.querySelector('[data-report-stat="dismissed"] .ukn-display'),
-  };
-  var counts = {
-    pending: parseInt((statValueEls.pending && statValueEls.pending.textContent) || '0', 10) || 0,
-    resolved: parseInt((statValueEls.resolved && statValueEls.resolved.textContent) || '0', 10) || 0,
-    dismissed: parseInt((statValueEls.dismissed && statValueEls.dismissed.textContent) || '0', 10) || 0,
-  };
-  function moveCount(fromKey, toKey) {
-    if (counts[fromKey] > 0) {
-      counts[fromKey] -= 1;
-    }
-    counts[toKey] += 1;
-    if (statValueEls[fromKey]) { statValueEls[fromKey].textContent = String(counts[fromKey]); }
-    if (statValueEls[toKey]) { statValueEls[toKey].textContent = String(counts[toKey]); }
-  }
-  function setReportStatus(row, status, decisionText) {
-    var fromStatus = row.getAttribute('data-report-status');
-    row.setAttribute('data-report-status', status);
-    row.setAttribute('data-report-decision', decisionText);
-    row.setAttribute('data-report-resolved-display', 'Just now (demo)');
-    var badge = row.querySelector('[data-report-status-badge]');
-    if (badge) {
-      badge.textContent = status === 'resolved' ? 'Resolved' : 'Dismissed';
-      badge.classList.remove('ukn-status-accent', 'ukn-status-neutral');
-      badge.classList.add(status === 'resolved' ? 'ukn-status-accent' : 'ukn-status-neutral');
-    }
-
-    if (fromStatus === 'pending') {
-      moveCount('pending', status === 'resolved' ? 'resolved' : 'dismissed');
-    }
-  }
   var reviewModal = document.getElementById('reportReviewModal');
   var currentRow = null;
   function setText(scope, key, value) {
@@ -156,16 +122,33 @@
       }
     }
     var decisionRow = reviewModal.querySelector('[data-report-decision-row]');
-    var resolveBtn = reviewModal.querySelector('[data-report-resolve]');
-    var dismissBtn = reviewModal.querySelector('[data-report-dismiss]');
     var isPending = status === 'pending';
-    if (resolveBtn) { resolveBtn.hidden = !isPending; }
-    if (dismissBtn) { dismissBtn.hidden = !isPending; }
     if (decisionRow) {
       decisionRow.hidden = isPending;
       if (!isPending) {
         setText(reviewModal, 'decision', row.getAttribute('data-report-decision'));
         setText(reviewModal, 'resolvedDisplay', row.getAttribute('data-report-resolved-display'));
+      }
+    }
+    // Step 51: Resolve / Dismiss submit a real form for this report. The optional target
+    // action (hide the post/comment, suspend the user) is offered only when it can apply.
+    var form = reviewModal.querySelector('[data-report-review-form]');
+    if (form) {
+      form.hidden = !isPending;
+      form.reset();
+      form.querySelector('[data-report-review-id]').value = row.getAttribute('data-report-db-id') || '';
+      var actionWrap = form.querySelector('[data-report-review-action-wrap]');
+      var actionLabel = form.querySelector('[data-report-review-action-label]');
+      var targetStatus = type === 'post' ? row.getAttribute('data-report-post-status')
+        : (type === 'comment' ? row.getAttribute('data-report-comment-status') : row.getAttribute('data-report-user-status'));
+      var canAct = row.getAttribute('data-report-target-available') === '1'
+        && row.getAttribute('data-report-target-actionable') === '1'
+        && (type === 'user' ? targetStatus !== 'Suspended' : targetStatus === 'visible');
+      if (actionWrap) {
+        actionWrap.hidden = !canAct;
+      }
+      if (actionLabel) {
+        actionLabel.textContent = type === 'user' ? 'Also suspend this user' : 'Also hide this ' + type;
       }
     }
   }
@@ -177,34 +160,16 @@
         populateReview(row);
       }
     });
-  }
-  document.addEventListener('click', function (event) {
-    var resolveBtn = event.target.closest('[data-report-resolve]');
-    var dismissBtn = event.target.closest('[data-report-dismiss]');
-    if ((!resolveBtn && !dismissBtn) || !currentRow) {
-      return;
-    }
-    var row = currentRow;
-    var status = resolveBtn ? 'resolved' : 'dismissed';
-    var decisionText = resolveBtn
-      ? 'Reviewed by admin. Report resolved in demo mode.'
-      : 'Reviewed by admin. No further action required.';
-    setReportStatus(row, status, decisionText);
-    populateReview(row);
-    if (window.UKN && window.UKN.showToast) {
-      window.UKN.showToast(status === 'resolved' ? 'Report resolved in demo mode.' : 'Report dismissed in demo mode.', 'success');
-    }
-    if (typeof applyReportsView === 'function') {
-      applyReportsView();
-    }
-
-    if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
-      var instance = bootstrap.Modal.getInstance(reviewModal);
-      if (instance) {
-        instance.hide();
+    // Dismissing never moderates the target, so the option is cleared before that submit.
+    reviewModal.addEventListener('click', function (event) {
+      if (event.target.closest('[data-report-dismiss]')) {
+        var action = reviewModal.querySelector('[data-report-review-action]');
+        if (action) {
+          action.checked = false;
+        }
       }
-    }
-  });
+    });
+  }
   var searchInput = document.querySelector('[data-report-search]');
   var typeFilter = document.querySelector('[data-report-filter="type"]');
   var statusFilter = document.querySelector('[data-report-filter="status"]');

@@ -9,3 +9,7 @@
     grid-template-columns: 1fr;
   }
 }
+/* Period tabs are real links (Step 43): keep the pill look on hover. */
+a.ukn-tab-pill:hover{
+  text-decoration: none;
+}

@@ -4,11 +4,6 @@ require_once __DIR__ . '/../../components/empty-state.php';
 require_once __DIR__ . '/../../components/error-state.php';
 require_once __DIR__ . '/../../backend/config/database.php';
 
-// TODO(auth): replace with the real session user id; mirrors index.php's own hardcoded
-// demo identity (Nabila Rahman, user id 1) until real sessions exist.
-if (!defined('UKN_DEMO_USER_ID')) {
-    define('UKN_DEMO_USER_ID', 1);
-}
 
 $overall = 0.0;
 $totalReviews = 0;
@@ -32,7 +27,7 @@ try {
                 AVG(communication) AS communication, AVG(helpfulness) AS helpfulness
          FROM session_ratings WHERE mentor_id = ?"
     );
-    $summaryStmt->execute([UKN_DEMO_USER_ID]);
+    $summaryStmt->execute([UKN_CURRENT_USER_ID]);
     $summary = $summaryStmt->fetch();
     $totalReviews = (int) $summary['total'];
     $overall = $summary['overall'] !== null ? round((float) $summary['overall'], 1) : 0.0;
@@ -46,14 +41,14 @@ try {
     }
 
     $userStmt = $pdo->prepare("SELECT sessions_as_mentor FROM users WHERE id = ?");
-    $userStmt->execute([UKN_DEMO_USER_ID]);
+    $userStmt->execute([UKN_CURRENT_USER_ID]);
     $completedSessions = (int) $userStmt->fetchColumn();
 
     $distStmt = $pdo->prepare(
         "SELECT ROUND(overall) AS star, COUNT(*) AS n FROM session_ratings
          WHERE mentor_id = ? GROUP BY star"
     );
-    $distStmt->execute([UKN_DEMO_USER_ID]);
+    $distStmt->execute([UKN_CURRENT_USER_ID]);
     foreach ($distStmt->fetchAll() as $row) {
         $star = (int) $row['star'];
         if (isset($distribution[$star])) {
@@ -71,7 +66,7 @@ try {
          WHERE sr.mentor_id = ?
          ORDER BY sr.created_at DESC"
     );
-    $reviewsStmt->execute([UKN_DEMO_USER_ID]);
+    $reviewsStmt->execute([UKN_CURRENT_USER_ID]);
     $reviews = array_map(static function (array $row): array {
         return [
             'reviewer' => $row['reviewer'],
@@ -95,7 +90,7 @@ try {
         "SELECT DISTINCT sk.name FROM session_ratings sr JOIN skills sk ON sk.id = sr.skill_id
          WHERE sr.mentor_id = ? ORDER BY sk.name"
     );
-    $skillsStmt->execute([UKN_DEMO_USER_ID]);
+    $skillsStmt->execute([UKN_CURRENT_USER_ID]);
     foreach ($skillsStmt->fetchAll(PDO::FETCH_COLUMN) as $skillName) {
         $skillFilters[] = $skillName;
     }

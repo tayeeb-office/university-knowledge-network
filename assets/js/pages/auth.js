@@ -78,35 +78,23 @@
     if (!confirm) {
       return;
     }
-    var form = confirm.closest('[data-mock-auth-form]');
+    var form = confirm.closest('[data-auth-form]');
     if (form) {
       checkPasswordsMatch(form);
     }
   });
+  // Client-side checks only give early feedback; the form posts to the server, which
+  // re-validates everything.
   document.addEventListener('submit', function (event) {
-    var form = event.target.closest('[data-mock-auth-form]');
+    var form = event.target.closest('[data-auth-form]');
     if (!form) {
       return;
     }
-    event.preventDefault();
-    var kind = form.getAttribute('data-mock-auth-form');
+    var kind = form.getAttribute('data-auth-form');
     var requiredValid = window.UKN && window.UKN.validateForm ? window.UKN.validateForm(form) : true;
     var passwordsOk = kind === 'register' ? checkPasswordsMatch(form) : true;
     if (!requiredValid || !passwordsOk) {
-      return;
-    }
-    var message = form.getAttribute('data-success-message') || 'Success. Demo mode only.';
-    if (window.UKN && window.UKN.showToast) {
-      window.UKN.showToast(message, 'success');
-    }
-    var continueLink = form.querySelector('[data-continue-to-login]');
-    if (continueLink) {
-      continueLink.hidden = false;
-    }
-    form.reset();
-    var strengthMeter = form.querySelector('[data-password-strength]');
-    if (strengthMeter) {
-      strengthMeter.hidden = true;
+      event.preventDefault();
     }
   });
   document.addEventListener('click', function (event) {

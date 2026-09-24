@@ -14,6 +14,83 @@ if (!defined('UKN_MIN_PASSWORD')) {
 if (!defined('UKN_MAX_PASSWORD_BYTES')) {
     define('UKN_MAX_PASSWORD_BYTES', 72);
 }
+if (!function_exists('uknPostString')) {
+    /**
+     * A POST field as a string, or null when it is missing or not a scalar string
+     * (e.g. `field[]=x` array tampering), so callers never cast arrays to "Array".
+     */
+    function uknPostString(string $key): ?string
+    {
+        $value = $_POST[$key] ?? null;
+        return is_string($value) ? $value : null;
+    }
+}
+if (!function_exists('uknInputHasInvalidUtf8')) {
+    /**
+     * True when any key or string value in $data (nested arrays included) is not valid UTF-8.
+     * Such bytes would otherwise be stored lossily ("?") by MySQL instead of being rejected.
+     */
+    function uknInputHasInvalidUtf8(array $data): bool
+    {
+        foreach ($data as $key => $value) {
+            if (is_string($key) && !mb_check_encoding($key, 'UTF-8')) {
+                return true;
+            }
+            if (is_array($value) ? uknInputHasInvalidUtf8($value) : (is_string($value) && !mb_check_encoding($value, 'UTF-8'))) {
+                return true;
+            }
+        }
+        return false;
+    }
+}
+if (!function_exists('uknPostId')) {
+    /** A positive integer id from POST (digits only), or null. */
+    function uknPostId(string $key): ?int
+    {
+        $value = uknPostString($key);
+        if ($value === null || !ctype_digit($value) || strlen($value) > 10) {
+            return null;
+        }
+        $id = (int) $value;
+        return $id > 0 ? $id : null;
+    }
+}
+if (!function_exists('uknDeriveInitials')) {
+
+    function uknDeriveInitials(string $fullName): string
+    {
+        $cleaned = preg_replace('/[^\p{L}\s]+/u', ' ', $fullName);
+        if ($cleaned === null) {
+            $cleaned = $fullName;
+        }
+        $parts = preg_split('/\s+/u', trim($cleaned), -1, PREG_SPLIT_NO_EMPTY);
+        if (!is_array($parts) || $parts === []) {
+            return 'U';
+        }
+        if (count($parts) === 1) {
+            $initials = mb_substr($parts[0], 0, 2, 'UTF-8');
+        } else {
+            $initials = mb_substr($parts[0], 0, 1, 'UTF-8')
+                . mb_substr($parts[count($parts) - 1], 0, 1, 'UTF-8');
+        }
+        return mb_substr(mb_strtoupper($initials, 'UTF-8'), 0, 4, 'UTF-8');
+    }
+}
+if (!function_exists('uknResolveDepartmentId')) {
+    function uknResolveDepartmentId(PDO $pdo, string $name): ?int
+    {
+        $name = trim($name);
+        if ($name === '') {
+            return null;
+        }
+        $stmt = $pdo->prepare(
+            'SELECT id FROM departments WHERE name = ? AND status = ? LIMIT 1'
+        );
+        $stmt->execute([$name, 'active']);
+        $id = $stmt->fetchColumn();
+        return $id === false ? null : (int) $id;
+    }
+}
 if (!function_exists('validateRequired')) {
     function validateRequired($value): bool
     {
@@ -155,6 +232,9 @@ if (!function_exists('validateRegistrationData')) {
             $errors['confirm_password'] = 'Please confirm your password.';
         } elseif (!validatePasswordMatch($password, $confirmPassword)) {
             $errors['confirm_password'] = 'Passwords do not match.';
+        }
+        if (empty($data['terms'])) {
+            $errors['terms'] = 'You must agree to the Terms and Privacy Policy to continue.';
         }
         return [
             'valid'  => $errors === [],

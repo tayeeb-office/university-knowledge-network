@@ -3,10 +3,10 @@ $activeRole = !empty($currentUser['dualRole']) ? ($currentUser['activeRole'] ?? 
 $isMentor = $activeRole === 'mentor';
 $otherRole = $isMentor ? 'Learner' : 'Mentor';
 $profile = [
-    'name' => $currentUser['name'] ?? 'Nabila Rahman',
-    'initials' => $currentUser['initials'] ?? 'NR',
-    'department' => 'Computer Science',
-    'email' => 'nabila.rahman@university.edu',
+    'name' => $currentUser['name'] ?? '',
+    'initials' => $currentUser['initials'] ?? '',
+    'department' => $currentUser['department'] ?? '',
+    'email' => $currentUser['email'] ?? '',
 ];
 $notificationOptions = $isMentor
     ? [

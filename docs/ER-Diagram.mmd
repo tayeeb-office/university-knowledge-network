@@ -1,0 +1,273 @@
+%% UKN — Entity-Relationship diagram (generated from database/schema.sql via information_schema).
+%% Cardinalities follow the foreign keys: a NOT NULL FK = exactly one parent (||), a nullable FK = zero or one (|o);
+%% an FK that is also the child's PK / a single-column UNIQUE key = at most one child (o|), otherwise many (o{).
+%% Dotted lines are logical references WITHOUT a foreign key (reports.target_type + target_id).
+erDiagram
+    departments {
+        SMALLINT id PK
+        VARCHAR name UK
+        VARCHAR code UK
+        ENUM status
+        DATETIME created_at
+        DATETIME updated_at
+    }
+    users {
+        INT id PK
+        VARCHAR full_name
+        VARCHAR initials
+        VARCHAR email UK
+        VARCHAR university_id UK
+        VARCHAR password_hash
+        DATETIME email_verified_at
+        CHAR verification_token_hash UK
+        DATETIME verification_expires_at
+        SMALLINT department_id FK
+        ENUM role
+        TINYINT is_admin
+        ENUM year_of_study
+        VARCHAR headline
+        TEXT bio
+        VARCHAR avatar_path
+        ENUM status
+        VARCHAR suspend_reason
+        INT learning_points
+        INT mentor_points
+        DECIMAL avg_rating
+        INT total_reviews
+        INT sessions_as_learner
+        INT sessions_as_mentor
+        INT learners_helped
+        DATETIME last_active_at
+        DATETIME created_at
+        DATETIME updated_at
+    }
+    user_settings {
+        INT user_id PK, FK
+        TINYINT notify_session_updates
+        TINYINT notify_session_reminders
+        TINYINT notify_community_replies
+        TINYINT notify_follow_activity
+        TINYINT notify_learner_requests
+        TINYINT notify_rating_received
+        ENUM profile_visibility
+        ENUM theme
+        DATETIME updated_at
+    }
+    skill_categories {
+        TINYINT id PK
+        VARCHAR name UK
+        VARCHAR description
+        ENUM status
+        DATETIME created_at
+        DATETIME updated_at
+    }
+    skills {
+        SMALLINT id PK
+        VARCHAR name UK
+        VARCHAR slug UK
+        TINYINT category_id FK
+        VARCHAR description
+        TEXT about
+        ENUM status
+        DATETIME created_at
+        DATETIME updated_at
+    }
+    skill_relations {
+        INT id PK
+        SMALLINT source_skill_id FK, UK
+        SMALLINT target_skill_id FK, UK
+        ENUM strength
+        VARCHAR reason
+        DATETIME created_at
+    }
+    user_skills {
+        INT id PK
+        INT user_id FK, UK
+        SMALLINT skill_id FK, UK
+        ENUM skill_type UK
+        ENUM proficiency
+        TINYINT progress
+        INT sessions_count
+        DECIMAL avg_rating
+        INT primary_mentor_id FK
+        DATETIME created_at
+        DATETIME updated_at
+    }
+    mentor_availability {
+        INT id PK
+        INT user_id FK, UK
+        TINYINT day_of_week UK
+        TIME start_time UK
+        TIME end_time
+        TINYINT is_enabled
+        DATETIME created_at
+        DATETIME updated_at
+    }
+    learning_goals {
+        INT id PK
+        INT user_id FK
+        SMALLINT skill_id FK
+        VARCHAR title
+        VARCHAR description
+        TINYINT progress
+        DATE target_date
+        ENUM status
+        DATETIME completed_at
+        DATETIME created_at
+        DATETIME updated_at
+    }
+    mentoring_sessions {
+        INT id PK
+        VARCHAR reference_code UK
+        INT learner_id FK
+        INT mentor_id FK
+        SMALLINT skill_id FK
+        DATE scheduled_date
+        TIME scheduled_time
+        SMALLINT duration_minutes
+        ENUM status
+        TEXT request_message
+        VARCHAR cancel_reason
+        DATETIME requested_at
+        DATETIME responded_at
+        DATETIME completed_at
+        DATETIME created_at
+        DATETIME updated_at
+    }
+    session_ratings {
+        INT id PK
+        INT session_id FK, UK
+        INT reviewer_id FK
+        INT mentor_id FK
+        SMALLINT skill_id FK
+        TINYINT overall
+        TINYINT teaching
+        TINYINT communication
+        TINYINT helpfulness
+        TEXT review
+        DATETIME created_at
+    }
+    posts {
+        INT id PK
+        INT user_id FK
+        VARCHAR title
+        TEXT content
+        INT vote_score
+        INT comment_count
+        INT report_count
+        ENUM status
+        DATETIME created_at
+        DATETIME updated_at
+    }
+    post_skills {
+        INT post_id PK, FK
+        SMALLINT skill_id PK, FK
+    }
+    comments {
+        INT id PK
+        INT post_id FK
+        INT user_id FK
+        INT parent_id FK
+        TEXT content
+        INT report_count
+        ENUM status
+        DATETIME created_at
+        DATETIME updated_at
+    }
+    post_votes {
+        INT user_id PK, FK
+        INT post_id PK, FK
+        TINYINT value
+        DATETIME created_at
+    }
+    saved_posts {
+        INT user_id PK, FK
+        INT post_id PK, FK
+        DATETIME created_at
+    }
+    follows {
+        INT follower_id PK, FK
+        INT following_id PK, FK
+        DATETIME created_at
+    }
+    point_transactions {
+        BIGINT id PK
+        INT user_id FK
+        INT amount
+        ENUM point_type
+        ENUM category
+        VARCHAR reason
+        INT related_session_id FK
+        INT related_post_id FK
+        INT related_goal_id FK
+        DATETIME created_at
+    }
+    notifications {
+        BIGINT id PK
+        INT user_id FK
+        ENUM type
+        VARCHAR icon
+        VARCHAR message
+        VARCHAR link_url
+        TINYINT is_read
+        DATETIME created_at
+    }
+    reports {
+        INT id PK
+        VARCHAR reference_code UK
+        INT reporter_id FK, UK
+        ENUM target_type UK
+        INT target_id UK
+        ENUM reason
+        TEXT description
+        ENUM status
+        INT reviewed_by FK
+        DATETIME reviewed_at
+        DATETIME created_at
+    }
+    login_attempts {
+        CHAR throttle_key PK
+        INT attempts
+        DATETIME window_started_at
+        DATETIME updated_at
+    }
+    departments |o--o{ users : "department_id"
+    users ||--o| user_settings : "user_id"
+    skill_categories ||--o{ skills : "category_id"
+    skills ||--o{ skill_relations : "source_skill_id"
+    skills ||--o{ skill_relations : "target_skill_id"
+    users |o--o{ user_skills : "primary_mentor_id"
+    skills ||--o{ user_skills : "skill_id"
+    users ||--o{ user_skills : "user_id"
+    users ||--o{ mentor_availability : "user_id"
+    skills |o--o{ learning_goals : "skill_id"
+    users ||--o{ learning_goals : "user_id"
+    users ||--o{ mentoring_sessions : "learner_id"
+    users ||--o{ mentoring_sessions : "mentor_id"
+    skills ||--o{ mentoring_sessions : "skill_id"
+    users ||--o{ session_ratings : "mentor_id"
+    users ||--o{ session_ratings : "reviewer_id"
+    mentoring_sessions ||--o| session_ratings : "session_id"
+    skills |o--o{ session_ratings : "skill_id"
+    users ||--o{ posts : "user_id"
+    posts ||--o{ post_skills : "post_id"
+    skills ||--o{ post_skills : "skill_id"
+    comments |o--o{ comments : "parent_id"
+    posts ||--o{ comments : "post_id"
+    users ||--o{ comments : "user_id"
+    posts ||--o{ post_votes : "post_id"
+    users ||--o{ post_votes : "user_id"
+    posts ||--o{ saved_posts : "post_id"
+    users ||--o{ saved_posts : "user_id"
+    users ||--o{ follows : "follower_id"
+    users ||--o{ follows : "following_id"
+    learning_goals |o--o{ point_transactions : "related_goal_id"
+    posts |o--o{ point_transactions : "related_post_id"
+    mentoring_sessions |o--o{ point_transactions : "related_session_id"
+    users ||--o{ point_transactions : "user_id"
+    users ||--o{ notifications : "user_id"
+    users ||--o{ reports : "reporter_id"
+    users |o--o{ reports : "reviewed_by"
+    posts |o..o{ reports : "target_id (target_type=post, no FK)"
+    comments |o..o{ reports : "target_id (target_type=comment, no FK)"
+    users |o..o{ reports : "target_id (target_type=user, no FK)"

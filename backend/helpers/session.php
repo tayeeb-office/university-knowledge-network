@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/error-handling.php';
 if (!function_exists('startSecureSession')) {
     function startSecureSession(): void
     {
@@ -68,6 +69,41 @@ if (!function_exists('setAuthSession')) {
         $_SESSION['active_role']  = $activeRole;
         $_SESSION['is_admin']     = !empty($user['is_admin']);
         $_SESSION['logged_in_at'] = time();
+        // New privilege level, new CSRF token (csrfToken() issues a fresh one on next use).
+        unset($_SESSION['csrf_token']);
+    }
+}
+if (!function_exists('clearAuthSession')) {
+    /**
+     * Drops only the authentication keys (e.g. when the session's user no longer exists or
+     * is no longer allowed in) and rotates the session id; unrelated session data is kept.
+     */
+    function clearAuthSession(): void
+    {
+        unset(
+            $_SESSION['user_id'],
+            $_SESSION['role'],
+            $_SESSION['active_role'],
+            $_SESSION['is_admin'],
+            $_SESSION['logged_in_at']
+        );
+        if (session_status() === PHP_SESSION_ACTIVE && !headers_sent()) {
+            session_regenerate_id(true);
+        }
+    }
+}
+if (!function_exists('uknTakeFlash')) {
+    /**
+     * Reads a one-time session value (flash message, form errors, old input) and removes it.
+     */
+    function uknTakeFlash(string $key, $default = null)
+    {
+        if (!array_key_exists($key, $_SESSION ?? [])) {
+            return $default;
+        }
+        $value = $_SESSION[$key];
+        unset($_SESSION[$key]);
+        return $value;
     }
 }
 

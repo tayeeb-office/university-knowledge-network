@@ -40,6 +40,14 @@
       resetSkillPicker(form);
     }, 300);
   });
+  // Real server forms inside modals (session request, rating): check required fields first,
+  // otherwise let the browser POST normally.
+  document.addEventListener('submit', function (event) {
+    var form = event.target.closest('[data-validated-form]');
+    if (form && window.UKN && window.UKN.validateForm && !window.UKN.validateForm(form)) {
+      event.preventDefault();
+    }
+  });
   function currentSkills(hiddenInput) {
     return hiddenInput.value ? hiddenInput.value.split('|').filter(Boolean) : [];
   }
@@ -93,7 +101,7 @@
     }
     addSkillTag(picker, hiddenInput, input.value);
     input.value = '';
-    var form = picker.closest('[data-mock-form]');
+    var form = picker.closest('[data-mock-form], [data-validated-form]');
     if (form) {
       var message = form.querySelector('[data-error-for="' + hiddenInput.name + '"]');
       if (message) {
@@ -113,9 +121,14 @@
     }
   });
   var deleteModal = document.getElementById('deleteConfirmationModal');
+  // Triggers with data-delete-form="<form id>" are real server actions: confirming submits
+  // that form (the server reports the result) instead of showing a local toast.
+  var pendingDeleteForm = null;
   if (deleteModal) {
     deleteModal.addEventListener('show.bs.modal', function (event) {
       var trigger = event.relatedTarget;
+      var formId = trigger ? trigger.getAttribute('data-delete-form') : null;
+      pendingDeleteForm = formId ? document.getElementById(formId) : null;
       if (!trigger) {
         return;
       }
@@ -143,6 +156,11 @@
     if (!confirmBtn) {
       return;
     }
+    if (pendingDeleteForm) {
+      confirmBtn.disabled = true;
+      pendingDeleteForm.submit();
+      return;
+    }
     var message = confirmBtn.getAttribute('data-success-message') || 'Item deleted.';
     if (window.UKN && window.UKN.showToast) {
       window.UKN.showToast(message, 'success');
@@ -163,6 +181,10 @@
       var skill = trigger.getAttribute('data-request-skill') || '';
       var rating = trigger.getAttribute('data-request-rating') || '';
       var skillOptions = (trigger.getAttribute('data-request-skill-options') || '').split('|').filter(Boolean);
+      var mentorIdInput = sessionRequestModal.querySelector('[data-request-mentor-id-input]');
+      if (mentorIdInput) {
+        mentorIdInput.value = trigger.getAttribute('data-request-mentor-id') || '';
+      }
       var avatarEl = sessionRequestModal.querySelector('[data-request-avatar]');
       var nameEl = sessionRequestModal.querySelector('[data-request-name-el]');
       var metaEl = sessionRequestModal.querySelector('[data-request-meta-el]');
@@ -208,6 +230,10 @@
       var mentor = trigger.getAttribute('data-rating-mentor') || '';
       var skill = trigger.getAttribute('data-rating-skill') || '';
       var date = trigger.getAttribute('data-rating-date') || '';
+      var sessionIdInput = ratingModal.querySelector('[data-rating-session-id-input]');
+      if (sessionIdInput) {
+        sessionIdInput.value = trigger.getAttribute('data-rating-session-id') || '';
+      }
       var summaryEl = ratingModal.querySelector('[data-rating-summary]');
       if (summaryEl) {
         summaryEl.textContent = (skill ? skill + ' with ' : '') + mentor + (date ? ' · ' + date : '');
@@ -221,7 +247,11 @@
       if (!trigger || !trigger.hasAttribute('data-edit-post-title')) {
         return;
       }
-      var form = editPostModal.querySelector('[data-mock-form]');
+      var form = editPostModal.querySelector('form');
+      var postIdInput = editPostModal.querySelector('[data-edit-post-id-input]');
+      if (postIdInput) {
+        postIdInput.value = trigger.getAttribute('data-edit-post-id') || '';
+      }
       var titleInput = editPostModal.querySelector('#editPostTitle');
       var contentInput = editPostModal.querySelector('#editPostContent');
       var picker = editPostModal.querySelector('[data-skill-picker]');

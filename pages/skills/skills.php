@@ -3,12 +3,13 @@ require_once __DIR__ . '/../../components/skill-card.php';
 require_once __DIR__ . '/../../components/empty-state.php';
 require_once __DIR__ . '/../../components/error-state.php';
 require_once __DIR__ . '/../../backend/config/database.php';
+require_once __DIR__ . '/../../backend/helpers/skills.php';
 
 $activeRole = !empty($currentUser['dualRole']) ? ($currentUser['activeRole'] ?? 'learner') : ($currentUser['role'] ?? 'learner');
 $isMentor = $activeRole === 'mentor';
-// TODO(auth): read from the logged-in user's own user_skills rows once a real session exists.
-$myLearningSkills = ['Python', 'MySQL', 'Data Analysis', 'Public Speaking'];
-$myTeachingSkills = ['Python', 'Database Design', 'Data Analysis'];
+$mySkills = uknCurrentUserSkills();
+$myLearningSkills = array_values($mySkills['learning']);
+$myTeachingSkills = array_values($mySkills['teaching']);
 
 $categories = ['All'];
 $skills = [];
@@ -41,6 +42,9 @@ foreach ($skills as &$skill) {
     $skill['mentors'] = (int) $skill['mentors'];
     $skill['learners'] = (int) $skill['learners'];
     $skill['href'] = ukn_route_href('skill-details') . '&id=' . $skill['id'];
+    if (empty($currentUser['loggedIn'])) {
+        continue; // guests browse only; add/remove needs an account
+    }
     if ($isMentor) {
         $skill['teachingState'] = in_array($skill['name'], $myTeachingSkills, true) ? 'added' : 'add';
     } else {

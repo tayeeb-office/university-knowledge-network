@@ -1,12 +1,13 @@
 <?php
+require_once __DIR__ . '/../backend/helpers/search.php';
 $currentUser = $currentUser ?? [
-    'loggedIn'   => true,
-    'role'       => 'learner',
-    'dualRole'   => true,
-    'activeRole' => 'learner',
-    'name'       => 'Nabila Rahman',
-    'initials'   => 'NR',
-    'meta'       => 'Learner · Computer Science',
+    'loggedIn'   => false,
+    'role'       => 'visitor',
+    'dualRole'   => false,
+    'activeRole' => 'visitor',
+    'name'       => '',
+    'initials'   => '',
+    'meta'       => '',
 ];
 // index.php always computes real $notifications (from the `notifications` table) before
 // including this file, so this fallback only matters if header.php is ever included without
@@ -42,7 +43,8 @@ $showRightSidebar = $showRightSidebar ?? true;
       name="q"
       class="form-control"
       placeholder="Search skills, mentors, discussions"
-      value="<?= ($page ?? '') === 'search' ? htmlspecialchars(trim((string) ($_GET['q'] ?? ''))) : '' ?>"
+      maxlength="<?= UKN_SEARCH_MAX_LENGTH ?>"
+      value="<?= ($page ?? '') === 'search' ? htmlspecialchars(uknSearchQueryFromRequest()) : '' ?>"
     >
   </form>
   <div class="ukn-header__actions">

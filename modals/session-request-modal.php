@@ -1,14 +1,17 @@
 <?php
-$requestMentor = $requestMentor ?? [
-    'name' => 'Rahim Ahmed', 'initials' => 'RA', 'department' => 'Computer Science',
-    'skill' => 'Python', 'rating' => 4.9,
-    'skillOptions' => ['Python', 'Machine Learning'],
+// Filled per trigger by modal.js (data-request-* attributes); a page may preset $requestMentor
+// (the mentor profile does). The server re-validates the mentor and skill (backend/sessions/request.php).
+$requestMentor = ($requestMentor ?? []) + [
+    'id' => null, 'name' => '', 'initials' => '', 'department' => '', 'skill' => '', 'rating' => null, 'skillOptions' => [],
 ];
 ?>
 <div class="modal fade" id="sessionRequestModal" tabindex="-1" aria-labelledby="sessionRequestModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
-      <form data-mock-form="session-request" data-success-message="Session request sent successfully." novalidate>
+      <form action="backend/sessions/request.php" method="post" data-validated-form novalidate>
+        <?= function_exists('csrfField') ? csrfField() : '' ?>
+        <?= function_exists('uknReturnToField') ? uknReturnToField() : '' ?>
+        <input type="hidden" name="mentor_id" value="<?= $requestMentor['id'] !== null ? (int) $requestMentor['id'] : '' ?>" data-request-mentor-id-input>
         <div class="modal-header">
           <h2 class="modal-title ukn-h3" id="sessionRequestModalLabel">Request a Session</h2>
           <button type="button" class="btn-icon" data-bs-dismiss="modal" aria-label="Close">
@@ -20,8 +23,8 @@ $requestMentor = $requestMentor ?? [
             <span class="ukn-avatar ukn-avatar-lg" aria-hidden="true" data-request-avatar><?= htmlspecialchars($requestMentor['initials']) ?></span>
             <div>
               <div class="fw-bold" data-request-name-el><?= htmlspecialchars($requestMentor['name']) ?></div>
-              <div class="ukn-body-sm" data-request-meta-el><?= htmlspecialchars($requestMentor['skill']) ?> Mentor · <?= htmlspecialchars($requestMentor['department']) ?></div>
-              <div class="ukn-body-sm" data-request-rating-el>★ <?= htmlspecialchars((string) $requestMentor['rating']) ?></div>
+              <div class="ukn-body-sm" data-request-meta-el><?= $requestMentor['skill'] !== '' ? htmlspecialchars($requestMentor['skill']) . ' Mentor · ' : '' ?><?= htmlspecialchars($requestMentor['department']) ?></div>
+              <div class="ukn-body-sm" data-request-rating-el><?= $requestMentor['rating'] !== null ? '★ ' . htmlspecialchars((string) $requestMentor['rating']) : '' ?></div>
             </div>
           </div>
           <div class="ukn-form-row">
@@ -40,9 +43,9 @@ $requestMentor = $requestMentor ?? [
             <div class="ukn-form-group">
               <label for="sessionRequestDuration" class="form-label">Duration</label>
               <select class="form-select" id="sessionRequestDuration" name="duration">
-                <option>60 minutes</option>
-                <option>45 minutes</option>
-                <option>30 minutes</option>
+                <option value="60">60 minutes</option>
+                <option value="45">45 minutes</option>
+                <option value="30">30 minutes</option>
               </select>
             </div>
           </div>
@@ -64,7 +67,7 @@ $requestMentor = $requestMentor ?? [
           </div>
           <div class="ukn-form-group mb-0">
             <label for="sessionRequestMessage" class="form-label">Message (optional)</label>
-            <textarea class="form-control" id="sessionRequestMessage" name="message" placeholder="I need help understanding Python data analysis basics."></textarea>
+            <textarea class="form-control" id="sessionRequestMessage" name="message" maxlength="1000" placeholder="I need help understanding Python data analysis basics."></textarea>
           </div>
         </div>
         <div class="modal-footer">

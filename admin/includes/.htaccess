@@ -1,0 +1,7 @@
+# Phase J (J4): include-only admin files are never requested directly. The exception is
+# header.php, which enforces requireAdmin() itself (non-admins are redirected before any
+# output), so serving it directly is safe and keeps the Phase B guard behaviour.
+Require all denied
+<Files "header.php">
+    Require all granted
+</Files>

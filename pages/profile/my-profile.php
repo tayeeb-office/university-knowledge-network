@@ -5,15 +5,11 @@ require_once __DIR__ . '/../../components/post-card.php';
 require_once __DIR__ . '/../../components/error-state.php';
 require_once __DIR__ . '/../../backend/config/database.php';
 require_once __DIR__ . '/../../backend/helpers/format.php';
+require_once __DIR__ . '/../../backend/helpers/community.php';
 
 $activeRole = !empty($currentUser['dualRole']) ? ($currentUser['activeRole'] ?? 'learner') : ($currentUser['role'] ?? 'learner');
 $isMentor = $activeRole === 'mentor';
 $isDualRoleUser = !empty($currentUser['loggedIn']) && !empty($currentUser['dualRole']);
-// TODO(auth): replace with the real session user id; mirrors index.php's own hardcoded
-// demo identity (Nabila Rahman, user id 1) until real sessions exist.
-if (!defined('UKN_DEMO_USER_ID')) {
-    define('UKN_DEMO_USER_ID', 1);
-}
 
 $department = '';
 $yearOfStudy = '';
@@ -36,7 +32,7 @@ try {
          FROM users u LEFT JOIN departments d ON d.id = u.department_id
          WHERE u.id = ?"
     );
-    $userStmt->execute([UKN_DEMO_USER_ID]);
+    $userStmt->execute([UKN_CURRENT_USER_ID]);
     $user = $userStmt->fetch();
 
     if ($user !== false) {
@@ -49,14 +45,14 @@ try {
             "SELECT COALESCE(SUM(amount), 0) FROM point_transactions
              WHERE user_id = ? AND point_type = 'learning' AND created_at >= DATE_FORMAT(NOW(), '%Y-%m-01')"
         );
-        $learningMonthStmt->execute([UKN_DEMO_USER_ID]);
+        $learningMonthStmt->execute([UKN_CURRENT_USER_ID]);
         $learningMonth = (int) $learningMonthStmt->fetchColumn();
 
         $mentorMonthStmt = $pdo->prepare(
             "SELECT COALESCE(SUM(amount), 0) FROM point_transactions
              WHERE user_id = ? AND point_type = 'mentor' AND created_at >= DATE_FORMAT(NOW(), '%Y-%m-01')"
         );
-        $mentorMonthStmt->execute([UKN_DEMO_USER_ID]);
+        $mentorMonthStmt->execute([UKN_CURRENT_USER_ID]);
         $mentorMonth = (int) $mentorMonthStmt->fetchColumn();
 
         $pointsStatByRole = [
@@ -69,17 +65,17 @@ try {
         $teachingCountStmt = $pdo->prepare(
             "SELECT COUNT(*) FROM user_skills WHERE user_id = ? AND skill_type = 'teaching'"
         );
-        $teachingCountStmt->execute([UKN_DEMO_USER_ID]);
+        $teachingCountStmt->execute([UKN_CURRENT_USER_ID]);
 
         $learningCountStmt = $pdo->prepare(
             "SELECT COUNT(*) FROM user_skills WHERE user_id = ? AND skill_type = 'learning'"
         );
-        $learningCountStmt->execute([UKN_DEMO_USER_ID]);
+        $learningCountStmt->execute([UKN_CURRENT_USER_ID]);
 
         $goalsCountStmt = $pdo->prepare(
             "SELECT COUNT(*) FROM learning_goals WHERE user_id = ? AND status = 'in-progress'"
         );
-        $goalsCountStmt->execute([UKN_DEMO_USER_ID]);
+        $goalsCountStmt->execute([UKN_CURRENT_USER_ID]);
 
         $profileStats = $isMentor
             ? [
@@ -98,17 +94,17 @@ try {
              WHERE us.user_id = ? AND us.skill_type = ?
              ORDER BY s.name"
         );
-        $skillsStmt->execute([UKN_DEMO_USER_ID, $isMentor ? 'teaching' : 'learning']);
+        $skillsStmt->execute([UKN_CURRENT_USER_ID, $isMentor ? 'teaching' : 'learning']);
         $skills = $skillsStmt->fetchAll(PDO::FETCH_COLUMN);
 
         if (!$isMentor) {
             $goalsStmt = $pdo->prepare(
-                "SELECT lg.title, s.name AS skill, lg.progress, lg.target_date
+                "SELECT lg.id, lg.title, s.name AS skill, lg.progress, lg.target_date
                  FROM learning_goals lg LEFT JOIN skills s ON s.id = lg.skill_id
                  WHERE lg.user_id = ? AND lg.status = 'in-progress'
                  ORDER BY lg.target_date ASC"
             );
-            $goalsStmt->execute([UKN_DEMO_USER_ID]);
+            $goalsStmt->execute([UKN_CURRENT_USER_ID]);
             $goals = array_map(static function (array $row): array {
                 $row['targetDate'] = $row['target_date'] ? date('F Y', strtotime($row['target_date'])) : '';
                 return $row;
@@ -126,7 +122,7 @@ try {
             "SELECT category, reason FROM point_transactions
              WHERE user_id = ? ORDER BY created_at DESC LIMIT 4"
         );
-        $activityStmt->execute([UKN_DEMO_USER_ID]);
+        $activityStmt->execute([UKN_CURRENT_USER_ID]);
         $activity = array_map(static function (array $row) use ($activityIcons): array {
             return ['icon' => $activityIcons[$row['category']] ?? 'inbox', 'text' => $row['reason']];
         }, $activityStmt->fetchAll());
@@ -136,7 +132,7 @@ try {
              FROM posts WHERE user_id = ? AND status = 'visible'
              ORDER BY created_at DESC LIMIT 1"
         );
-        $postStmt->execute([UKN_DEMO_USER_ID]);
+        $postStmt->execute([UKN_CURRENT_USER_ID]);
         $postRow = $postStmt->fetch();
         if ($postRow !== false) {
             $tagsStmt = $pdo->prepare(
@@ -151,7 +147,7 @@ try {
             $postRow['role'] = $isMentor ? 'Mentor' : 'Learner';
             $postRow['department'] = $department;
             $postRow['isOwner'] = true;
-            $myPost = $postRow;
+            $myPost = uknDecoratePosts([$postRow])[0];
         }
     }
 } catch (Throwable $e) {
@@ -173,10 +169,10 @@ $skillsSectionHref = ukn_route_href($isMentor ? 'teaching-skills' : 'learning-sk
 <div class="card mb-4">
   <div class="card-body">
     <div class="d-flex align-items-start gap-3 flex-wrap">
-      <span class="ukn-avatar ukn-avatar-xl flex-shrink-0" aria-hidden="true"><?= htmlspecialchars($currentUser['initials'] ?? 'NR') ?></span>
+      <span class="ukn-avatar ukn-avatar-xl flex-shrink-0" aria-hidden="true"><?= htmlspecialchars($currentUser['initials'] ?? '') ?></span>
       <div class="flex-fill ukn-min-w-0">
         <div class="d-flex align-items-center gap-2 flex-wrap">
-          <h1 class="ukn-h3 mb-0"><?= htmlspecialchars($currentUser['name'] ?? 'Nabila Rahman') ?></h1>
+          <h1 class="ukn-h3 mb-0"><?= htmlspecialchars($currentUser['name'] ?? '') ?></h1>
           <span class="ukn-status ukn-status-accent"><?= htmlspecialchars(ucfirst($activeRole)) ?></span>
         </div>
         <div class="ukn-body-sm mt-1"><?= htmlspecialchars($department) ?> &middot; <?= htmlspecialchars($yearOfStudy) ?></div>
@@ -191,7 +187,7 @@ $skillsSectionHref = ukn_route_href($isMentor ? 'teaching-skills' : 'learning-sk
   </div>
 </div>
 <div class="row g-3 mb-4">
-  <?php foreach ($pointsRolesToRender as $pointsRole): ?>
+  <?php foreach ($pointsRolesToRender as $pointsRole): if (!isset($pointsStatByRole[$pointsRole])) { continue; } ?>
     <div
       class="col-6 col-lg-3"
       data-profile-points-stat="<?= htmlspecialchars($pointsRole) ?>"

@@ -5,11 +5,6 @@ require_once __DIR__ . '/../../components/empty-state.php';
 require_once __DIR__ . '/../../components/error-state.php';
 require_once __DIR__ . '/../../backend/config/database.php';
 
-// TODO(auth): replace with the real session user id; mirrors index.php's own hardcoded
-// demo identity (Nabila Rahman, user id 1) until real sessions exist.
-if (!defined('UKN_DEMO_USER_ID')) {
-    define('UKN_DEMO_USER_ID', 1);
-}
 
 $summaryStats = [];
 $learningSkills = [];
@@ -27,7 +22,7 @@ try {
          WHERE us.user_id = ? AND us.skill_type = 'learning'
          ORDER BY s.name"
     );
-    $skillsStmt->execute([UKN_DEMO_USER_ID]);
+    $skillsStmt->execute([UKN_CURRENT_USER_ID]);
     $learningSkills = array_map(static function (array $row): array {
         $sessions = (int) $row['sessions_count'];
         $sessionsLabel = $sessions . ' session' . ($sessions === 1 ? '' : 's') . ' completed';
@@ -41,13 +36,13 @@ try {
     $userStmt = $pdo->prepare(
         "SELECT sessions_as_learner, learning_points FROM users WHERE id = ?"
     );
-    $userStmt->execute([UKN_DEMO_USER_ID]);
+    $userStmt->execute([UKN_CURRENT_USER_ID]);
     $user = $userStmt->fetch();
 
     $goalsCountStmt = $pdo->prepare(
         "SELECT COUNT(*) FROM learning_goals WHERE user_id = ? AND status = 'in-progress'"
     );
-    $goalsCountStmt->execute([UKN_DEMO_USER_ID]);
+    $goalsCountStmt->execute([UKN_CURRENT_USER_ID]);
 
     $summaryStats = [
         ['label' => 'Skills Learning', 'value' => (string) count($learningSkills), 'icon' => 'workspaces'],

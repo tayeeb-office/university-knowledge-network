@@ -1,14 +1,15 @@
 <?php
-$editPost = $editPost ?? [
-    'title' => 'Need Help Understanding Database Normalization',
-    'content' => "I get 1NF and 2NF but 3NF stops making sense the moment a table has two candidate keys. Anyone mentoring on this before Thursday?",
-    'skills' => ['MySQL', 'Database', '3NF'],
-];
+// Filled per trigger by modal.js (data-edit-post-* attributes); saved by backend/posts/update.php,
+// which only accepts the logged-in author's own post.
+$editPost = ($editPost ?? []) + ['title' => '', 'content' => '', 'skills' => []];
 ?>
 <div class="modal fade" id="editPostModal" tabindex="-1" aria-labelledby="editPostModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
     <div class="modal-content">
-      <form data-mock-form="post" data-success-message="Changes saved successfully." novalidate>
+      <form action="backend/posts/update.php" method="post" data-validated-form novalidate>
+        <?= function_exists('csrfField') ? csrfField() : '' ?>
+        <?= function_exists('uknReturnToField') ? uknReturnToField() : '' ?>
+        <input type="hidden" name="post_id" value="" data-edit-post-id-input>
         <div class="modal-header">
           <h2 class="modal-title ukn-h3" id="editPostModalLabel">Edit Post</h2>
           <button type="button" class="btn-icon" data-bs-dismiss="modal" aria-label="Close">
@@ -25,7 +26,7 @@ $editPost = $editPost ?? [
           </div>
           <div class="ukn-form-group">
             <label for="editPostContent" class="form-label">Post Content <span class="ukn-text-danger" aria-hidden="true">*</span></label>
-            <textarea class="form-control ukn-textarea-lg" id="editPostContent" name="content" data-validate="required"><?= htmlspecialchars($editPost['content']) ?></textarea>
+            <textarea class="form-control ukn-textarea-lg" id="editPostContent" name="content" maxlength="10000" data-validate="required"><?= htmlspecialchars($editPost['content']) ?></textarea>
             <div class="ukn-field-message is-invalid" data-error-for="content" hidden>
               <span class="ms" aria-hidden="true">error</span>Add some content before saving.
             </div>

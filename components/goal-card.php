@@ -4,8 +4,9 @@ if (!function_exists('ukn_goal_card')) {
     {
         $goal += [
             'id' => null, 'skill' => '', 'progress' => 0, 'targetDate' => '', 'targetDateRaw' => '',
-            'status' => 'in-progress', 'showActions' => true, 'showDelete' => false,
+            'status' => 'in-progress', 'showActions' => true, 'showDelete' => false, 'description' => '',
         ];
+        $goalId = (int) $goal['id'];
         $pct = max(0, min(100, (int) $goal['progress']));
         $isCompleted = $goal['status'] === 'completed';
         ?>
@@ -17,6 +18,7 @@ if (!function_exists('ukn_goal_card')) {
           data-goal-target-date="<?= htmlspecialchars($goal['targetDateRaw']) ?>"
           data-goal-progress="<?= $pct ?>"
           data-goal-status="<?= htmlspecialchars($goal['status']) ?>"
+          data-goal-description="<?= htmlspecialchars((string) $goal['description']) ?>"
         >
           <div class="card-body">
             <div class="d-flex align-items-start gap-3">
@@ -34,12 +36,17 @@ if (!function_exists('ukn_goal_card')) {
                   <button type="button" class="btn-icon btn-icon-sm" aria-label="Edit goal" data-goal-edit>
                     <span class="ms" aria-hidden="true">edit</span>
                   </button>
-                  <?php if (!$isCompleted): ?>
-                    <button type="button" class="btn-icon btn-icon-sm" aria-label="Mark goal complete" data-goal-complete>
-                      <span class="ms" aria-hidden="true">check_circle</span>
-                    </button>
+                  <?php if (!$isCompleted && $goalId > 0): ?>
+                    <form action="backend/goals/complete.php" method="post" class="d-inline-flex m-0">
+                      <?= function_exists('csrfField') ? csrfField() : '' ?>
+                      <?= function_exists('uknReturnToField') ? uknReturnToField() : '' ?>
+                      <input type="hidden" name="goal_id" value="<?= $goalId ?>">
+                      <button type="submit" class="btn-icon btn-icon-sm" aria-label="Mark goal complete" data-goal-complete>
+                        <span class="ms" aria-hidden="true">check_circle</span>
+                      </button>
+                    </form>
                   <?php endif; ?>
-                  <?php if ($goal['showDelete']): ?>
+                  <?php if ($goal['showDelete'] && $goalId > 0): ?>
                     <button
                       type="button"
                       class="btn-icon btn-icon-sm"
@@ -49,11 +56,15 @@ if (!function_exists('ukn_goal_card')) {
                       data-delete-title="Delete Learning Goal?"
                       data-delete-message="This goal will be removed from your current list."
                       data-delete-confirm-label="Delete"
-                      data-success-message="<?= htmlspecialchars($goal['title']) ?> deleted."
-                      data-remove-goal-card
+                      data-delete-form="goalDeleteForm-<?= $goalId ?>"
                     >
                       <span class="ms" aria-hidden="true">delete</span>
                     </button>
+                    <form id="goalDeleteForm-<?= $goalId ?>" action="backend/goals/delete.php" method="post" hidden>
+                      <?= function_exists('csrfField') ? csrfField() : '' ?>
+                      <?= function_exists('uknReturnToField') ? uknReturnToField() : '' ?>
+                      <input type="hidden" name="goal_id" value="<?= $goalId ?>">
+                    </form>
                   <?php endif; ?>
                 </div>
               <?php endif; ?>

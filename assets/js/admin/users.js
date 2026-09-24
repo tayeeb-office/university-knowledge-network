@@ -1,56 +1,22 @@
 (function () {
   'use strict';
-  var deleteModal = document.getElementById('deleteConfirmationModal');
-  var pendingAction = null;
-  if (deleteModal) {
-    deleteModal.addEventListener('show.bs.modal', function (event) {
+  // Step 48: Suspend opens a real form (reason required); Restore submits a real form through
+  // the confirmation modal (data-delete-form). This only fills in which user is targeted.
+  var suspendModal = document.getElementById('suspendUserModal');
+  if (suspendModal) {
+    suspendModal.addEventListener('show.bs.modal', function (event) {
       var trigger = event.relatedTarget;
-      pendingAction = null;
-      if (!trigger) {
+      if (!trigger || !trigger.hasAttribute('data-suspend-user-id')) {
         return;
       }
-      var row = trigger.closest('[data-user-row]');
-      if (!row) {
-        return;
+      var form = suspendModal.querySelector('form');
+      if (form) {
+        form.reset();
       }
-      if (trigger.hasAttribute('data-suspend-user')) {
-        pendingAction = { type: 'suspend', row: row };
-      } else if (trigger.hasAttribute('data-restore-user')) {
-        pendingAction = { type: 'restore', row: row };
-      }
+      suspendModal.querySelector('[data-suspend-user-id-input]').value = trigger.getAttribute('data-suspend-user-id');
+      suspendModal.querySelector('[data-suspend-user-name]').textContent = trigger.getAttribute('data-suspend-user-name') || 'user';
     });
   }
-  function setRowStatus(row, status) {
-    var label = status === 'active' ? 'Active' : (status === 'suspended' ? 'Suspended' : 'Inactive');
-    var statusClass = status === 'active' ? 'ukn-status-accent' : 'ukn-status-neutral';
-    row.dataset.userStatus = status;
-    var badge = row.querySelector('[data-user-status-badge]');
-    if (badge) {
-      badge.textContent = label;
-      badge.classList.remove('ukn-status-accent', 'ukn-status-neutral');
-      badge.classList.add(statusClass);
-    }
-    var suspendBtn = row.querySelector('[data-suspend-user]');
-    var restoreBtn = row.querySelector('[data-restore-user]');
-    if (suspendBtn) {
-      suspendBtn.hidden = status === 'suspended';
-    }
-    if (restoreBtn) {
-      restoreBtn.hidden = status !== 'suspended';
-    }
-  }
-
-  document.addEventListener('click', function (event) {
-    if (!event.target.closest('[data-delete-confirm]') || !pendingAction) {
-      return;
-    }
-    var action = pendingAction;
-    pendingAction = null;
-    setRowStatus(action.row, action.type === 'suspend' ? 'suspended' : 'active');
-    if (typeof applyUsersView === 'function') {
-      applyUsersView();
-    }
-  });
 
   var table = document.querySelector('[data-user-table]');
   if (!table) {

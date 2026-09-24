@@ -5,11 +5,6 @@ require_once __DIR__ . '/../../components/empty-state.php';
 require_once __DIR__ . '/../../components/error-state.php';
 require_once __DIR__ . '/../../backend/config/database.php';
 
-// TODO(auth): replace with the real session user id; mirrors index.php's own hardcoded
-// demo identity (Nabila Rahman, user id 1) until real sessions exist.
-if (!defined('UKN_DEMO_USER_ID')) {
-    define('UKN_DEMO_USER_ID', 1);
-}
 
 $skillOptions = [];
 $activeGoals = [];
@@ -24,7 +19,7 @@ try {
         "SELECT name FROM skills WHERE status = 'active' ORDER BY name"
     )->fetchAll(PDO::FETCH_COLUMN);
 
-    $goalsBase = "SELECT lg.id, lg.title, s.name AS skill, lg.progress, lg.target_date, lg.status
+    $goalsBase = "SELECT lg.id, lg.title, lg.description, s.name AS skill, lg.progress, lg.target_date, lg.status
         FROM learning_goals lg LEFT JOIN skills s ON s.id = lg.skill_id
         WHERE lg.user_id = ? AND lg.status = ? ";
 
@@ -35,17 +30,17 @@ try {
     };
 
     $activeStmt = $pdo->prepare($goalsBase . "ORDER BY lg.target_date ASC");
-    $activeStmt->execute([UKN_DEMO_USER_ID, 'in-progress']);
+    $activeStmt->execute([UKN_CURRENT_USER_ID, 'in-progress']);
     $activeGoals = array_map($mapGoal, $activeStmt->fetchAll());
 
     $completedStmt = $pdo->prepare($goalsBase . "ORDER BY lg.target_date DESC");
-    $completedStmt->execute([UKN_DEMO_USER_ID, 'completed']);
+    $completedStmt->execute([UKN_CURRENT_USER_ID, 'completed']);
     $completedGoals = array_map($mapGoal, $completedStmt->fetchAll());
 
     $targetSkillsStmt = $pdo->prepare(
         "SELECT COUNT(DISTINCT skill_id) FROM learning_goals WHERE user_id = ? AND skill_id IS NOT NULL"
     );
-    $targetSkillsStmt->execute([UKN_DEMO_USER_ID]);
+    $targetSkillsStmt->execute([UKN_CURRENT_USER_ID]);
 
     $activeCount = count($activeGoals);
     $completedCount = count($completedGoals);
@@ -124,8 +119,10 @@ $completedCount = count($completedGoals);
 <div class="modal fade" id="goalFormModal" tabindex="-1" aria-labelledby="goalFormModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
-      <form data-goal-form novalidate>
-        <input type="hidden" data-goal-form-id>
+      <form data-goal-form action="backend/goals/create.php" method="post" data-create-action="backend/goals/create.php" data-update-action="backend/goals/update.php" novalidate>
+        <?= csrfField() ?>
+        <?= uknReturnToField() ?>
+        <input type="hidden" name="goal_id" data-goal-form-id>
         <div class="modal-header">
           <h2 class="modal-title ukn-h3" id="goalFormModalLabel" data-goal-form-title>Create Goal</h2>
           <button type="button" class="btn-icon" data-bs-dismiss="modal" aria-label="Close">
@@ -163,7 +160,7 @@ $completedCount = count($completedGoals);
           </div>
           <div class="ukn-form-group">
             <label for="goalFormDescription" class="form-label">Description (optional)</label>
-            <textarea class="form-control" id="goalFormDescription" name="description" placeholder="What does finishing this goal look like?"></textarea>
+            <textarea class="form-control" id="goalFormDescription" name="description" maxlength="500" placeholder="What does finishing this goal look like?"></textarea>
           </div>
           <div class="ukn-form-group mb-0">
             <label for="goalFormProgress" class="form-label">Progress</label>

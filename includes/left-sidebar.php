@@ -82,13 +82,13 @@ if (!function_exists('ukn_route_href')) {
     }
 }
 $currentUser = $currentUser ?? [
-    'loggedIn'   => true,
-    'role'       => 'learner',
-    'dualRole'   => true,
-    'activeRole' => 'learner',
-    'name'       => 'Nabila Rahman',
-    'initials'   => 'NR',
-    'meta'       => 'Learner · Computer Science',
+    'loggedIn'   => false,
+    'role'       => 'visitor',
+    'dualRole'   => false,
+    'activeRole' => 'visitor',
+    'name'       => '',
+    'initials'   => '',
+    'meta'       => '',
 ];
 $activeNav = $activeNav ?? 'home';
 $navRole = $currentUser['loggedIn']

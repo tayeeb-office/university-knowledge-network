@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/follow-button.php';
 if (!function_exists('ukn_learner_card')) {
     function ukn_learner_card(array $learner): void
     {
@@ -38,16 +39,8 @@ if (!function_exists('ukn_learner_card')) {
             </div>
             <div class="d-flex gap-2">
               <a href="<?= htmlspecialchars($learner['profileHref']) ?>" class="btn btn-outline-secondary btn-sm flex-fill">View Profile</a>
-              <?php if ($learner['following'] !== null): ?>
-                <button
-                  type="button"
-                  class="btn btn-sm flex-fill <?= $learner['following'] ? 'btn-outline-secondary' : 'btn-primary' ?>"
-                  data-follow-toggle
-                  data-following="<?= $learner['following'] ? 'true' : 'false' ?>"
-                  aria-pressed="<?= $learner['following'] ? 'true' : 'false' ?>"
-                >
-                  <span data-follow-label><?= $learner['following'] ? 'Following' : 'Follow' ?></span>
-                </button>
+              <?php if ($learner['following'] !== null && !empty($learner['id'])): ?>
+                <?php ukn_follow_form((int) $learner['id'], (bool) $learner['following'], 'btn btn-sm w-100 ' . ($learner['following'] ? 'btn-outline-secondary' : 'btn-primary'), 'd-flex flex-fill'); ?>
               <?php endif; ?>
             </div>
           </div>

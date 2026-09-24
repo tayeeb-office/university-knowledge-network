@@ -6,6 +6,8 @@ require_once __DIR__ . '/../../components/error-state.php';
 require_once __DIR__ . '/../../components/empty-state.php';
 require_once __DIR__ . '/../../backend/config/database.php';
 require_once __DIR__ . '/../../backend/helpers/format.php';
+require_once __DIR__ . '/../../backend/helpers/community.php';
+require_once __DIR__ . '/../../components/follow-button.php';
 
 $requestedId = isset($_GET['id']) && is_numeric($_GET['id']) ? (int) $_GET['id'] : 0;
 $learner = false;
@@ -88,7 +90,7 @@ try {
             $postRow['time'] = ukn_time_ago($postRow['created_at']);
             $postRow['href'] = 'index.php?page=post-details&id=' . $postRow['id'];
         }
-        $learner['post'] = $postRow === false ? null : $postRow;
+        $learner['post'] = $postRow === false ? null : uknDecoratePosts([$postRow + ['author_id' => $learnerId]])[0];
     }
 } catch (Throwable $e) {
     error_log('[UKN learner-profile] ' . $e->getMessage());
@@ -119,15 +121,13 @@ try {
         <div class="ukn-body-sm mt-1"><?= htmlspecialchars($learner['department']) ?> &middot; <?= htmlspecialchars($learner['year']) ?></div>
         <p class="ukn-body-sm mt-2 mb-0"><?= htmlspecialchars($learner['bio']) ?></p>
       </div>
+      <?php if (!empty($currentUser['loggedIn']) && (int) $learner['id'] !== UKN_CURRENT_USER_ID):
+        $isFollowing = isset(uknCurrentUserFollowingIds()[(int) $learner['id']]);
+      ?>
       <div class="flex-shrink-0">
-        <button
-          type="button"
-          class="btn btn-primary btn-sm"
-          data-follow-toggle
-          data-following="false"
-          aria-pressed="false"
-        ><span data-follow-label>Follow</span></button>
+        <?php ukn_follow_form((int) $learner['id'], $isFollowing, 'btn btn-sm ' . ($isFollowing ? 'btn-outline-secondary' : 'btn-primary')); ?>
       </div>
+      <?php endif; ?>
     </div>
   </div>
 </div>

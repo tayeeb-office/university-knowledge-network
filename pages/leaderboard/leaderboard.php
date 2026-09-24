@@ -1,16 +1,19 @@
 <?php
 require_once __DIR__ . '/../../components/leaderboard-row.php';
 require_once __DIR__ . '/../../components/error-state.php';
+require_once __DIR__ . '/../../components/empty-state.php';
 require_once __DIR__ . '/../../backend/config/database.php';
+require_once __DIR__ . '/../../backend/helpers/leaderboard.php';
 
 $activeRole = !empty($currentUser['dualRole']) ? ($currentUser['activeRole'] ?? 'learner') : ($currentUser['role'] ?? 'learner');
 $isMentor = $activeRole === 'mentor';
-$defaultView = $isMentor ? 'mentors' : 'learners';
-// TODO(auth): "you" should be the real session user id; this mirrors index.php's own
-// hardcoded demo identity (Nabila Rahman, user id 1) until real sessions exist.
-if (!defined('UKN_DEMO_USER_ID')) {
-    define('UKN_DEMO_USER_ID', 1);
-}
+$viewKeys = ['mentors', 'learners', 'contributors'];
+$requestedView = $_GET['view'] ?? '';
+$defaultView = is_string($requestedView) && in_array($requestedView, $viewKeys, true)
+    ? $requestedView
+    : ($isMentor ? 'mentors' : 'learners');
+$period = uknLeaderboardPeriodFromRequest();
+$periods = uknLeaderboardPeriods();
 
 $learners = [];
 $mentors = [];
@@ -18,45 +21,13 @@ $contributors = [];
 $leaderboardDbError = false;
 
 try {
+    // Step 43: every board is a SUM over the point_transactions ledger (see backend/helpers/leaderboard.php).
     $pdo = getDatabaseConnection();
+    $learners = uknLeaderboardRows($pdo, 'learning', $period);
+    $mentors = uknLeaderboardRows($pdo, 'mentor', $period);
+    $contributors = uknLeaderboardRows($pdo, 'community', $period);
 
-    $learnersStmt = $pdo->query(
-        "SELECT u.id, u.full_name AS name, u.initials, u.learning_points AS points,
-                u.sessions_as_learner AS sessions, d.name AS category
-         FROM users u LEFT JOIN departments d ON d.id = u.department_id
-         WHERE u.role IN ('learner', 'dual') AND u.status = 'active'
-         ORDER BY u.learning_points DESC
-         LIMIT 20"
-    );
-    $learners = $learnersStmt->fetchAll();
-
-    $mentorsStmt = $pdo->query(
-        "SELECT u.id, u.full_name AS name, u.initials, u.mentor_points AS points, u.avg_rating AS rating,
-                u.sessions_as_mentor AS sessions, d.name AS category
-         FROM users u LEFT JOIN departments d ON d.id = u.department_id
-         WHERE u.role IN ('mentor', 'dual') AND u.status = 'active'
-         ORDER BY u.mentor_points DESC, u.avg_rating DESC
-         LIMIT 20"
-    );
-    $mentors = $mentorsStmt->fetchAll();
-
-    $contributorsStmt = $pdo->query(
-        "SELECT u.id, u.full_name AS name, u.initials, u.role, d.name AS category,
-                SUM(pt.amount) AS points, COUNT(*) AS sessions
-         FROM point_transactions pt
-         JOIN users u ON u.id = pt.user_id
-         LEFT JOIN departments d ON d.id = u.department_id
-         WHERE pt.point_type = 'community'
-         GROUP BY u.id, u.full_name, u.initials, u.role, d.name
-         ORDER BY points DESC
-         LIMIT 20"
-    );
-    $contributors = $contributorsStmt->fetchAll();
-
-    // $defaultProfileRoute is used only for rows where the query itself didn't fetch a
-    // role (learners/mentors tabs are already role-filtered); contributors carries its
-    // own per-row role since it can mix both.
-    $rankAndDecorate = static function (array $rows, string $defaultProfileRoute, string $pointType) {
+    $rankAndDecorate = static function (array $rows, string $pointType, string $activityLabel) {
         $rank = 0;
         foreach ($rows as &$row) {
             $rank++;
@@ -64,31 +35,22 @@ try {
             $row['points'] = (int) $row['points'];
             $row['category'] = (string) ($row['category'] ?? '');
             $row['pointType'] = $pointType;
-            $row['isCurrentUser'] = ((int) $row['id'] === UKN_DEMO_USER_ID);
-            $profileRoute = isset($row['role'])
-                ? (in_array($row['role'], ['mentor', 'dual'], true) ? 'mentor-profile' : 'learner-profile')
-                : $defaultProfileRoute;
+            $row['sessions'] = (int) $row['activity'];
+            $row['activityLabel'] = $activityLabel;
+            $row['isCurrentUser'] = ((int) $row['id'] === UKN_CURRENT_USER_ID);
+            $profileRoute = in_array($row['role'], ['mentor', 'dual'], true) ? 'mentor-profile' : 'learner-profile';
             $row['href'] = $row['isCurrentUser']
                 ? ukn_route_href('my-profile')
                 : ukn_route_href($profileRoute) . '&id=' . $row['id'];
-            if (array_key_exists('rating', $row) && $row['rating'] !== null) {
-                $row['rating'] = (float) $row['rating'];
-            }
-            if (array_key_exists('sessions', $row) && $row['sessions'] !== null) {
-                $row['sessions'] = (int) $row['sessions'];
-            }
-            unset($row['id'], $row['role']);
+            $row['rating'] = isset($row['rating']) ? (float) $row['rating'] : null;
+            unset($row['id'], $row['role'], $row['activity']);
         }
         unset($row);
         return $rows;
     };
-    $learners = $rankAndDecorate($learners, 'learner-profile', 'Learning Points');
-    $mentors = $rankAndDecorate($mentors, 'mentor-profile', 'Mentor Points');
-    $contributors = $rankAndDecorate($contributors, 'learner-profile', 'Community Points');
-    foreach ($contributors as &$row) {
-        $row['activityLabel'] = 'posts';
-    }
-    unset($row);
+    $learners = $rankAndDecorate($learners, 'Learning Points', 'sessions');
+    $mentors = $rankAndDecorate($mentors, 'Mentor Points', 'sessions');
+    $contributors = $rankAndDecorate($contributors, 'Community Points', 'contributions');
 } catch (Throwable $e) {
     error_log('[UKN leaderboard] ' . $e->getMessage());
     $leaderboardDbError = true;
@@ -102,6 +64,9 @@ $views = [
     'learners'     => ['label' => 'Top Learners', 'rows' => $learners],
     'contributors' => ['label' => 'Community Contributors', 'rows' => $contributors],
 ];
+$periodHref = static function (string $periodKey) use ($defaultView): string {
+    return ukn_route_href('leaderboard') . '&period=' . $periodKey . '&view=' . $defaultView;
+};
 ?>
 <div class="ukn-page-header">
   <div>
@@ -121,16 +86,24 @@ $views = [
       <button type="button" class="ukn-tab-pill<?= $key === $defaultView ? ' is-active' : '' ?>" data-leaderboard-view-tab="<?= $key ?>" aria-pressed="<?= $key === $defaultView ? 'true' : 'false' ?>"><?= htmlspecialchars($view['label']) ?></button>
     <?php endforeach; ?>
   </div>
-  <div class="ukn-tabs-pill" data-leaderboard-periods role="group" aria-label="Leaderboard time period">
-    <button type="button" class="ukn-tab-pill" data-leaderboard-period="week" aria-pressed="false">This Week</button>
-    <button type="button" class="ukn-tab-pill" data-leaderboard-period="month" aria-pressed="false">This Month</button>
-    <button type="button" class="ukn-tab-pill is-active" data-leaderboard-period="all" aria-pressed="true">All Time</button>
-  </div>
+  <nav class="ukn-tabs-pill" data-leaderboard-periods aria-label="Leaderboard time period">
+    <?php foreach ($periods as $periodKey => $periodLabel): ?>
+      <a href="<?= htmlspecialchars($periodHref($periodKey)) ?>" class="ukn-tab-pill<?= $periodKey === $period ? ' is-active' : '' ?>" data-leaderboard-period="<?= $periodKey ?>"<?= $periodKey === $period ? ' aria-current="page"' : '' ?>><?= htmlspecialchars($periodLabel) ?></a>
+    <?php endforeach; ?>
+  </nav>
 </div>
 
 <?php foreach ($views as $key => $view): ?>
   <div<?= $key === $defaultView ? '' : ' hidden' ?> data-leaderboard-view="<?= $key ?>">
-    <p class="ukn-body-sm ukn-text-muted mb-3"><?= count($view['rows']) ?> ranked members</p>
+    <p class="ukn-body-sm ukn-text-muted mb-3"><?= count($view['rows']) ?> ranked member<?= count($view['rows']) === 1 ? '' : 's' ?> &middot; <?= htmlspecialchars($periods[$period]) ?></p>
+    <?php if ($view['rows'] === []): ?>
+      <?php ukn_empty_state([
+          'icon' => 'leaderboard',
+          'title' => $period === 'all' ? 'No points earned yet.' : 'No points earned ' . strtolower($periods[$period]) . ' yet.',
+          'message' => 'Rankings appear as members earn points from sessions and community activity.',
+          'dashed' => true,
+      ]); ?>
+    <?php endif; ?>
     <div class="ukn-leaderboard-podium">
       <?php foreach (array_slice($view['rows'], 0, 3) as $row): ukn_leaderboard_row($row, ['variant' => 'podium']); endforeach; ?>
     </div>

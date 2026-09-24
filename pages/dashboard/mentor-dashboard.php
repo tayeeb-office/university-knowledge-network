@@ -6,11 +6,6 @@ require_once __DIR__ . '/../../components/empty-state.php';
 require_once __DIR__ . '/../../components/error-state.php';
 require_once __DIR__ . '/../../backend/config/database.php';
 
-// TODO(auth): replace with the real session user id; mirrors index.php's own hardcoded
-// demo identity (Nabila Rahman, user id 1) until real sessions exist.
-if (!defined('UKN_DEMO_USER_ID')) {
-    define('UKN_DEMO_USER_ID', 1);
-}
 
 $mentorStats = [];
 $pendingRequests = [];
@@ -34,20 +29,20 @@ try {
     $pdo = getDatabaseConnection();
 
     $userStmt = $pdo->prepare("SELECT mentor_points, avg_rating, sessions_as_mentor FROM users WHERE id = ?");
-    $userStmt->execute([UKN_DEMO_USER_ID]);
+    $userStmt->execute([UKN_CURRENT_USER_ID]);
     $user = $userStmt->fetch();
 
     $monthSumStmt = $pdo->prepare(
         "SELECT COALESCE(SUM(amount), 0) FROM point_transactions
          WHERE user_id = ? AND point_type = 'mentor' AND created_at >= DATE_FORMAT(NOW(), '%Y-%m-01')"
     );
-    $monthSumStmt->execute([UKN_DEMO_USER_ID]);
+    $monthSumStmt->execute([UKN_CURRENT_USER_ID]);
     $mentorMonth = (int) $monthSumStmt->fetchColumn();
 
     $pendingCountStmt = $pdo->prepare(
         "SELECT COUNT(*) FROM mentoring_sessions WHERE mentor_id = ? AND status = 'pending'"
     );
-    $pendingCountStmt->execute([UKN_DEMO_USER_ID]);
+    $pendingCountStmt->execute([UKN_CURRENT_USER_ID]);
     $pendingCount = (int) $pendingCountStmt->fetchColumn();
 
     $mentorStats = [
@@ -68,10 +63,12 @@ try {
          ORDER BY ms.requested_at DESC
          LIMIT 2"
     );
-    $requestsStmt->execute([UKN_DEMO_USER_ID]);
+    $requestsStmt->execute([UKN_CURRENT_USER_ID]);
     $pendingRequests = array_map(static function (array $row): array {
         $timestamp = strtotime($row['scheduled_date'] . ' ' . $row['scheduled_time']);
         return [
+            'id' => (int) $row['id'],
+            'viewer' => 'mentor',
             'counterparty' => $row['counterparty'],
             'counterpartyInitials' => $row['counterpartyInitials'],
             'skill' => $row['skill'],
@@ -81,6 +78,7 @@ try {
             'duration' => $row['duration_minutes'] . ' min',
             'status' => 'pending',
             'message' => $row['request_message'],
+            'detailsHref' => ukn_route_href('session-details') . '&id=' . $row['id'],
         ];
     }, $requestsStmt->fetchAll());
 
@@ -94,10 +92,12 @@ try {
          ORDER BY ms.scheduled_date, ms.scheduled_time
          LIMIT 2"
     );
-    $sessionsStmt->execute([UKN_DEMO_USER_ID]);
+    $sessionsStmt->execute([UKN_CURRENT_USER_ID]);
     $mentorSessions = array_map(static function (array $row): array {
         $timestamp = strtotime($row['scheduled_date'] . ' ' . $row['scheduled_time']);
         return [
+            'id' => (int) $row['id'],
+            'viewer' => 'mentor',
             'counterparty' => $row['counterparty'],
             'counterpartyInitials' => $row['counterpartyInitials'],
             'skill' => $row['skill'],
@@ -123,7 +123,7 @@ try {
          WHERE ms.mentor_id = ? AND ms.status IN ('accepted', 'completed')
          ORDER BY ms.created_at DESC"
     );
-    $recentLearnersStmt->execute([UKN_DEMO_USER_ID]);
+    $recentLearnersStmt->execute([UKN_CURRENT_USER_ID]);
     $seenLearnerIds = [];
     foreach ($recentLearnersStmt->fetchAll() as $row) {
         if (count($recentLearners) >= 2) {
@@ -151,7 +151,7 @@ try {
          ORDER BY us.sessions_count DESC
          LIMIT 3"
     );
-    $teachingSkillsStmt->execute([UKN_DEMO_USER_ID]);
+    $teachingSkillsStmt->execute([UKN_CURRENT_USER_ID]);
     $teachingSkills = array_map(static function (array $row): array {
         $row['sessions'] = (int) $row['sessions'];
         return $row;
@@ -163,7 +163,7 @@ try {
          WHERE user_id = ? AND is_enabled = 1
          ORDER BY day_of_week, start_time"
     );
-    $slotsStmt->execute([UKN_DEMO_USER_ID]);
+    $slotsStmt->execute([UKN_CURRENT_USER_ID]);
     $slotsByDay = [];
     foreach ($slotsStmt->fetchAll() as $row) {
         $dow = (int) $row['day_of_week'];
@@ -182,7 +182,7 @@ try {
                 AVG(communication) AS communication, AVG(helpfulness) AS helpfulness
          FROM session_ratings WHERE mentor_id = ?"
     );
-    $ratingStmt->execute([UKN_DEMO_USER_ID]);
+    $ratingStmt->execute([UKN_CURRENT_USER_ID]);
     $ratingRow = $ratingStmt->fetch();
     $ratingSummary['total'] = (int) $ratingRow['total'];
     $ratingSummary['overall'] = $ratingRow['overall'] !== null ? round((float) $ratingRow['overall'], 1) : 0.0;
@@ -204,7 +204,7 @@ try {
          WHERE mentor_id = ? AND status = 'completed' AND completed_at IS NOT NULL
          GROUP BY ym"
     );
-    $monthlyStmt->execute([UKN_DEMO_USER_ID]);
+    $monthlyStmt->execute([UKN_CURRENT_USER_ID]);
     $monthlyCounts = array_column($monthlyStmt->fetchAll(), 'c', 'ym');
     $ariaParts = [];
     for ($i = 5; $i >= 0; $i--) {

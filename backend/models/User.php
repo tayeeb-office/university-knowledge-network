@@ -9,6 +9,7 @@ class User
         email,
         university_id,
         password_hash,
+        email_verified_at,
         role,
         is_admin,
         status,
@@ -141,6 +142,88 @@ class User
         $stmt->execute();
 
         return $stmt->rowCount() > 0;
+    }
+    /**
+     * The row behind the logged-in session (getCurrentUser()), with the department name the
+     * shared layout displays.
+     */
+    public function findSessionUser(int $id): ?array
+    {
+        if ($id <= 0) {
+            return null;
+        }
+        $stmt = $this->pdo->prepare(
+            'SELECT u.id, u.full_name, u.initials, u.email, u.university_id, u.role, u.is_admin,
+                    u.status, u.email_verified_at, u.department_id, d.name AS department_name,
+                    u.year_of_study, u.avatar_path, u.learning_points, u.mentor_points
+             FROM users u
+             LEFT JOIN departments d ON d.id = u.department_id
+             WHERE u.id = ?
+             LIMIT 1'
+        );
+        $stmt->bindValue(1, $id, PDO::PARAM_INT);
+        $stmt->execute();
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $row === false ? null : $row;
+    }
+    public function updatePasswordHash(int $userId, string $passwordHash): void
+    {
+        $stmt = $this->pdo->prepare('UPDATE users SET password_hash = ? WHERE id = ?');
+        $stmt->bindValue(1, $passwordHash, PDO::PARAM_STR);
+        $stmt->bindValue(2, $userId, PDO::PARAM_INT);
+        $stmt->execute();
+    }
+    /**
+     * Stores the SHA-256 hash of a new verification token (replacing any previous one, so
+     * older links stop working) with an expiry $ttlHours from now.
+     */
+    public function setVerificationToken(int $userId, string $tokenHash, int $ttlHours): void
+    {
+        $stmt = $this->pdo->prepare(
+            'UPDATE users
+             SET verification_token_hash = ?, verification_expires_at = NOW() + INTERVAL ? HOUR
+             WHERE id = ? AND email_verified_at IS NULL'
+        );
+        $stmt->bindValue(1, $tokenHash, PDO::PARAM_STR);
+        $stmt->bindValue(2, $ttlHours, PDO::PARAM_INT);
+        $stmt->bindValue(3, $userId, PDO::PARAM_INT);
+        $stmt->execute();
+    }
+    /**
+     * Consumes a verification token. One atomic UPDATE both verifies the account and clears
+     * the token, so a token can only ever succeed once.
+     *
+     * @return string 'verified' | 'expired' | 'invalid'
+     */
+    public function verifyEmailByTokenHash(string $tokenHash): string
+    {
+        $stmt = $this->pdo->prepare(
+            'UPDATE users
+             SET email_verified_at = NOW(), verification_token_hash = NULL, verification_expires_at = NULL
+             WHERE verification_token_hash = ? AND verification_expires_at > NOW() AND email_verified_at IS NULL'
+        );
+        $stmt->execute([$tokenHash]);
+        if ($stmt->rowCount() === 1) {
+            return 'verified';
+        }
+        $stmt = $this->pdo->prepare('SELECT id FROM users WHERE verification_token_hash = ? LIMIT 1');
+        $stmt->execute([$tokenHash]);
+        return $stmt->fetchColumn() !== false ? 'expired' : 'invalid';
+    }
+    /**
+     * True when the user's current token was issued less than $seconds ago (throttles resends).
+     */
+    public function verificationRecentlyIssued(int $userId, int $ttlHours, int $seconds): bool
+    {
+        $stmt = $this->pdo->prepare(
+            'SELECT 1 FROM users
+             WHERE id = ? AND verification_expires_at > NOW() + INTERVAL ? HOUR - INTERVAL ? SECOND'
+        );
+        $stmt->bindValue(1, $userId, PDO::PARAM_INT);
+        $stmt->bindValue(2, $ttlHours, PDO::PARAM_INT);
+        $stmt->bindValue(3, $seconds, PDO::PARAM_INT);
+        $stmt->execute();
+        return $stmt->fetchColumn() !== false;
     }
     public function createUserSettings(int $userId): bool
     {

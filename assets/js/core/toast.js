@@ -44,4 +44,11 @@
   }
   window.UKN = window.UKN || {};
   window.UKN.showToast = showToast;
+  // One-time result message from a server action (rendered by index.php).
+  document.addEventListener('DOMContentLoaded', function () {
+    var flash = document.querySelector('[data-flash-toast]');
+    if (flash) {
+      showToast(flash.textContent, flash.getAttribute('data-flash-type'));
+    }
+  });
 })();

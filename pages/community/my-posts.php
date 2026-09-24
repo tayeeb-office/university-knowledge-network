@@ -4,12 +4,8 @@ require_once __DIR__ . '/../../components/empty-state.php';
 require_once __DIR__ . '/../../components/error-state.php';
 require_once __DIR__ . '/../../backend/config/database.php';
 require_once __DIR__ . '/../../backend/helpers/format.php';
+require_once __DIR__ . '/../../backend/helpers/community.php';
 
-// TODO(auth): replace with the real session user id; mirrors index.php's own hardcoded
-// demo identity (Nabila Rahman, user id 1) until real sessions exist.
-if (!defined('UKN_DEMO_USER_ID')) {
-    define('UKN_DEMO_USER_ID', 1);
-}
 
 $myPosts = [];
 $skillOptions = [];
@@ -27,7 +23,7 @@ try {
          WHERE p.user_id = ? AND p.status = 'visible'
          ORDER BY p.created_at DESC"
     );
-    $postsStmt->execute([UKN_DEMO_USER_ID]);
+    $postsStmt->execute([UKN_CURRENT_USER_ID]);
     $myPosts = $postsStmt->fetchAll();
 
     if ($myPosts) {
@@ -52,7 +48,7 @@ try {
             $post['time'] = ukn_time_ago($post['created_at']);
             $post['excerpt'] = ukn_excerpt($post['content']);
             $post['href'] = 'index.php?page=post-details&id=' . $post['id'];
-            $post['authorHref'] = ukn_route_href($post['role'] === 'Mentor' ? 'mentor-profile' : 'learner-profile') . '&id=' . UKN_DEMO_USER_ID;
+            $post['authorHref'] = ukn_route_href($post['role'] === 'Mentor' ? 'mentor-profile' : 'learner-profile') . '&id=' . UKN_CURRENT_USER_ID;
             $post['isOwner'] = true;
 
             foreach ($post['tags'] as $tag) {
@@ -60,6 +56,7 @@ try {
             }
         }
         unset($post);
+        $myPosts = uknDecoratePosts($myPosts);
         $skillOptions = array_keys($skillOptions);
         sort($skillOptions);
     }

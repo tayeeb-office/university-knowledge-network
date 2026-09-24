@@ -4,11 +4,6 @@ require_once __DIR__ . '/../../components/session-card.php';
 require_once __DIR__ . '/../../components/error-state.php';
 require_once __DIR__ . '/../../backend/config/database.php';
 
-// TODO(auth): replace with the real session user id; mirrors index.php's own hardcoded
-// demo identity (Nabila Rahman, user id 1) until real sessions exist.
-if (!defined('UKN_DEMO_USER_ID')) {
-    define('UKN_DEMO_USER_ID', 1);
-}
 
 // Display order Monday -> Sunday; day_of_week follows the 0 = Sunday .. 6 = Saturday
 // convention used throughout this project (see DATABASE_READ_INTEGRATION_PLAN.md §2.3).
@@ -38,7 +33,7 @@ try {
          WHERE user_id = ? AND is_enabled = 1
          ORDER BY day_of_week, start_time"
     );
-    $slotsStmt->execute([UKN_DEMO_USER_ID]);
+    $slotsStmt->execute([UKN_CURRENT_USER_ID]);
     $slotsByDay = [];
     $toMinutes = static fn (string $t): int => (int) explode(':', $t)[0] * 60 + (int) explode(':', $t)[1];
     $totalMinutes = 0;
@@ -64,14 +59,14 @@ try {
         "SELECT COALESCE(SUM(duration_minutes), 0) FROM mentoring_sessions
          WHERE mentor_id = ? AND status = 'accepted' AND scheduled_date BETWEEN ? AND ?"
     );
-    $bookedMinutesStmt->execute([UKN_DEMO_USER_ID, $today, $weekAhead]);
+    $bookedMinutesStmt->execute([UKN_CURRENT_USER_ID, $today, $weekAhead]);
     $bookedHours = (int) round(((int) $bookedMinutesStmt->fetchColumn()) / 60);
     $openHours = max(0, $totalHours - $bookedHours);
 
     $pendingStmt = $pdo->prepare(
         "SELECT COUNT(*) FROM mentoring_sessions WHERE mentor_id = ? AND status = 'pending'"
     );
-    $pendingStmt->execute([UKN_DEMO_USER_ID]);
+    $pendingStmt->execute([UKN_CURRENT_USER_ID]);
     $pendingRequestCount = (int) $pendingStmt->fetchColumn();
 
     $upcomingStmt = $pdo->prepare(
@@ -83,10 +78,12 @@ try {
          WHERE ms.mentor_id = ? AND ms.status = 'accepted' AND ms.scheduled_date >= CURDATE()
          ORDER BY ms.scheduled_date, ms.scheduled_time"
     );
-    $upcomingStmt->execute([UKN_DEMO_USER_ID]);
+    $upcomingStmt->execute([UKN_CURRENT_USER_ID]);
     $upcomingSessions = array_map(static function (array $row): array {
         $timestamp = strtotime($row['scheduled_date'] . ' ' . $row['scheduled_time']);
         return [
+            'id' => (int) $row['id'],
+            'viewer' => 'mentor',
             'counterparty' => $row['counterparty'],
             'counterpartyInitials' => $row['counterpartyInitials'],
             'skill' => $row['skill'],
@@ -117,7 +114,9 @@ try {
       'message' => 'Something went wrong while loading this page. Please try again shortly.',
   ]); ?>
 <?php else: ?>
-<form data-availability-form novalidate>
+<form data-availability-form action="backend/availability/save.php" method="post" novalidate>
+  <?= csrfField() ?>
+  <?= uknReturnToField() ?>
   <div class="row g-3 mb-4">
     <div class="col-lg-8">
       <div class="card h-100">
@@ -133,7 +132,7 @@ try {
                   <div class="form-check form-switch mb-0">
                     <input
                       class="form-check-input" type="checkbox" role="switch"
-                      id="avail-<?= $day['key'] ?>-toggle" data-availability-toggle
+                      id="avail-<?= $day['key'] ?>-toggle" name="enabled[<?= $day['key'] ?>]" value="1" data-availability-toggle
                       <?= $day['enabled'] ? 'checked' : '' ?>
                     >
                     <label class="form-check-label ukn-body-sm" for="avail-<?= $day['key'] ?>-toggle" data-availability-toggle-label>
@@ -150,12 +149,12 @@ try {
                   <div class="d-flex align-items-start gap-2 flex-wrap mb-2" data-availability-slot>
                     <div>
                       <label class="ukn-visually-hidden" for="<?= $startId ?>"><?= htmlspecialchars($day['day']) ?> slot start time</label>
-                      <input type="time" class="form-control form-control-sm ukn-time-input" id="<?= $startId ?>" value="<?= htmlspecialchars($slot['start']) ?>" data-slot-start>
+                      <input type="time" class="form-control form-control-sm ukn-time-input" id="<?= $startId ?>" name="slot_start[<?= $day['key'] ?>][]" value="<?= htmlspecialchars($slot['start']) ?>" data-slot-start>
                     </div>
                     <span class="ukn-body-sm mt-1">to</span>
                     <div>
                       <label class="ukn-visually-hidden" for="<?= $endId ?>"><?= htmlspecialchars($day['day']) ?> slot end time</label>
-                      <input type="time" class="form-control form-control-sm ukn-time-input" id="<?= $endId ?>" value="<?= htmlspecialchars($slot['end']) ?>" data-slot-end>
+                      <input type="time" class="form-control form-control-sm ukn-time-input" id="<?= $endId ?>" name="slot_end[<?= $day['key'] ?>][]" value="<?= htmlspecialchars($slot['end']) ?>" data-slot-end>
                     </div>
                     <button type="button" class="btn-icon btn-icon-sm" aria-label="Remove this time slot" data-availability-remove-slot>
                       <span class="ms" aria-hidden="true">close</span>

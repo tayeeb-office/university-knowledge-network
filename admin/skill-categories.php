@@ -1,4 +1,7 @@
 <?php
+require_once __DIR__ . '/../backend/helpers/auth.php';
+requireAdmin();
+require_once __DIR__ . '/../backend/helpers/csrf.php';
 require_once __DIR__ . '/../components/empty-state.php';
 require_once __DIR__ . '/../components/error-state.php';
 require_once __DIR__ . '/../components/stat-card.php';
@@ -18,18 +21,20 @@ $categoriesDbError = false;
 
 try {
     $pdo = getDatabaseConnection();
+    // Step 46: skill counts grouped once for all categories.
     $stmt = $pdo->query(
-        "SELECT sc.id, sc.name, sc.description, sc.status, sc.updated_at,
-                (SELECT COUNT(*) FROM skills s WHERE s.category_id = sc.id) AS skill_count
+        "SELECT sc.id, sc.name, sc.description, sc.status, sc.updated_at, COUNT(s.id) AS skill_count
          FROM skill_categories sc
+         LEFT JOIN skills s ON s.category_id = sc.id
+         GROUP BY sc.id, sc.name, sc.description, sc.status, sc.updated_at
          ORDER BY sc.name"
     );
     foreach ($stmt->fetchAll() as $row) {
         $row['updated'] = date('M j, Y', strtotime($row['updated_at']));
         $skillCounts[$row['id']] = (int) $row['skill_count'];
         $categories[$row['id']] = $row;
+        $totalSkills += (int) $row['skill_count'];
     }
-    $totalSkills = (int) $pdo->query("SELECT COUNT(*) FROM skills")->fetchColumn();
 } catch (Throwable $e) {
     error_log('[UKN admin/skill-categories] ' . $e->getMessage());
     $categoriesDbError = true;
@@ -90,11 +95,11 @@ require __DIR__ . '/includes/header.php';
         </tr>
       </thead>
       <tbody>
-        <?php foreach ($categories as $id => $cat): $isActive = $cat['status'] === 'active'; $count = $skillCounts[$id]; ?>
+        <?php foreach ($categories as $id => $cat): $isActive = $cat['status'] === 'active'; $count = $skillCounts[$id]; $id = (int) $id; ?>
           <tr
             data-category-row
             data-category-id="<?= $id ?>"
-            data-category-name="<?= htmlspecialchars(strtolower($cat['name'])) ?>"
+            data-category-name="<?= htmlspecialchars(mb_strtolower($cat['name'], 'UTF-8')) ?>"
             data-category-status="<?= htmlspecialchars($cat['status']) ?>"
             data-category-skill-count="<?= $count ?>"
           >
@@ -104,6 +109,19 @@ require __DIR__ . '/includes/header.php';
             <td data-label="Status"><span class="ukn-status <?= $statusClass[$cat['status']] ?>" data-category-status-badge><?= htmlspecialchars($statusLabels[$cat['status']]) ?></span></td>
             <td data-label="Updated"><?= htmlspecialchars($cat['updated']) ?></td>
             <td data-label="Actions">
+              <form action="../backend/admin/skill-categories/status.php" method="post" id="categoryStatus-<?= $id ?>" hidden>
+                <?= csrfField() ?>
+                <?= uknReturnToField() ?>
+                <input type="hidden" name="category_id" value="<?= $id ?>">
+                <input type="hidden" name="status" value="<?= $isActive ? 'inactive' : 'active' ?>">
+              </form>
+              <?php if ($count === 0): ?>
+                <form action="../backend/admin/skill-categories/delete.php" method="post" id="categoryDelete-<?= $id ?>" hidden>
+                  <?= csrfField() ?>
+                  <?= uknReturnToField() ?>
+                  <input type="hidden" name="category_id" value="<?= $id ?>">
+                </form>
+              <?php endif; ?>
               <div class="d-flex gap-1 justify-content-md-end">
                 <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#categoryFormModal" data-category-edit>Edit</button>
                 <div class="dropdown">
@@ -117,28 +135,34 @@ require __DIR__ . '/includes/header.php';
                         class="dropdown-item"
                         data-bs-toggle="modal"
                         data-bs-target="#deleteConfirmationModal"
-                        data-category-deactivate
-                        <?= $isActive ? '' : 'hidden' ?>
+                        data-delete-form="categoryStatus-<?= $id ?>"
+                        <?php if ($isActive): ?>
                         data-delete-title="Deactivate <?= htmlspecialchars($cat['name']) ?>?"
-                        data-delete-message="<?= $count > 0 ? htmlspecialchars($cat['name']) . ' contains ' . $count . ' skill' . ($count === 1 ? '' : 's') . '. Deactivating is simulated only — those skills will keep showing this category.' : 'This is a frontend demo. The category status will only change in the current mock state.' ?>"
+                        data-delete-message="<?= htmlspecialchars($count > 0
+                            ? 'The category is hidden from category filters and cannot receive new skills. Its ' . $count . ' skill' . ($count === 1 ? '' : 's') . ' keep this category and their own status.'
+                            : 'The category is hidden from category filters and cannot receive new skills.') ?>"
                         data-delete-confirm-label="Deactivate Category"
-                        data-success-message="Category deactivated in demo mode."
-                      >Deactivate</button>
+                        <?php else: ?>
+                        data-delete-title="Activate <?= htmlspecialchars($cat['name']) ?>?"
+                        data-delete-message="The category becomes available in filters and for new skills again."
+                        data-delete-confirm-label="Activate Category"
+                        <?php endif; ?>
+                      ><?= $isActive ? 'Deactivate' : 'Activate' ?></button>
                     </li>
+                    <?php if ($count === 0): ?>
                     <li>
                       <button
                         type="button"
-                        class="dropdown-item"
+                        class="dropdown-item ukn-text-danger"
                         data-bs-toggle="modal"
                         data-bs-target="#deleteConfirmationModal"
-                        data-category-activate
-                        <?= $isActive ? 'hidden' : '' ?>
-                        data-delete-title="Activate <?= htmlspecialchars($cat['name']) ?>?"
-                        data-delete-message="This is a frontend demo. The category status will only change in the current mock state."
-                        data-delete-confirm-label="Activate Category"
-                        data-success-message="Category activated in demo mode."
-                      >Activate</button>
+                        data-delete-form="categoryDelete-<?= $id ?>"
+                        data-delete-title="Delete <?= htmlspecialchars($cat['name']) ?>?"
+                        data-delete-message="This category has no skills. It will be permanently deleted."
+                        data-delete-confirm-label="Delete Category"
+                      >Delete</button>
                     </li>
+                    <?php endif; ?>
                   </ul>
                 </div>
               </div>
@@ -168,19 +192,22 @@ require __DIR__ . '/includes/header.php';
           <span class="ms" aria-hidden="true">close</span>
         </button>
       </div>
-      <form data-category-form novalidate>
+      <form action="../backend/admin/skill-categories/create.php" method="post" data-category-form data-validated-form novalidate
+            data-create-action="../backend/admin/skill-categories/create.php" data-update-action="../backend/admin/skill-categories/update.php">
+        <?= csrfField() ?>
+        <?= uknReturnToField() ?>
         <div class="modal-body">
-          <input type="hidden" data-category-form-id>
+          <input type="hidden" name="category_id" value="" data-category-form-id>
           <div class="ukn-form-group">
             <label for="categoryNameInput" class="form-label">Category Name</label>
-            <input type="text" class="form-control" id="categoryNameInput" name="name" data-validate="required">
-            <div class="ukn-field-message is-invalid" data-error-for="name" data-message-required="Category name is required." data-message-duplicate="A category with this name already exists." hidden>
+            <input type="text" class="form-control" id="categoryNameInput" name="name" maxlength="60" data-validate="required">
+            <div class="ukn-field-message is-invalid" data-error-for="name" data-message-required="Category name is required." hidden>
               <span class="ms" aria-hidden="true">error</span><span data-message-text>Category name is required.</span>
             </div>
           </div>
           <div class="ukn-form-group">
             <label for="categoryDescriptionInput" class="form-label">Description</label>
-            <textarea class="form-control" id="categoryDescriptionInput" name="description" rows="3" data-validate="required"></textarea>
+            <textarea class="form-control" id="categoryDescriptionInput" name="description" rows="3" maxlength="255" data-validate="required"></textarea>
             <div class="ukn-field-message is-invalid" data-error-for="description" hidden>
               <span class="ms" aria-hidden="true">error</span>Description is required.
             </div>

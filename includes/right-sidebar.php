@@ -1,12 +1,9 @@
 <?php
 require_once __DIR__ . '/../backend/config/database.php';
 require_once __DIR__ . '/../backend/helpers/format.php';
+require_once __DIR__ . '/../backend/helpers/community.php';
+require_once __DIR__ . '/../components/follow-button.php';
 
-// TODO(auth): replace with the real session user id; mirrors index.php's own hardcoded
-// demo identity (Nabila Rahman, user id 1) until real sessions exist.
-if (!defined('UKN_DEMO_USER_ID')) {
-    define('UKN_DEMO_USER_ID', 1);
-}
 
 if (!function_exists('ukn_sidebar_modules_for_context')) {
     /**
@@ -32,21 +29,21 @@ if (!function_exists('ukn_sidebar_modules_for_context')) {
                     $modules = [];
 
                     $stmt = $pdo->prepare("SELECT COUNT(*) FROM user_skills WHERE user_id = ? AND skill_type = 'learning'");
-                    $stmt->execute([UKN_DEMO_USER_ID]);
+                    $stmt->execute([UKN_CURRENT_USER_ID]);
                     $skillsInProgress = (int) $stmt->fetchColumn();
 
                     $stmt = $pdo->prepare(
                         "SELECT COUNT(*) FROM mentoring_sessions
                          WHERE learner_id = ? AND status = 'completed' AND completed_at >= DATE_FORMAT(NOW(), '%Y-%m-01')"
                     );
-                    $stmt->execute([UKN_DEMO_USER_ID]);
+                    $stmt->execute([UKN_CURRENT_USER_ID]);
                     $sessionsThisMonth = (int) $stmt->fetchColumn();
 
                     $stmt = $pdo->prepare(
                         "SELECT COALESCE(SUM(duration_minutes), 0) FROM mentoring_sessions
                          WHERE learner_id = ? AND status = 'completed'"
                     );
-                    $stmt->execute([UKN_DEMO_USER_ID]);
+                    $stmt->execute([UKN_CURRENT_USER_ID]);
                     $hoursLearned = round(((int) $stmt->fetchColumn()) / 60, 1);
 
                     $modules[] = [
@@ -67,7 +64,7 @@ if (!function_exists('ukn_sidebar_modules_for_context')) {
                          WHERE ms.learner_id = ? AND ms.status = 'accepted' AND ms.scheduled_date >= CURDATE()
                          ORDER BY ms.scheduled_date, ms.scheduled_time LIMIT 2"
                     );
-                    $stmt->execute([UKN_DEMO_USER_ID]);
+                    $stmt->execute([UKN_CURRENT_USER_ID]);
                     $upcoming = array_map(static function (array $row): array {
                         $ts = strtotime($row['scheduled_date'] . ' ' . $row['scheduled_time']);
                         return [
@@ -84,7 +81,7 @@ if (!function_exists('ukn_sidebar_modules_for_context')) {
                         "SELECT title, progress FROM learning_goals
                          WHERE user_id = ? AND status = 'in-progress' ORDER BY target_date ASC LIMIT 2"
                     );
-                    $stmt->execute([UKN_DEMO_USER_ID]);
+                    $stmt->execute([UKN_CURRENT_USER_ID]);
                     $goals = array_map(static function (array $row): array {
                         return ['label' => $row['title'], 'pct' => (int) $row['progress']];
                     }, $stmt->fetchAll());
@@ -93,13 +90,13 @@ if (!function_exists('ukn_sidebar_modules_for_context')) {
                     }
 
                     $stmt = $pdo->prepare("SELECT learning_points FROM users WHERE id = ?");
-                    $stmt->execute([UKN_DEMO_USER_ID]);
+                    $stmt->execute([UKN_CURRENT_USER_ID]);
                     $learningPoints = (int) $stmt->fetchColumn();
                     $stmt = $pdo->prepare(
                         "SELECT COALESCE(SUM(amount), 0) FROM point_transactions
                          WHERE user_id = ? AND point_type = 'learning' AND created_at >= DATE_FORMAT(NOW(), '%Y-%m-01')"
                     );
-                    $stmt->execute([UKN_DEMO_USER_ID]);
+                    $stmt->execute([UKN_CURRENT_USER_ID]);
                     $learningMonth = (int) $stmt->fetchColumn();
                     $modules[] = [
                         'type' => 'stat-rows',
@@ -120,7 +117,7 @@ if (!function_exists('ukn_sidebar_modules_for_context')) {
                          WHERE u.role IN ('mentor', 'dual') AND u.status = 'active' AND u.id != ?
                          ORDER BY u.avg_rating DESC, u.sessions_as_mentor DESC LIMIT 1"
                     );
-                    $stmt->execute([UKN_DEMO_USER_ID]);
+                    $stmt->execute([UKN_CURRENT_USER_ID]);
                     $topMentor = $stmt->fetch();
                     if ($topMentor) {
                         $skillStmt = $pdo->prepare(
@@ -149,18 +146,18 @@ if (!function_exists('ukn_sidebar_modules_for_context')) {
                     $modules = [];
 
                     $stmt = $pdo->prepare("SELECT mentor_points, avg_rating, sessions_as_mentor FROM users WHERE id = ?");
-                    $stmt->execute([UKN_DEMO_USER_ID]);
+                    $stmt->execute([UKN_CURRENT_USER_ID]);
                     $user = $stmt->fetch();
 
                     $stmt = $pdo->prepare("SELECT COUNT(*) FROM mentoring_sessions WHERE mentor_id = ? AND status = 'pending'");
-                    $stmt->execute([UKN_DEMO_USER_ID]);
+                    $stmt->execute([UKN_CURRENT_USER_ID]);
                     $pending = (int) $stmt->fetchColumn();
 
                     $stmt = $pdo->prepare(
                         "SELECT COUNT(*) FROM mentoring_sessions
                          WHERE mentor_id = ? AND status = 'accepted' AND scheduled_date >= CURDATE()"
                     );
-                    $stmt->execute([UKN_DEMO_USER_ID]);
+                    $stmt->execute([UKN_CURRENT_USER_ID]);
                     $upcomingCount = (int) $stmt->fetchColumn();
 
                     $modules[] = [
@@ -182,7 +179,7 @@ if (!function_exists('ukn_sidebar_modules_for_context')) {
                          WHERE ms.mentor_id = ? AND ms.status = 'accepted' AND ms.scheduled_date >= CURDATE()
                          ORDER BY ms.scheduled_date, ms.scheduled_time LIMIT 2"
                     );
-                    $stmt->execute([UKN_DEMO_USER_ID]);
+                    $stmt->execute([UKN_CURRENT_USER_ID]);
                     $upcoming = array_map(static function (array $row): array {
                         $ts = strtotime($row['scheduled_date'] . ' ' . $row['scheduled_time']);
                         return [
@@ -202,7 +199,7 @@ if (!function_exists('ukn_sidebar_modules_for_context')) {
                          WHERE ms.mentor_id = ? AND ms.status IN ('accepted', 'completed')
                          ORDER BY ms.created_at DESC"
                     );
-                    $stmt->execute([UKN_DEMO_USER_ID]);
+                    $stmt->execute([UKN_CURRENT_USER_ID]);
                     $recentLearners = [];
                     $seen = [];
                     foreach ($stmt->fetchAll() as $row) {
@@ -384,7 +381,7 @@ if (!function_exists('ukn_sidebar_modules_for_context')) {
                          WHERE us.user_id = ? AND us.skill_type = 'learning'
                          ORDER BY us.sessions_count DESC LIMIT 1"
                     );
-                    $stmt->execute([UKN_DEMO_USER_ID]);
+                    $stmt->execute([UKN_CURRENT_USER_ID]);
                     $primaryLearningSkill = $stmt->fetchColumn();
                     if ($primaryLearningSkill) {
                         $modules[] = [
@@ -414,12 +411,12 @@ if (!function_exists('ukn_sidebar_modules_for_context')) {
                     $stmt = $pdo->prepare(
                         "SELECT status, COUNT(*) AS c FROM mentoring_sessions WHERE {$column} = ? GROUP BY status"
                     );
-                    $stmt->execute([UKN_DEMO_USER_ID]);
+                    $stmt->execute([UKN_CURRENT_USER_ID]);
                     $byStatus = array_column($stmt->fetchAll(), 'c', 'status');
                     $stmt = $pdo->prepare(
                         "SELECT COUNT(*) FROM mentoring_sessions WHERE {$column} = ? AND status = 'accepted' AND scheduled_date >= CURDATE()"
                     );
-                    $stmt->execute([UKN_DEMO_USER_ID]);
+                    $stmt->execute([UKN_CURRENT_USER_ID]);
                     $upcomingCount = (int) $stmt->fetchColumn();
 
                     $modules = [[
@@ -442,7 +439,7 @@ if (!function_exists('ukn_sidebar_modules_for_context')) {
                          WHERE ms.{$column} = ? AND ms.status = 'accepted' AND ms.scheduled_date >= CURDATE()
                          ORDER BY ms.scheduled_date, ms.scheduled_time LIMIT 1"
                     );
-                    $stmt->execute([UKN_DEMO_USER_ID]);
+                    $stmt->execute([UKN_CURRENT_USER_ID]);
                     $next = $stmt->fetch();
                     if ($next) {
                         $ts = strtotime($next['scheduled_date'] . ' ' . $next['scheduled_time']);
@@ -462,7 +459,7 @@ if (!function_exists('ukn_sidebar_modules_for_context')) {
 
                 case 'points': {
                     $stmt = $pdo->prepare("SELECT learning_points, mentor_points FROM users WHERE id = ?");
-                    $stmt->execute([UKN_DEMO_USER_ID]);
+                    $stmt->execute([UKN_CURRENT_USER_ID]);
                     $user = $stmt->fetch();
                     $learningPoints = (int) ($user['learning_points'] ?? 0);
                     $mentorPoints = (int) ($user['mentor_points'] ?? 0);
@@ -480,7 +477,7 @@ if (!function_exists('ukn_sidebar_modules_for_context')) {
                     $stmt = $pdo->prepare(
                         "SELECT amount, reason FROM point_transactions WHERE user_id = ? ORDER BY created_at DESC LIMIT 3"
                     );
-                    $stmt->execute([UKN_DEMO_USER_ID]);
+                    $stmt->execute([UKN_CURRENT_USER_ID]);
                     $transactions = array_map(static function (array $row): array {
                         $amount = (int) $row['amount'];
                         return ['label' => $row['reason'], 'value' => ($amount >= 0 ? '+' : '') . $amount, 'accent' => $amount >= 0];
@@ -509,28 +506,27 @@ if (!function_exists('ukn_sidebar_modules_for_context')) {
                         $stmt->execute([$postId]);
                         $postRow = $stmt->fetch();
                     }
-                    if ($postRow === false) {
-                        // No specific/visible post requested: fall back to the most recent visible
-                        // post, mirroring pages/community/post-details.php's own fallback behaviour.
-                        $stmt = $pdo->prepare($selectBase . "ORDER BY p.created_at DESC LIMIT 1");
-                        $stmt->execute();
-                        $postRow = $stmt->fetch();
-                    }
+                    // No fallback to another post: pages/community/post-details.php shows "Post not
+                    // found" for a missing / deleted post, so the sidebar stays empty too.
 
                     if ($postRow !== false) {
                         $pid = (int) $postRow['id'];
                         $authorRole = in_array($postRow['role'], ['mentor', 'dual'], true) ? 'Mentor' : 'Learner';
                         $authorPoints = $authorRole === 'Mentor' ? (int) $postRow['mentor_points'] : (int) $postRow['learning_points'];
+                        $authorId = (int) $postRow['author_id'];
+                        // Follow button only for logged-in viewers looking at someone else's post.
+                        $canFollow = !empty($currentUser['loggedIn']) && $authorId !== UKN_CURRENT_USER_ID;
                         $modules[] = [
                             'type' => 'author-card',
                             'title' => 'About Author',
                             'items' => [[
+                                'id' => $authorId,
                                 'initials' => $postRow['initials'],
                                 'name' => $postRow['name'],
                                 'department' => (string) ($postRow['department'] ?? ''),
                                 'role' => $authorRole,
                                 'points' => (string) $authorPoints,
-                                'followLabel' => 'Follow',
+                                'following' => $canFollow ? isset(uknCurrentUserFollowingIds()[$authorId]) : null,
                             ]],
                         ];
 
@@ -575,23 +571,15 @@ if (!function_exists('ukn_sidebar_modules_for_context')) {
                 case 'leaderboard': {
                     $activeRole = !empty($currentUser['dualRole']) ? ($currentUser['activeRole'] ?? 'learner') : ($currentUser['role'] ?? 'learner');
                     $isMentor = $activeRole === 'mentor';
-                    $pointColumn = $isMentor ? 'mentor_points' : 'learning_points';
-
-                    $stmt = $pdo->prepare("SELECT {$pointColumn} FROM users WHERE id = ?");
-                    $stmt->execute([UKN_DEMO_USER_ID]);
-                    $myPoints = (int) $stmt->fetchColumn();
-
-                    $rankStmt = $pdo->prepare(
-                        "SELECT COUNT(*) + 1 FROM users WHERE status = 'active' AND {$pointColumn} > ?"
-                    );
-                    $rankStmt->execute([$myPoints]);
-                    $myRank = (int) $rankStmt->fetchColumn();
-
-                    $leaderStmt = $pdo->query(
-                        "SELECT full_name FROM users WHERE status = 'active' AND role IN ('" . ($isMentor ? 'mentor' : 'learner') . "', 'dual')
-                         ORDER BY {$pointColumn} DESC LIMIT 1"
-                    );
-                    $leaderName = $leaderStmt->fetchColumn();
+                    // Step 43: same ledger totals, period and tie-break as the leaderboard itself.
+                    require_once __DIR__ . '/../backend/helpers/leaderboard.php';
+                    $pointType = $isMentor ? 'mentor' : 'learning';
+                    $period = uknLeaderboardPeriodFromRequest();
+                    $standing = uknLeaderboardStanding($pdo, UKN_CURRENT_USER_ID, $pointType, $period);
+                    $myPoints = $standing['points'];
+                    $myRank = $standing['rank'];
+                    $leaderRows = uknLeaderboardRows($pdo, $pointType, $period, 1);
+                    $leaderName = $leaderRows[0]['name'] ?? false;
 
                     return [[
                         'type' => 'stat-rows',
@@ -600,9 +588,9 @@ if (!function_exists('ukn_sidebar_modules_for_context')) {
                         // page itself (see index.php's $sidebarContextByPage), so a "View
                         // Leaderboard" link here would always point at the current page.
                         'items' => array_values(array_filter([
-                            ['label' => 'Your ' . ($isMentor ? 'mentor' : 'learning') . ' rank', 'value' => '#' . $myRank, 'accent' => true],
+                            ['label' => 'Your ' . ($isMentor ? 'mentor' : 'learning') . ' rank', 'value' => $myRank !== null ? '#' . $myRank : 'Unranked', 'accent' => true],
                             ['label' => 'Your ' . ($isMentor ? 'mentor' : 'learning') . ' points', 'value' => (string) $myPoints],
-                            $leaderName ? ['label' => 'Current leader', 'value' => ((int) $myRank === 1 ? 'You (' . $leaderName . ')' : $leaderName)] : null,
+                            $leaderName ? ['label' => 'Current leader', 'value' => ($myRank === 1 ? 'You (' . $leaderName . ')' : $leaderName)] : null,
                         ])),
                     ]];
                 }
@@ -616,7 +604,7 @@ if (!function_exists('ukn_sidebar_modules_for_context')) {
                         "SELECT learning_points, mentor_points, avg_rating, sessions_as_learner, sessions_as_mentor
                          FROM users WHERE id = ?"
                     );
-                    $stmt->execute([UKN_DEMO_USER_ID]);
+                    $stmt->execute([UKN_CURRENT_USER_ID]);
                     $user = $stmt->fetch();
 
                     $profileModules = [];
@@ -653,7 +641,7 @@ if (!function_exists('ukn_sidebar_modules_for_context')) {
                                  WHERE us.user_id = ? AND us.skill_type = 'learning'
                                  ORDER BY s.name LIMIT 6"
                             );
-                            $skillStmt->execute([UKN_DEMO_USER_ID]);
+                            $skillStmt->execute([UKN_CURRENT_USER_ID]);
                             $skillNames = $skillStmt->fetchAll(PDO::FETCH_COLUMN);
                             if ($skillNames) {
                                 $tagModule = ['type' => 'tag-list', 'title' => 'Main Skills', 'items' => $skillNames];
@@ -668,7 +656,7 @@ if (!function_exists('ukn_sidebar_modules_for_context')) {
                                 "SELECT title, progress FROM learning_goals
                                  WHERE user_id = ? AND status = 'in-progress' ORDER BY target_date ASC LIMIT 1"
                             );
-                            $goalStmt->execute([UKN_DEMO_USER_ID]);
+                            $goalStmt->execute([UKN_CURRENT_USER_ID]);
                             $goalRows = $goalStmt->fetchAll();
                             if ($goalRows) {
                                 $goalModule = [
@@ -707,29 +695,21 @@ if (!function_exists('ukn_sidebar_modules_for_context')) {
                         $modules[] = ['type' => 'ranked-list', 'title' => 'Top Skills', 'action' => 'Browse All Skills', 'actionHref' => ukn_route_href('skills'), 'items' => $topSkills];
                     }
 
-                    $stmt = $pdo->query(
-                        "SELECT u.full_name AS name, u.mentor_points AS points, d.name AS department
-                         FROM users u LEFT JOIN departments d ON d.id = u.department_id
-                         WHERE u.role IN ('mentor', 'dual') AND u.status = 'active'
-                         ORDER BY u.mentor_points DESC LIMIT 3"
-                    );
+                    // Ledger totals, same ranking as the leaderboard page (Step 43).
+                    require_once __DIR__ . '/../backend/helpers/leaderboard.php';
+                    $topMentorRows = uknLeaderboardRows($pdo, 'mentor', 'all', 3);
                     $topMentors = [];
-                    foreach ($stmt->fetchAll() as $i => $row) {
-                        $topMentors[] = ['rank' => (string) ($i + 1), 'a' => $row['name'], 'c' => (string) ($row['department'] ?? ''), 'b' => ((int) $row['points']) . ' pts'];
+                    foreach ($topMentorRows as $i => $row) {
+                        $topMentors[] = ['rank' => (string) ($i + 1), 'a' => $row['name'], 'c' => (string) ($row['category'] ?? ''), 'b' => ((int) $row['points']) . ' pts'];
                     }
                     if ($topMentors) {
                         $modules[] = ['type' => 'ranked-list', 'title' => 'Top Mentors', 'action' => 'Find a Mentor', 'actionHref' => ukn_route_href('find-mentors'), 'items' => $topMentors];
                     }
 
-                    $stmt = $pdo->query(
-                        "SELECT u.full_name AS name, u.learning_points AS points, d.name AS department
-                         FROM users u LEFT JOIN departments d ON d.id = u.department_id
-                         WHERE u.role IN ('learner', 'dual') AND u.status = 'active'
-                         ORDER BY u.learning_points DESC LIMIT 3"
-                    );
+                    $topLearnerRows = uknLeaderboardRows($pdo, 'learning', 'all', 3);
                     $topLearners = [];
-                    foreach ($stmt->fetchAll() as $i => $row) {
-                        $topLearners[] = ['rank' => (string) ($i + 1), 'a' => $row['name'], 'c' => (string) ($row['department'] ?? ''), 'b' => ((int) $row['points']) . ' pts'];
+                    foreach ($topLearnerRows as $i => $row) {
+                        $topLearners[] = ['rank' => (string) ($i + 1), 'a' => $row['name'], 'c' => (string) ($row['category'] ?? ''), 'b' => ((int) $row['points']) . ' pts'];
                     }
                     if ($topLearners) {
                         $modules[] = ['type' => 'ranked-list', 'title' => 'Top Learners', 'items' => $topLearners];
@@ -852,7 +832,9 @@ if (!function_exists('ukn_render_sidebar_module')) {
                     <span class="ukn-role-chip"><?= htmlspecialchars($author['role']) ?></span>
                     <span class="ukn-body-sm"><?= htmlspecialchars($author['points']) ?> pts</span>
                   </div>
-                  <button type="button" class="btn btn-outline-primary btn-sm w-100"><?= htmlspecialchars($author['followLabel']) ?></button>
+                  <?php if (($author['following'] ?? null) !== null): ?>
+                    <?php ukn_follow_form((int) $author['id'], (bool) $author['following'], 'btn btn-sm w-100 ' . ($author['following'] ? 'btn-outline-secondary' : 'btn-outline-primary'), 'd-block'); ?>
+                  <?php endif; ?>
                 </div>
               <?php endforeach; ?>
             <?php break;
@@ -883,13 +865,13 @@ if (!function_exists('ukn_render_sidebar_module')) {
     }
 }
 $currentUser = $currentUser ?? [
-    'loggedIn'   => true,
-    'role'       => 'learner',
-    'dualRole'   => true,
-    'activeRole' => 'learner',
-    'name'       => 'Nabila Rahman',
-    'initials'   => 'NR',
-    'meta'       => 'Learner · Computer Science',
+    'loggedIn'   => false,
+    'role'       => 'visitor',
+    'dualRole'   => false,
+    'activeRole' => 'visitor',
+    'name'       => '',
+    'initials'   => '',
+    'meta'       => '',
 ];
 $rightSidebarContext = $rightSidebarContext ?? 'home';
 $sidebarModules = $sidebarModules ?? ukn_sidebar_modules_for_context($rightSidebarContext, $currentUser);

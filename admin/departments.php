@@ -1,4 +1,7 @@
 <?php
+require_once __DIR__ . '/../backend/helpers/auth.php';
+requireAdmin();
+require_once __DIR__ . '/../backend/helpers/csrf.php';
 require_once __DIR__ . '/../components/empty-state.php';
 require_once __DIR__ . '/../components/error-state.php';
 require_once __DIR__ . '/../components/stat-card.php';
@@ -18,12 +21,15 @@ $departmentsDbError = false;
 
 try {
     $pdo = getDatabaseConnection();
+    // Step 45: member counts grouped once for all departments.
     $stmt = $pdo->query(
         "SELECT d.id, d.name, d.code, d.status,
-                (SELECT COUNT(*) FROM users u WHERE u.department_id = d.id) AS users,
-                (SELECT COUNT(*) FROM users u WHERE u.department_id = d.id AND u.role IN ('learner','dual')) AS learners,
-                (SELECT COUNT(*) FROM users u WHERE u.department_id = d.id AND u.role IN ('mentor','dual')) AS mentors
+                COUNT(u.id) AS users,
+                COALESCE(SUM(u.role IN ('learner','dual')), 0) AS learners,
+                COALESCE(SUM(u.role IN ('mentor','dual')), 0) AS mentors
          FROM departments d
+         LEFT JOIN users u ON u.department_id = d.id
+         GROUP BY d.id, d.name, d.code, d.status
          ORDER BY d.name"
     );
     foreach ($stmt->fetchAll() as $row) {
@@ -99,11 +105,11 @@ require __DIR__ . '/includes/header.php';
         </tr>
       </thead>
       <tbody>
-        <?php foreach ($departments as $id => $dept): $isActive = $dept['status'] === 'active'; ?>
+        <?php foreach ($departments as $id => $dept): $isActive = $dept['status'] === 'active'; $id = (int) $id; ?>
           <tr
             data-department-row
             data-department-id="<?= $id ?>"
-            data-department-name="<?= htmlspecialchars(strtolower($dept['name'])) ?>"
+            data-department-name="<?= htmlspecialchars(mb_strtolower($dept['name'], 'UTF-8')) ?>"
             data-department-code="<?= htmlspecialchars(strtolower($dept['code'])) ?>"
             data-department-status="<?= htmlspecialchars($dept['status']) ?>"
           >
@@ -114,6 +120,19 @@ require __DIR__ . '/includes/header.php';
             <td data-label="Mentors"><?= number_format($dept['mentors']) ?></td>
             <td data-label="Status"><span class="ukn-status <?= $statusClass[$dept['status']] ?>" data-department-status-badge><?= htmlspecialchars($statusLabels[$dept['status']]) ?></span></td>
             <td data-label="Actions">
+              <form action="../backend/admin/departments/status.php" method="post" id="departmentStatus-<?= $id ?>" hidden>
+                <?= csrfField() ?>
+                <?= uknReturnToField() ?>
+                <input type="hidden" name="department_id" value="<?= $id ?>">
+                <input type="hidden" name="status" value="<?= $isActive ? 'inactive' : 'active' ?>">
+              </form>
+              <?php if ($dept['users'] === 0): ?>
+                <form action="../backend/admin/departments/delete.php" method="post" id="departmentDelete-<?= $id ?>" hidden>
+                  <?= csrfField() ?>
+                  <?= uknReturnToField() ?>
+                  <input type="hidden" name="department_id" value="<?= $id ?>">
+                </form>
+              <?php endif; ?>
               <div class="d-flex gap-1 justify-content-md-end">
                 <button
                   type="button"
@@ -133,28 +152,32 @@ require __DIR__ . '/includes/header.php';
                         class="dropdown-item"
                         data-bs-toggle="modal"
                         data-bs-target="#deleteConfirmationModal"
-                        data-department-deactivate
-                        <?= $isActive ? '' : 'hidden' ?>
+                        data-delete-form="departmentStatus-<?= $id ?>"
+                        <?php if ($isActive): ?>
                         data-delete-title="Deactivate <?= htmlspecialchars($dept['name']) ?>?"
-                        data-delete-message="This department has <?= number_format($dept['users']) ?> assigned users. Deactivating is simulated only and will not remove those users or their data."
+                        data-delete-message="New members will no longer be able to choose this department. Its <?= number_format($dept['users']) ?> current members keep it on their profiles."
                         data-delete-confirm-label="Deactivate Department"
-                        data-success-message="Department deactivated in demo mode."
-                      >Deactivate</button>
+                        <?php else: ?>
+                        data-delete-title="Activate <?= htmlspecialchars($dept['name']) ?>?"
+                        data-delete-message="Members will be able to choose this department again when registering or editing their profile."
+                        data-delete-confirm-label="Activate Department"
+                        <?php endif; ?>
+                      ><?= $isActive ? 'Deactivate' : 'Activate' ?></button>
                     </li>
+                    <?php if ($dept['users'] === 0): ?>
                     <li>
                       <button
                         type="button"
-                        class="dropdown-item"
+                        class="dropdown-item ukn-text-danger"
                         data-bs-toggle="modal"
                         data-bs-target="#deleteConfirmationModal"
-                        data-department-activate
-                        <?= $isActive ? 'hidden' : '' ?>
-                        data-delete-title="Activate <?= htmlspecialchars($dept['name']) ?>?"
-                        data-delete-message="This is a frontend demo. The department status will only change in the current mock state."
-                        data-delete-confirm-label="Activate Department"
-                        data-success-message="Department activated in demo mode."
-                      >Activate</button>
+                        data-delete-form="departmentDelete-<?= $id ?>"
+                        data-delete-title="Delete <?= htmlspecialchars($dept['name']) ?>?"
+                        data-delete-message="No members belong to this department. It will be permanently deleted."
+                        data-delete-confirm-label="Delete Department"
+                      >Delete</button>
                     </li>
+                    <?php endif; ?>
                   </ul>
                 </div>
               </div>
@@ -184,20 +207,23 @@ require __DIR__ . '/includes/header.php';
           <span class="ms" aria-hidden="true">close</span>
         </button>
       </div>
-      <form data-department-form novalidate>
+      <form action="../backend/admin/departments/create.php" method="post" data-department-form data-validated-form novalidate
+            data-create-action="../backend/admin/departments/create.php" data-update-action="../backend/admin/departments/update.php">
+        <?= csrfField() ?>
+        <?= uknReturnToField() ?>
         <div class="modal-body">
-          <input type="hidden" data-department-form-id>
+          <input type="hidden" name="department_id" value="" data-department-form-id>
           <div class="ukn-form-group">
             <label for="departmentNameInput" class="form-label">Department Name</label>
-            <input type="text" class="form-control" id="departmentNameInput" name="name" data-validate="required">
-            <div class="ukn-field-message is-invalid" data-error-for="name" data-message-required="Department name is required." data-message-duplicate="A department with this name already exists." hidden>
+            <input type="text" class="form-control" id="departmentNameInput" name="name" maxlength="100" data-validate="required">
+            <div class="ukn-field-message is-invalid" data-error-for="name" data-message-required="Department name is required." hidden>
               <span class="ms" aria-hidden="true">error</span><span data-message-text>Department name is required.</span>
             </div>
           </div>
           <div class="ukn-form-group">
             <label for="departmentCodeInput" class="form-label">Department Code</label>
             <input type="text" class="form-control" id="departmentCodeInput" name="code" maxlength="10" data-validate="required">
-            <div class="ukn-field-message is-invalid" data-error-for="code" data-message-required="Department code is required." data-message-duplicate="A department with this code already exists." hidden>
+            <div class="ukn-field-message is-invalid" data-error-for="code" data-message-required="Department code is required." hidden>
               <span class="ms" aria-hidden="true">error</span><span data-message-text>Department code is required.</span>
             </div>
           </div>

@@ -1,0 +1,5 @@
+# Phase J (J7): user-upload area (no upload feature exists yet). Nothing here may ever run
+# as code, whatever its name.
+<FilesMatch "\.(php[0-9]?|phtml|phar|pl|py|cgi|sh|shtml)$">
+    Require all denied
+</FilesMatch>

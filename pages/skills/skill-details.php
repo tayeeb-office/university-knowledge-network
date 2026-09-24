@@ -5,12 +5,15 @@ require_once __DIR__ . '/../../components/error-state.php';
 require_once __DIR__ . '/../../components/empty-state.php';
 require_once __DIR__ . '/../../backend/config/database.php';
 require_once __DIR__ . '/../../backend/helpers/format.php';
+require_once __DIR__ . '/../../backend/helpers/community.php';
+require_once __DIR__ . '/../../backend/helpers/skills.php';
+require_once __DIR__ . '/../../components/skill-toggle.php';
 
 $activeRole = !empty($currentUser['dualRole']) ? ($currentUser['activeRole'] ?? 'learner') : ($currentUser['role'] ?? 'learner');
 $isMentor = $activeRole === 'mentor';
-// TODO(auth): read from the logged-in user's own user_skills rows once a real session exists.
-$myLearningSkills = ['Python', 'MySQL', 'Data Analysis', 'Public Speaking'];
-$myTeachingSkills = ['Python', 'Database Design', 'Data Analysis'];
+$mySkills = uknCurrentUserSkills();
+$myLearningSkills = array_values($mySkills['learning']);
+$myTeachingSkills = array_values($mySkills['teaching']);
 
 $requestedId = isset($_GET['id']) && is_numeric($_GET['id']) ? (int) $_GET['id'] : 0;
 $skill = false;
@@ -58,7 +61,7 @@ try {
 
         $postsStmt = $pdo->prepare(
             "SELECT p.id, p.title, p.content, p.vote_score AS score, p.comment_count AS comments,
-                    p.created_at, u.full_name AS author, u.initials, u.role, d.name AS department
+                    p.created_at, u.id AS author_id, u.full_name AS author, u.initials, u.role, d.name AS department
              FROM post_skills ps
              JOIN posts p ON p.id = ps.post_id
              JOIN users u ON u.id = p.user_id
@@ -73,10 +76,10 @@ try {
             $row['time'] = ukn_time_ago($row['created_at']);
             $row['excerpt'] = ukn_excerpt($row['content']);
             $row['tags'] = [];
-            $row['isOwner'] = false;
             $row['href'] = 'index.php?page=post-details&id=' . $row['id'];
             return $row;
         }, $postsStmt->fetchAll());
+        $skill['discussionPosts'] = uknDecoratePosts($skill['discussionPosts']);
 
         $mentorsStmt = $pdo->prepare(
             "SELECT u.id, u.full_name AS name, u.initials, u.avg_rating AS rating, u.mentor_points AS points,
@@ -143,15 +146,9 @@ $isAdded = $skill !== [] && in_array($skill['name'], $mySkillNames, true);
         <div class="ukn-eyebrow">Discussions</div>
         <div class="ukn-display"><?= (int) $skill['discussions'] ?></div>
       </div>
-      <button
-        type="button"
-        class="btn btn-sm ms-auto <?= $isAdded ? 'btn-outline-secondary' : 'btn-outline-primary' ?>"
-        data-skill-toggle="<?= $kind ?>"
-        data-state="<?= $isAdded ? 'added' : 'add' ?>"
-      >
-        <span class="ms" aria-hidden="true"><?= $isAdded ? 'check' : 'add' ?></span>
-        <span data-skill-toggle-label><?= $isAdded ? $kindLabel : ('Add to ' . $kindLabel) ?></span>
-      </button>
+      <?php if (!empty($currentUser['loggedIn'])): ?>
+        <?php ukn_skill_toggle_form((int) $skill['id'], $kind, $isAdded, '', 'ms-auto'); ?>
+      <?php endif; ?>
     </div>
   </div>
 </div>

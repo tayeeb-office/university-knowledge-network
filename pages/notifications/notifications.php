@@ -5,11 +5,6 @@ require_once __DIR__ . '/../../components/error-state.php';
 require_once __DIR__ . '/../../backend/config/database.php';
 require_once __DIR__ . '/../../backend/helpers/format.php';
 
-// TODO(auth): replace with the real session user id; mirrors index.php's own hardcoded
-// demo identity (Nabila Rahman, user id 1) until real sessions exist.
-if (!defined('UKN_DEMO_USER_ID')) {
-    define('UKN_DEMO_USER_ID', 1);
-}
 
 $notifications = [];
 $notificationsDbError = false;
@@ -19,12 +14,13 @@ try {
     $pdo = getDatabaseConnection();
 
     $stmt = $pdo->prepare(
-        "SELECT icon, message, type, is_read, link_url, created_at
+        "SELECT id, icon, message, type, is_read, link_url, created_at
          FROM notifications WHERE user_id = ? ORDER BY created_at DESC"
     );
-    $stmt->execute([UKN_DEMO_USER_ID]);
+    $stmt->execute([UKN_CURRENT_USER_ID]);
     $notifications = array_map(static function (array $row) use ($kindLabels): array {
         return [
+            'id' => (int) $row['id'],
             'icon' => $row['icon'],
             'text' => $row['message'],
             'time' => ukn_time_ago($row['created_at']),
@@ -62,9 +58,13 @@ $unreadCount = count(array_filter($notifications, static fn (array $n): bool => 
     <button type="button" class="ukn-tab-pill" data-notification-filter="session" aria-pressed="false">Sessions</button>
     <button type="button" class="ukn-tab-pill" data-notification-filter="community" aria-pressed="false">Community</button>
   </div>
-  <button type="button" class="btn btn-outline-secondary btn-sm" data-action="mark-all-read" <?= $unreadCount === 0 ? 'disabled' : '' ?>>
-    Mark All as Read
-  </button>
+  <form action="backend/notifications/mark-all-read.php" method="post" class="m-0">
+    <?= csrfField() ?>
+    <?= uknReturnToField() ?>
+    <button type="submit" class="btn btn-outline-secondary btn-sm" data-action="mark-all-read" <?= $unreadCount === 0 ? 'disabled' : '' ?>>
+      Mark All as Read
+    </button>
+  </form>
 </div>
 <div class="card ukn-notification-list">
   <div data-notification-list>

@@ -5,6 +5,7 @@ require_once __DIR__ . '/../helpers/csrf.php';
 require_once __DIR__ . '/../helpers/validation.php';
 require_once __DIR__ . '/../helpers/auth.php';
 require_once __DIR__ . '/../models/User.php';
+require_once __DIR__ . '/../helpers/verification.php';
 if (!function_exists('uknRegisterFail')) {
     function uknRegisterFail(array $errors, array $old = []): void
     {
@@ -23,42 +24,6 @@ if (!function_exists('uknRegisterAbort')) {
         exit($message . "\n");
     }
 }
-if (!function_exists('uknDeriveInitials')) {
-
-    function uknDeriveInitials(string $fullName): string
-    {
-        $cleaned = preg_replace('/[^\p{L}\s]+/u', ' ', $fullName);
-        if ($cleaned === null) {
-            $cleaned = $fullName;
-        }
-        $parts = preg_split('/\s+/u', trim($cleaned), -1, PREG_SPLIT_NO_EMPTY);
-        if (!is_array($parts) || $parts === []) {
-            return 'U';
-        }
-        if (count($parts) === 1) {
-            $initials = mb_substr($parts[0], 0, 2, 'UTF-8');
-        } else {
-            $initials = mb_substr($parts[0], 0, 1, 'UTF-8')
-                . mb_substr($parts[count($parts) - 1], 0, 1, 'UTF-8');
-        }
-        return mb_substr(mb_strtoupper($initials, 'UTF-8'), 0, 4, 'UTF-8');
-    }
-}
-if (!function_exists('uknResolveDepartmentId')) {
-    function uknResolveDepartmentId(PDO $pdo, string $name): ?int
-    {
-        $name = trim($name);
-        if ($name === '') {
-            return null;
-        }
-        $stmt = $pdo->prepare(
-            'SELECT id FROM departments WHERE name = ? AND status = ? LIMIT 1'
-        );
-        $stmt->execute([$name, 'active']);
-        $id = $stmt->fetchColumn();
-        return $id === false ? null : (int) $id;
-    }
-}
 
 if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') {
     if (!headers_sent()) {
@@ -66,8 +31,12 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') {
     }
     uknRegisterAbort(405, 'Method Not Allowed. This endpoint accepts POST only.');
 }
+redirectIfLoggedIn();
 if (!verifyCsrf($_POST['csrf_token'] ?? null)) {
-    uknRegisterAbort(403, 'Invalid or expired form token. Please reload the page and try again.');
+    uknRegisterFail(['form' => 'Your form expired. Please try again.']);
+}
+if (uknInputHasInvalidUtf8($_POST)) {
+    uknRegisterFail(['form' => 'Your input contains invalid characters. Please check it and try again.']);
 }
 $input = [
     'full_name'     => sanitizeInput($_POST['fullName'] ?? ''),
@@ -77,6 +46,7 @@ $input = [
 
     'password'         => is_string($_POST['password'] ?? null) ? $_POST['password'] : '',
     'confirm_password' => is_string($_POST['confirmPassword'] ?? null) ? $_POST['confirmPassword'] : '',
+    'terms'            => ($_POST['terms'] ?? null) === 'on',
 ];
 $old = [
     'fullName'     => $input['full_name'],
@@ -126,6 +96,7 @@ try {
             'department_id' => $departmentId,
         ]);
         $userModel->createUserSettings($userId);
+        $verificationToken = uknIssueVerificationToken($userModel, $userId);
         $pdo->commit();
     } catch (Throwable $e) {
         if ($pdo->inTransaction()) {
@@ -166,5 +137,11 @@ try {
 
 unset($_SESSION['register_errors'], $_SESSION['register_old']);
 
-$_SESSION['flash_success'] = 'Your account has been created. Please log in.';
+// The account exists either way; if the email could not be sent the user can request a new
+// link from the login page.
+if (uknSendVerificationEmail($input['email'], $input['full_name'], $verificationToken)) {
+    $_SESSION['flash_success'] = 'Your account has been created. We sent a verification link to your email — verify your address, then log in.';
+} else {
+    $_SESSION['flash_success'] = 'Your account has been created, but we could not send the verification email. Use "Resend verification email" below to try again.';
+}
 uknRedirectToRoute('login');

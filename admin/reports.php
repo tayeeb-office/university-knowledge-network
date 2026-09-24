@@ -1,4 +1,7 @@
 <?php
+require_once __DIR__ . '/../backend/helpers/auth.php';
+requireAdmin();
+require_once __DIR__ . '/../backend/helpers/csrf.php';
 require_once __DIR__ . '/../components/empty-state.php';
 require_once __DIR__ . '/../components/error-state.php';
 require_once __DIR__ . '/../components/stat-card.php';
@@ -45,7 +48,7 @@ try {
     $pdo = getDatabaseConnection();
 
     $stmt = $pdo->query(
-        "SELECT r.reference_code, r.target_type, r.target_id, r.reason, r.description,
+        "SELECT r.id, r.reference_code, r.target_type, r.target_id, r.reason, r.description,
                 r.status, r.reviewed_at, r.created_at,
                 ru.id AS reporter_id, ru.full_name AS reporter_name, rd.name AS reporter_department,
                 rv.full_name AS reviewer_name
@@ -115,6 +118,7 @@ try {
         $type = $row['target_type'];
         $entry = [
             'id' => $row['reference_code'],
+            'dbId' => (int) $row['id'],
             'type' => $type,
             'status' => $row['status'],
             'reporter' => [
@@ -133,6 +137,11 @@ try {
             $entry['resolvedDisplay'] = $row['reviewed_at'] ? date('M j, Y', strtotime($row['reviewed_at'])) : '';
         }
 
+        // Step 51: whether the target still exists, and whether the optional moderation action
+        // may be offered (an admin never suspends their own account from a report).
+        $entry['targetAvailable'] = $type === 'post' ? isset($postsById[$targetId])
+            : ($type === 'comment' ? isset($commentsById[$targetId]) : isset($usersById[$targetId]));
+        $entry['targetActionable'] = $entry['targetAvailable'] && !($type === 'user' && $targetId === (int) getCurrentUser()['id']);
         if ($type === 'post') {
             $p = $postsById[$targetId] ?? null;
             $entry['post'] = $p ? [
@@ -322,6 +331,9 @@ require __DIR__ . '/includes/header.php';
           <tr
             data-report-row
             data-report-id="<?= htmlspecialchars($r['id']) ?>"
+            data-report-db-id="<?= (int) $r['dbId'] ?>"
+            data-report-target-available="<?= $r['targetAvailable'] ? '1' : '0' ?>"
+            data-report-target-actionable="<?= $r['targetActionable'] ? '1' : '0' ?>"
             data-report-type="<?= htmlspecialchars($r['type']) ?>"
             data-report-status="<?= htmlspecialchars($r['status']) ?>"
             data-report-reason-slug="<?= htmlspecialchars($r['reasonSlug']) ?>"
@@ -453,8 +465,17 @@ require __DIR__ . '/includes/header.php';
           <a href="#" class="btn btn-outline-secondary btn-sm" data-report-detail-link="moderation">—</a>
           <a href="#" class="btn btn-outline-secondary btn-sm" data-report-detail-link="app" hidden>—</a>
         </div>
-        <button type="button" class="btn btn-outline-secondary btn-sm" data-report-dismiss hidden>Dismiss Report</button>
-        <button type="button" class="btn btn-primary btn-sm" data-report-resolve hidden>Resolve Report</button>
+        <form action="../backend/admin/reports/review.php" method="post" class="d-flex flex-wrap align-items-center gap-2" data-report-review-form hidden>
+          <?= csrfField() ?>
+          <?= uknReturnToField() ?>
+          <input type="hidden" name="report_id" value="" data-report-review-id>
+          <label class="form-check mb-0 ukn-body-sm" data-report-review-action-wrap hidden>
+            <input type="checkbox" class="form-check-input" name="action" value="moderate" data-report-review-action>
+            <span class="form-check-label" data-report-review-action-label>Also hide this content</span>
+          </label>
+          <button type="submit" name="decision" value="dismissed" class="btn btn-outline-secondary btn-sm" data-report-dismiss>Dismiss Report</button>
+          <button type="submit" name="decision" value="resolved" class="btn btn-primary btn-sm" data-report-resolve>Resolve Report</button>
+        </form>
         <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Close</button>
       </div>
     </div>

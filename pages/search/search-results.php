@@ -3,19 +3,24 @@ require_once __DIR__ . '/../../components/search-result-item.php';
 require_once __DIR__ . '/../../components/empty-state.php';
 require_once __DIR__ . '/../../components/error-state.php';
 require_once __DIR__ . '/../../backend/config/database.php';
+require_once __DIR__ . '/../../backend/helpers/skills.php';
+require_once __DIR__ . '/../../backend/helpers/community.php';
+require_once __DIR__ . '/../../backend/helpers/search.php';
 
 $activeRole = !empty($currentUser['dualRole']) ? ($currentUser['activeRole'] ?? 'learner') : ($currentUser['role'] ?? 'learner');
 $isMentor = $activeRole === 'mentor';
-// TODO(auth): read from the logged-in user's own user_skills rows once a real session exists.
-$myLearningSkills = ['Python', 'MySQL', 'Data Analysis', 'Public Speaking'];
-$myTeachingSkills = ['Python', 'Database Design', 'Data Analysis'];
-$q = trim((string) ($_GET['q'] ?? ''));
-$qLower = strtolower($q);
+$mySkills = uknCurrentUserSkills();
+$myLearningSkills = array_values($mySkills['learning']);
+$myTeachingSkills = array_values($mySkills['teaching']);
+$canToggleSkills = !empty($currentUser['loggedIn']);
+// Step 42: string-only, whitespace-collapsed, length-capped query (arrays and invalid UTF-8 become '').
+$q = uknSearchQueryFromRequest();
+$qLower = mb_strtolower($q, 'UTF-8');
 $searchRank = static function (string $qLower, string $primary, array $tier3 = [], array $tier4 = []): ?int {
     if ($qLower === '') {
         return null;
     }
-    $primaryLower = strtolower($primary);
+    $primaryLower = mb_strtolower($primary, 'UTF-8');
     if ($primaryLower === $qLower) {
         return 1;
     }
@@ -23,12 +28,12 @@ $searchRank = static function (string $qLower, string $primary, array $tier3 = [
         return 2;
     }
     foreach ($tier3 as $field) {
-        if ($field !== '' && stripos((string) $field, $qLower) !== false) {
+        if ($field !== '' && mb_stripos((string) $field, $qLower, 0, 'UTF-8') !== false) {
             return 3;
         }
     }
     foreach ($tier4 as $field) {
-        if ($field !== '' && stripos((string) $field, $qLower) !== false) {
+        if ($field !== '' && mb_stripos((string) $field, $qLower, 0, 'UTF-8') !== false) {
             return 4;
         }
     }
@@ -45,22 +50,44 @@ $searchDbError = false;
 if ($q !== '') {
     try {
         $pdo = getDatabaseConnection();
-        $like = '%' . $q . '%';
+        // All LIKE patterns escape % _ ! and use ESCAPE '!'; values are always bound.
+        $like = uknLikeContains($q);
+        $limit = UKN_SEARCH_RESULT_LIMIT;
 
+        // Posts: title/content go through the FULLTEXT(title, content) index in boolean mode
+        // (prefix terms, relevance-ranked). Queries with no indexable word (e.g. "Go", "C#",
+        // only stopwords) fall back to an escaped LIKE on title/content. Author names and
+        // skill tags are matched with LIKE. Candidate ids are merged, then joined once.
+        $ftTerms = uknFulltextTerms($q);
+        if ($ftTerms !== '') {
+            $textBranch = "SELECT id, MATCH(title, content) AGAINST (? IN BOOLEAN MODE) AS relevance
+                           FROM posts WHERE MATCH(title, content) AGAINST (? IN BOOLEAN MODE)";
+            $textParams = [$ftTerms, $ftTerms];
+        } else {
+            $textBranch = "SELECT id, 0 AS relevance FROM posts
+                           WHERE title LIKE ? ESCAPE '!' OR content LIKE ? ESCAPE '!'";
+            $textParams = [$like, $like];
+        }
         $postsStmt = $pdo->prepare(
             "SELECT p.id, p.title, p.content AS excerpt, p.vote_score AS votes, p.comment_count AS comments,
-                    u.full_name AS author
-             FROM posts p
+                    u.id AS author_id, u.full_name AS author, MAX(m.relevance) AS relevance
+             FROM (
+                 {$textBranch}
+                 UNION ALL
+                 SELECT p2.id, 0 FROM posts p2 JOIN users u2 ON u2.id = p2.user_id
+                 WHERE u2.full_name LIKE ? ESCAPE '!'
+                 UNION ALL
+                 SELECT ps.post_id, 0 FROM post_skills ps JOIN skills sk ON sk.id = ps.skill_id
+                 WHERE sk.name LIKE ? ESCAPE '!'
+             ) m
+             JOIN posts p ON p.id = m.id
              JOIN users u ON u.id = p.user_id
-             WHERE p.status = 'visible' AND (
-                 p.title LIKE ? OR p.content LIKE ? OR u.full_name LIKE ? OR
-                 EXISTS (SELECT 1 FROM post_skills ps JOIN skills sk ON sk.id = ps.skill_id
-                         WHERE ps.post_id = p.id AND sk.name LIKE ?)
-             )
-             ORDER BY p.created_at DESC
-             LIMIT 30"
+             WHERE p.status = 'visible'
+             GROUP BY p.id, p.title, p.content, p.vote_score, p.comment_count, p.created_at, u.id, u.full_name
+             ORDER BY relevance DESC, p.created_at DESC, p.id DESC
+             LIMIT {$limit}"
         );
-        $postsStmt->execute([$like, $like, $like, $like]);
+        $postsStmt->execute(array_merge($textParams, [$like, $like]));
         $mockPosts = $postsStmt->fetchAll();
         if ($mockPosts) {
             $postIds = array_column($mockPosts, 'id');
@@ -82,12 +109,15 @@ if ($q !== '') {
 
         $skillsStmt = $pdo->prepare(
             "SELECT s.id, s.name, sc.name AS category,
-                    (SELECT COUNT(*) FROM user_skills WHERE skill_id = s.id AND skill_type = 'teaching') AS mentors,
-                    (SELECT COUNT(*) FROM user_skills WHERE skill_id = s.id AND skill_type = 'learning') AS learners
-             FROM skills s JOIN skill_categories sc ON sc.id = s.category_id
-             WHERE s.status = 'active' AND (s.name LIKE ? OR sc.name LIKE ?)
-             ORDER BY s.name
-             LIMIT 30"
+                    COUNT(CASE WHEN us.skill_type = 'teaching' THEN 1 END) AS mentors,
+                    COUNT(CASE WHEN us.skill_type = 'learning' THEN 1 END) AS learners
+             FROM skills s
+             JOIN skill_categories sc ON sc.id = s.category_id
+             LEFT JOIN user_skills us ON us.skill_id = s.id
+             WHERE s.status = 'active' AND (s.name LIKE ? ESCAPE '!' OR sc.name LIKE ? ESCAPE '!')
+             GROUP BY s.id, s.name, sc.name
+             ORDER BY s.name, s.id
+             LIMIT {$limit}"
         );
         $skillsStmt->execute([$like, $like]);
         $mockSkills = array_map(static function (array $row) use ($isMentor, $myLearningSkills, $myTeachingSkills): array {
@@ -98,17 +128,24 @@ if ($q !== '') {
             return $row;
         }, $skillsStmt->fetchAll());
 
+        // Points come from the point_transactions ledger and ratings from session_ratings (via
+        // the mentor_rating_summary VIEW), the same sources the leaderboard (Step 43) and
+        // recommendations (Step 28) use.
         $mentorsStmt = $pdo->prepare(
-            "SELECT u.id, u.full_name AS name, u.initials, u.avg_rating AS rating, u.mentor_points AS points,
+            "SELECT u.id, u.full_name AS name, u.initials, r.avg_rating AS rating, COALESCE(lp.points, 0) AS points,
                     d.name AS department
-             FROM users u LEFT JOIN departments d ON d.id = u.department_id
+             FROM users u
+             LEFT JOIN departments d ON d.id = u.department_id
+             LEFT JOIN mentor_rating_summary r ON r.mentor_id = u.id
+             LEFT JOIN (SELECT user_id, SUM(amount) AS points FROM point_transactions
+                        WHERE point_type = 'mentor' GROUP BY user_id) lp ON lp.user_id = u.id
              WHERE u.role IN ('mentor', 'dual') AND u.status = 'active' AND (
-                 u.full_name LIKE ? OR d.name LIKE ? OR
+                 u.full_name LIKE ? ESCAPE '!' OR d.name LIKE ? ESCAPE '!' OR
                  EXISTS (SELECT 1 FROM user_skills us JOIN skills sk ON sk.id = us.skill_id
-                         WHERE us.user_id = u.id AND us.skill_type = 'teaching' AND sk.name LIKE ?)
+                         WHERE us.user_id = u.id AND us.skill_type = 'teaching' AND sk.name LIKE ? ESCAPE '!')
              )
-             ORDER BY u.avg_rating DESC
-             LIMIT 30"
+             ORDER BY r.avg_rating IS NULL, r.avg_rating DESC, u.full_name, u.id
+             LIMIT {$limit}"
         );
         $mentorsStmt->execute([$like, $like, $like]);
         $mockMentors = $mentorsStmt->fetchAll();
@@ -137,15 +174,18 @@ if ($q !== '') {
         }
 
         $learnersStmt = $pdo->prepare(
-            "SELECT u.id, u.full_name AS name, u.learning_points AS points, d.name AS department
-             FROM users u LEFT JOIN departments d ON d.id = u.department_id
+            "SELECT u.id, u.full_name AS name, COALESCE(lp.points, 0) AS points, d.name AS department
+             FROM users u
+             LEFT JOIN departments d ON d.id = u.department_id
+             LEFT JOIN (SELECT user_id, SUM(amount) AS points FROM point_transactions
+                        WHERE point_type = 'learning' GROUP BY user_id) lp ON lp.user_id = u.id
              WHERE u.role IN ('learner', 'dual') AND u.status = 'active' AND (
-                 u.full_name LIKE ? OR d.name LIKE ? OR
+                 u.full_name LIKE ? ESCAPE '!' OR d.name LIKE ? ESCAPE '!' OR
                  EXISTS (SELECT 1 FROM user_skills us JOIN skills sk ON sk.id = us.skill_id
-                         WHERE us.user_id = u.id AND us.skill_type = 'learning' AND sk.name LIKE ?)
+                         WHERE us.user_id = u.id AND us.skill_type = 'learning' AND sk.name LIKE ? ESCAPE '!')
              )
-             ORDER BY u.learning_points DESC
-             LIMIT 30"
+             ORDER BY points DESC, u.full_name, u.id
+             LIMIT {$limit}"
         );
         $learnersStmt->execute([$like, $like, $like]);
         $mockLearners = $learnersStmt->fetchAll();
@@ -166,8 +206,10 @@ if ($q !== '') {
             foreach ($mockLearners as &$learner) {
                 $learner['skills'] = $skillsByLearner[$learner['id']] ?? [];
                 $learner['department'] = (string) ($learner['department'] ?? '');
-                // TODO(auth): follow state needs the current session user; omitted for now.
-                $learner['following'] = null;
+                // Follow button for logged-in viewers, except on their own result.
+                $learner['following'] = !empty($currentUser['loggedIn']) && (int) $learner['id'] !== UKN_CURRENT_USER_ID
+                    ? isset(uknCurrentUserFollowingIds()[(int) $learner['id']])
+                    : null;
                 $learner['profileHref'] = ukn_route_href('learner-profile') . '&id=' . $learner['id'];
             }
             unset($learner);
@@ -182,11 +224,10 @@ if ($q !== '') {
     }
 }
 $results = [];
+// SQL already decided what matches; $searchRank only orders the tiers (4 = matched in SQL,
+// e.g. a FULLTEXT word match, without the whole query appearing as a substring).
 foreach ($mockPosts as $post) {
-    $rank = $searchRank($qLower, $post['title'], array_merge($post['skills'], [$post['author']]), [$post['excerpt']]);
-    if ($rank === null) {
-        continue;
-    }
+    $rank = $searchRank($qLower, $post['title'], array_merge($post['skills'], [$post['author']]), [$post['excerpt']]) ?? 4;
     $results[] = [
         'type' => 'post', 'rank' => $rank, 'title' => $post['title'],
         'meta' => $post['author'] . ' · ' . implode(', ', $post['skills']) . ' · ' . $post['votes'] . ' votes · ' . $post['comments'] . ' comments',
@@ -194,41 +235,33 @@ foreach ($mockPosts as $post) {
     ];
 }
 foreach ($mockSkills as $skill) {
-    $rank = $searchRank($qLower, $skill['name'], [$skill['category']]);
-    if ($rank === null) {
-        continue;
-    }
+    $rank = $searchRank($qLower, $skill['name'], [$skill['category']]) ?? 4;
     $results[] = [
         'type' => 'skill', 'rank' => $rank, 'title' => $skill['name'],
         'meta' => $skill['category'] . ' · ' . $skill['mentors'] . ' mentors · ' . $skill['learners'] . ' learners',
         'href' => ukn_route_href('skill-details') . '&id=' . $skill['id'],
-        'learningState' => $isMentor ? null : $skill['learningState'],
-        'teachingState' => $isMentor ? $skill['teachingState'] : null,
+        'skillId' => (int) $skill['id'],
+        'learningState' => $canToggleSkills && !$isMentor ? $skill['learningState'] : null,
+        'teachingState' => $canToggleSkills && $isMentor ? $skill['teachingState'] : null,
     ];
 }
 
 foreach ($mockMentors as $mentor) {
-    $rank = $searchRank($qLower, $mentor['name'], array_merge([$mentor['department'], $mentor['primarySkill']], $mentor['otherSkills']));
-    if ($rank === null) {
-        continue;
-    }
+    $rank = $searchRank($qLower, $mentor['name'], array_merge([$mentor['department'], $mentor['primarySkill']], $mentor['otherSkills'])) ?? 4;
     $results[] = [
-        'type' => 'mentor', 'rank' => $rank, 'title' => $mentor['name'],
-        'meta' => $mentor['department'] . ' · teaches ' . $mentor['primarySkill'] . ' · ★ ' . $mentor['rating'] . ' · ' . $mentor['points'] . ' points',
+        'type' => 'mentor', 'rank' => $rank, 'title' => $mentor['name'], 'mentorId' => (int) $mentor['id'],
+        'meta' => $mentor['department'] . ' · teaches ' . $mentor['primarySkill'] . ($mentor['rating'] !== null ? ' · ★ ' . $mentor['rating'] : '') . ' · ' . $mentor['points'] . ' points',
         'href' => $mentor['profileHref'],
         'initials' => $mentor['initials'], 'department' => $mentor['department'], 'skill' => $mentor['primarySkill'], 'rating' => $mentor['rating'],
     ];
 }
 foreach ($mockLearners as $learner) {
-    $rank = $searchRank($qLower, $learner['name'], array_merge([$learner['department']], $learner['skills']));
-    if ($rank === null) {
-        continue;
-    }
+    $rank = $searchRank($qLower, $learner['name'], array_merge([$learner['department']], $learner['skills'])) ?? 4;
     $results[] = [
         'type' => 'learner', 'rank' => $rank, 'title' => $learner['name'],
         'meta' => $learner['department'] . ' · learning ' . implode(', ', $learner['skills']) . ' · ' . $learner['points'] . ' points',
         'href' => $learner['profileHref'],
-        'following' => $learner['following'],
+        'following' => $learner['following'], 'memberId' => (int) $learner['id'],
     ];
 }
 usort($results, static fn (array $a, array $b): int => $a['rank'] <=> $b['rank']);
@@ -289,7 +322,7 @@ $typeEmptyCopy = [
       <button type="button" class="ukn-tab-pill<?= $type === 'all' ? ' is-active' : '' ?>" data-search-filter="<?= $type ?>" aria-pressed="<?= $type === 'all' ? 'true' : 'false' ?>"><?= $label ?> (<?= $counts[$type] ?>)</button>
     <?php endforeach; ?>
   </div>
-  <p class="ukn-body-sm mb-3" data-search-summary role="status"><?= $counts['all'] ?> result<?= $counts['all'] === 1 ? '' : 's' ?> for &ldquo;<?= htmlspecialchars($q) ?>&rdquo;</p>
+  <p class="ukn-body-sm mb-3" data-search-summary data-search-query="<?= htmlspecialchars($q) ?>" role="status"><?= $counts['all'] ?> result<?= $counts['all'] === 1 ? '' : 's' ?> for &ldquo;<?= htmlspecialchars($q) ?>&rdquo;</p>
   <div data-search-results>
     <?php foreach ($results as $result): ukn_search_result_item($result); endforeach; ?>
   </div>

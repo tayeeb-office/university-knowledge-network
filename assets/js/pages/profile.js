@@ -68,14 +68,10 @@
     if (!form) {
       return;
     }
-    event.preventDefault();
+    // Posts to backend/profile/update.php; only block clearly invalid input here.
     var isValid = !(window.UKN && window.UKN.validateForm) || window.UKN.validateForm(form);
     if (!isValid) {
-      return;
-    }
-    var message = form.getAttribute('data-success-message') || 'Saved successfully.';
-    if (window.UKN && window.UKN.showToast) {
-      window.UKN.showToast(message, 'success');
+      event.preventDefault();
     }
   });
 })();

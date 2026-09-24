@@ -1,4 +1,7 @@
 <?php
+require_once __DIR__ . '/../backend/helpers/auth.php';
+requireAdmin();
+require_once __DIR__ . '/../backend/helpers/csrf.php';
 require_once __DIR__ . '/../components/empty-state.php';
 require_once __DIR__ . '/../components/error-state.php';
 require_once __DIR__ . '/../components/stat-card.php';
@@ -24,16 +27,29 @@ try {
         $categories[$row['id']] = $row;
     }
 
+    // Step 47: learner/mentor counts and "is anything still using this skill" in grouped
+    // joins (one pass per referencing table), never one query per skill.
     $stmt = $pdo->query(
         "SELECT s.id, s.name, s.description, s.status, s.category_id AS categoryId, s.updated_at,
-                (SELECT COUNT(*) FROM user_skills WHERE skill_id = s.id AND skill_type = 'learning') AS learners,
-                (SELECT COUNT(*) FROM user_skills WHERE skill_id = s.id AND skill_type = 'teaching') AS mentors
+                COALESCE(us.learners, 0) AS learners, COALESCE(us.mentors, 0) AS mentors,
+                (COALESCE(us.total, 0) + COALESCE(ps.n, 0) + COALESCE(lg.n, 0) + COALESCE(ms.n, 0)
+                 + COALESCE(sr.n, 0) + COALESCE(rel.n, 0)) AS refs
          FROM skills s
+         LEFT JOIN (SELECT skill_id, SUM(skill_type = 'learning') AS learners, SUM(skill_type = 'teaching') AS mentors,
+                           COUNT(*) AS total FROM user_skills GROUP BY skill_id) us ON us.skill_id = s.id
+         LEFT JOIN (SELECT skill_id, COUNT(*) AS n FROM post_skills GROUP BY skill_id) ps ON ps.skill_id = s.id
+         LEFT JOIN (SELECT skill_id, COUNT(*) AS n FROM learning_goals WHERE skill_id IS NOT NULL GROUP BY skill_id) lg ON lg.skill_id = s.id
+         LEFT JOIN (SELECT skill_id, COUNT(*) AS n FROM mentoring_sessions GROUP BY skill_id) ms ON ms.skill_id = s.id
+         LEFT JOIN (SELECT skill_id, COUNT(*) AS n FROM session_ratings WHERE skill_id IS NOT NULL GROUP BY skill_id) sr ON sr.skill_id = s.id
+         LEFT JOIN (SELECT skill_id, COUNT(*) AS n FROM (SELECT source_skill_id AS skill_id FROM skill_relations
+                                                        UNION ALL SELECT target_skill_id FROM skill_relations) r
+                    GROUP BY skill_id) rel ON rel.skill_id = s.id
          ORDER BY s.name"
     );
     foreach ($stmt->fetchAll() as $row) {
         $row['learners'] = (int) $row['learners'];
         $row['mentors'] = (int) $row['mentors'];
+        $row['refs'] = (int) $row['refs'];
         $row['updated'] = date('M j, Y', strtotime($row['updated_at']));
         $row['updated_sort'] = strtotime($row['updated_at']);
         $skills[$row['id']] = $row;
@@ -120,14 +136,14 @@ require __DIR__ . '/includes/header.php';
         </tr>
       </thead>
       <tbody>
-        <?php foreach ($skills as $id => $skill): $isActive = $skill['status'] === 'active'; $cat = $categories[$skill['categoryId']]; ?>
+        <?php foreach ($skills as $id => $skill): $isActive = $skill['status'] === 'active'; $cat = $categories[$skill['categoryId']]; $id = (int) $id; ?>
           <tr
             data-skill-row
             data-skill-id="<?= $id ?>"
-            data-skill-name="<?= htmlspecialchars(strtolower($skill['name'])) ?>"
-            data-skill-category-id="<?= $skill['categoryId'] ?>"
-            data-skill-category-name="<?= htmlspecialchars(strtolower($cat['name'])) ?>"
-            data-skill-description="<?= htmlspecialchars(strtolower($skill['description'])) ?>"
+            data-skill-name="<?= htmlspecialchars(mb_strtolower($skill['name'], 'UTF-8')) ?>"
+            data-skill-category-id="<?= (int) $skill['categoryId'] ?>"
+            data-skill-category-name="<?= htmlspecialchars(mb_strtolower($cat['name'], 'UTF-8')) ?>"
+            data-skill-description="<?= htmlspecialchars(mb_strtolower($skill['description'], 'UTF-8')) ?>"
             data-skill-status="<?= htmlspecialchars($skill['status']) ?>"
             data-skill-learners="<?= (int) $skill['learners'] ?>"
             data-skill-mentors="<?= (int) $skill['mentors'] ?>"
@@ -143,8 +159,21 @@ require __DIR__ . '/includes/header.php';
             <td data-label="Status"><span class="ukn-status <?= $statusClass[$skill['status']] ?>" data-skill-status-badge><?= htmlspecialchars($statusLabels[$skill['status']]) ?></span></td>
             <td data-label="Updated"><?= htmlspecialchars($skill['updated']) ?></td>
             <td data-label="Actions">
+              <form action="../backend/admin/skills/status.php" method="post" id="skillStatus-<?= $id ?>" hidden>
+                <?= csrfField() ?>
+                <?= uknReturnToField() ?>
+                <input type="hidden" name="skill_id" value="<?= $id ?>">
+                <input type="hidden" name="status" value="<?= $isActive ? 'inactive' : 'active' ?>">
+              </form>
+              <?php if ($skill['refs'] === 0): ?>
+                <form action="../backend/admin/skills/delete.php" method="post" id="skillDelete-<?= $id ?>" hidden>
+                  <?= csrfField() ?>
+                  <?= uknReturnToField() ?>
+                  <input type="hidden" name="skill_id" value="<?= $id ?>">
+                </form>
+              <?php endif; ?>
               <div class="d-flex gap-1 justify-content-md-end">
-                <a href="../index.php?page=skill-details&id=<?= $id ?>" class="btn btn-outline-secondary btn-sm">View in App</a>
+                <a href="../index.php?page=skill-details&amp;id=<?= $id ?>" class="btn btn-outline-secondary btn-sm">View in App</a>
                 <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#skillFormModal" data-skill-edit>Edit</button>
                 <div class="dropdown">
                   <button type="button" class="btn-icon btn-icon-sm" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Skill actions for <?= htmlspecialchars($skill['name']) ?>">
@@ -157,28 +186,32 @@ require __DIR__ . '/includes/header.php';
                         class="dropdown-item"
                         data-bs-toggle="modal"
                         data-bs-target="#deleteConfirmationModal"
-                        data-skill-deactivate
-                        <?= $isActive ? '' : 'hidden' ?>
+                        data-delete-form="skillStatus-<?= $id ?>"
+                        <?php if ($isActive): ?>
                         data-delete-title="Deactivate <?= htmlspecialchars($skill['name']) ?>?"
-                        data-delete-message="<?= htmlspecialchars($skill['name']) ?> is currently associated with <?= number_format($skill['learners']) ?> learners and <?= number_format($skill['mentors']) ?> mentors. Deactivation is simulated only and will not affect their learning/teaching skills."
+                        data-delete-message="<?= htmlspecialchars($skill['name'] . ' leaves the skill directory, search, the skill network and skill pickers. Its ' . number_format($skill['learners']) . ' learners and ' . number_format($skill['mentors']) . ' mentors keep it on their profiles; goals, posts and sessions are unchanged.') ?>"
                         data-delete-confirm-label="Deactivate Skill"
-                        data-success-message="Skill deactivated in demo mode."
-                      >Deactivate</button>
+                        <?php else: ?>
+                        data-delete-title="Activate <?= htmlspecialchars($skill['name']) ?>?"
+                        data-delete-message="The skill becomes available in the directory, search, the skill network and skill pickers again."
+                        data-delete-confirm-label="Activate Skill"
+                        <?php endif; ?>
+                      ><?= $isActive ? 'Deactivate' : 'Activate' ?></button>
                     </li>
+                    <?php if ($skill['refs'] === 0): ?>
                     <li>
                       <button
                         type="button"
-                        class="dropdown-item"
+                        class="dropdown-item ukn-text-danger"
                         data-bs-toggle="modal"
                         data-bs-target="#deleteConfirmationModal"
-                        data-skill-activate
-                        <?= $isActive ? 'hidden' : '' ?>
-                        data-delete-title="Activate <?= htmlspecialchars($skill['name']) ?>?"
-                        data-delete-message="This is a frontend demo. The skill status will only change in the current mock state."
-                        data-delete-confirm-label="Activate Skill"
-                        data-success-message="Skill activated in demo mode."
-                      >Activate</button>
+                        data-delete-form="skillDelete-<?= $id ?>"
+                        data-delete-title="Delete <?= htmlspecialchars($skill['name']) ?>?"
+                        data-delete-message="Nothing uses this skill yet (no members, posts, goals, sessions, ratings or relations). It will be permanently deleted."
+                        data-delete-confirm-label="Delete Skill"
+                      >Delete</button>
                     </li>
+                    <?php endif; ?>
                   </ul>
                 </div>
               </div>
@@ -212,19 +245,22 @@ require __DIR__ . '/includes/header.php';
           <span class="ms" aria-hidden="true">close</span>
         </button>
       </div>
-      <form data-skill-form novalidate>
+      <form action="../backend/admin/skills/create.php" method="post" data-skill-form data-validated-form novalidate
+            data-create-action="../backend/admin/skills/create.php" data-update-action="../backend/admin/skills/update.php">
+        <?= csrfField() ?>
+        <?= uknReturnToField() ?>
         <div class="modal-body">
-          <input type="hidden" data-skill-form-id>
+          <input type="hidden" name="skill_id" value="" data-skill-form-id>
           <div class="ukn-form-group">
             <label for="skillNameInput" class="form-label">Skill Name</label>
-            <input type="text" class="form-control" id="skillNameInput" name="name" data-validate="required">
-            <div class="ukn-field-message is-invalid" data-error-for="name" data-message-required="Skill name is required." data-message-duplicate="A skill with this name already exists." hidden>
+            <input type="text" class="form-control" id="skillNameInput" name="name" maxlength="80" data-validate="required">
+            <div class="ukn-field-message is-invalid" data-error-for="name" data-message-required="Skill name is required." hidden>
               <span class="ms" aria-hidden="true">error</span><span data-message-text>Skill name is required.</span>
             </div>
           </div>
           <div class="ukn-form-group">
             <label for="skillCategoryInput" class="form-label">Category</label>
-            <select class="form-select" id="skillCategoryInput" name="categoryId">
+            <select class="form-select" id="skillCategoryInput" name="category_id">
               <?php foreach ($categories as $id => $cat): ?>
                 <option value="<?= $id ?>"<?= $cat['status'] !== 'active' ? ' disabled' : '' ?>><?= htmlspecialchars($cat['name']) ?><?= $cat['status'] !== 'active' ? ' (Inactive)' : '' ?></option>
               <?php endforeach; ?>
@@ -232,7 +268,7 @@ require __DIR__ . '/includes/header.php';
           </div>
           <div class="ukn-form-group">
             <label for="skillDescriptionInput" class="form-label">Description</label>
-            <textarea class="form-control" id="skillDescriptionInput" name="description" rows="3" data-validate="required"></textarea>
+            <textarea class="form-control" id="skillDescriptionInput" name="description" rows="3" maxlength="255" data-validate="required"></textarea>
             <div class="ukn-field-message is-invalid" data-error-for="description" hidden>
               <span class="ms" aria-hidden="true">error</span>Description is required.
             </div>
