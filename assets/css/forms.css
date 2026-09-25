@@ -213,16 +213,6 @@ textarea.form-control.ukn-textarea-lg{
 .ukn-tag-input input:focus{
   outline: none;
 }
-.ukn-dropzone{
-  display: flex;
-  align-items: center;
-  gap: var(--ukn-space-3);
-  padding: var(--ukn-space-3);
-  border: 1px dashed var(--ukn-border-strong);
-  border-radius: var(--ukn-radius-md);
-  color: var(--ukn-ink-muted);
-  font-size: .875rem;
-}
 .ukn-form-group{
   margin-bottom: var(--ukn-space-4);
 }

@@ -30,7 +30,7 @@ if (!function_exists('uknLeaderboardBaseSql')) {
     {
         $roleFilter = [
             'learning'  => "AND u.role IN ('learner', 'dual')",
-            'mentor'    => "AND u.role IN ('mentor', 'dual')",
+            'mentor'    => "AND u.role = 'dual'",
             'community' => '',
         ][$pointType];
         $periodFilter = [

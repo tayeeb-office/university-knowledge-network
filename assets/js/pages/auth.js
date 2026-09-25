@@ -92,18 +92,9 @@
     }
     var kind = form.getAttribute('data-auth-form');
     var requiredValid = window.UKN && window.UKN.validateForm ? window.UKN.validateForm(form) : true;
-    var passwordsOk = kind === 'register' ? checkPasswordsMatch(form) : true;
+    var passwordsOk = (kind === 'register' || kind === 'reset-password') ? checkPasswordsMatch(form) : true;
     if (!requiredValid || !passwordsOk) {
       event.preventDefault();
-    }
-  });
-  document.addEventListener('click', function (event) {
-    var btn = event.target.closest('[data-forgot-password]');
-    if (!btn) {
-      return;
-    }
-    if (window.UKN && window.UKN.showToast) {
-      window.UKN.showToast('Password reset is not available in this demo yet.', 'info');
     }
   });
 })();

@@ -66,7 +66,7 @@ $showResend = (bool) uknTakeFlash('login_unverified', false);
             <input type="checkbox" class="form-check-input" id="loginRememberMe" name="rememberMe">
             <label class="form-check-label" for="loginRememberMe">Remember Me</label>
           </div>
-          <button type="button" class="btn btn-link p-0" data-forgot-password>Forgot Password?</button>
+          <a href="index.php?page=forgot-password">Forgot Password?</a>
         </div>
         <button type="submit" class="btn btn-primary w-100">Login</button>
       </form>

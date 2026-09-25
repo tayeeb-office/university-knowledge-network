@@ -17,6 +17,10 @@
       if (hidden) {
         hidden.value = '';
       }
+      var textInput = picker.querySelector('[data-skill-input]');
+      if (textInput) {
+        textInput.value = '';
+      }
     });
   }
   document.addEventListener('submit', function (event) {
@@ -44,10 +48,25 @@
   // otherwise let the browser POST normally.
   document.addEventListener('submit', function (event) {
     var form = event.target.closest('[data-validated-form]');
-    if (form && window.UKN && window.UKN.validateForm && !window.UKN.validateForm(form)) {
+    if (!form) {
+      return;
+    }
+    // Create/Edit Post: a skill typed but not yet confirmed with Enter/comma is added exactly as
+    // Enter would add it; the server still checks every name against the skill directory.
+    form.querySelectorAll('[data-skill-picker]').forEach(commitPendingSkill);
+    if (window.UKN && window.UKN.validateForm && !window.UKN.validateForm(form)) {
       event.preventDefault();
     }
   });
+  function commitPendingSkill(picker) {
+    var textInput = picker.querySelector('[data-skill-input]');
+    var hiddenInput = picker.parentElement.querySelector('[data-skill-value]');
+    if (!textInput || !hiddenInput) {
+      return;
+    }
+    addSkillTag(picker, hiddenInput, textInput.value);
+    textInput.value = '';
+  }
   function currentSkills(hiddenInput) {
     return hiddenInput.value ? hiddenInput.value.split('|').filter(Boolean) : [];
   }

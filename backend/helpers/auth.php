@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/../config/app.php';
 require_once __DIR__ . '/session.php';
 require_once __DIR__ . '/../models/User.php';
 if (!function_exists('getCurrentUser')) {
@@ -33,6 +34,14 @@ if (!function_exists('getCurrentUser')) {
             clearAuthSession();
             return null;
         }
+        // The session must belong to the current password (see setAuthSession()). A session
+        // from before the password changed, or one without a fingerprint, has to log in again.
+        $fingerprint = $_SESSION['auth_fp'] ?? null;
+        if (!is_string($fingerprint) || !hash_equals((string) $row['password_fingerprint'], $fingerprint)) {
+            clearAuthSession();
+            return null;
+        }
+        unset($row['password_fingerprint']);
         $user = $row;
         return $user;
     }
@@ -76,6 +85,22 @@ if (!function_exists('uknBaseUrl')) {
         return '';
     }
 }
+if (!function_exists('uknAppUrl')) {
+    /**
+     * Absolute application base URL (no trailing slash) for links used outside the page:
+     * emailed verification links and shared post links. UKN_APP_URL is the canonical value;
+     * the request-derived fallback is for local development only.
+     */
+    function uknAppUrl(): string
+    {
+        if (UKN_APP_URL !== '') {
+            return UKN_APP_URL;
+        }
+        $isHttps = !empty($_SERVER['HTTPS']) && strtolower((string) $_SERVER['HTTPS']) !== 'off';
+        $host = preg_replace('/[^A-Za-z0-9.\-:\[\]]/', '', (string) ($_SERVER['HTTP_HOST'] ?? 'localhost'));
+        return ($isHttps ? 'https' : 'http') . '://' . $host . uknBaseUrl();
+    }
+}
 if (!function_exists('uknRouteUrl')) {
     function uknRouteUrl(string $route): string
     {
@@ -96,14 +121,22 @@ if (!function_exists('uknReturnToField')) {
     function uknReturnToField(): string
     {
         $path = (string) ($_SERVER['REQUEST_URI'] ?? '');
+        // Pages opened from an emailed link (?token=…) must not copy the secret token into other
+        // forms; those forms fall back to their default redirect instead.
+        parse_str((string) parse_url($path, PHP_URL_QUERY), $query);
+        if (array_key_exists('token', $query)) {
+            return '';
+        }
         return uknIsSafeRedirectPath($path)
             ? '<input type="hidden" name="return_to" value="' . htmlspecialchars($path, ENT_QUOTES, 'UTF-8') . '">'
             : '';
     }
 }
-// Role model: users.role is the capability ('learner', 'mentor', or 'dual' = both) and
-// users.is_admin is independent of it. The active role (learner|mentor) is per-session
-// state in $_SESSION['active_role'], always re-checked against the DB capability.
+// Role model: users.role is the capability — 'learner' (learner only) or 'dual' (learner +
+// mentor, granted by an approved mentor application). There is no mentor-only account.
+// users.is_admin is independent of it and is the only admin authorization. The active role
+// (learner|mentor) is per-session state in $_SESSION['active_role'], always re-checked
+// against the DB capability; 'admin' is never an active role.
 if (!function_exists('uknUserCanActAs')) {
     function uknUserCanActAs(array $user, string $role): bool
     {
@@ -111,19 +144,19 @@ if (!function_exists('uknUserCanActAs')) {
             return in_array($user['role'] ?? '', ['learner', 'dual'], true);
         }
         if ($role === 'mentor') {
-            return in_array($user['role'] ?? '', ['mentor', 'dual'], true);
+            return ($user['role'] ?? '') === 'dual';
         }
         return false;
     }
 }
 if (!function_exists('uknDefaultActiveRole')) {
     /**
-     * Same default setAuthSession() applies at login: mentor-only users start as mentor,
-     * learners and dual-role users start as learner.
+     * Same default setAuthSession() applies at login: every account starts in learner mode
+     * (learners can only be learners; learner + mentor accounts switch to mentor mode).
      */
     function uknDefaultActiveRole(array $user): string
     {
-        return ($user['role'] ?? '') === 'mentor' ? 'mentor' : 'learner';
+        return 'learner';
     }
 }
 if (!function_exists('getCurrentActiveRole')) {

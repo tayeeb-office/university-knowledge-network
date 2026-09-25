@@ -139,7 +139,7 @@ if ($q !== '') {
              LEFT JOIN mentor_rating_summary r ON r.mentor_id = u.id
              LEFT JOIN (SELECT user_id, SUM(amount) AS points FROM point_transactions
                         WHERE point_type = 'mentor' GROUP BY user_id) lp ON lp.user_id = u.id
-             WHERE u.role IN ('mentor', 'dual') AND u.status = 'active' AND (
+             WHERE u.role = 'dual' AND u.status = 'active' AND (
                  u.full_name LIKE ? ESCAPE '!' OR d.name LIKE ? ESCAPE '!' OR
                  EXISTS (SELECT 1 FROM user_skills us JOIN skills sk ON sk.id = us.skill_id
                          WHERE us.user_id = u.id AND us.skill_type = 'teaching' AND sk.name LIKE ? ESCAPE '!')

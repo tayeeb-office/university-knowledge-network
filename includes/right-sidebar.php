@@ -114,7 +114,7 @@ if (!function_exists('ukn_sidebar_modules_for_context')) {
                          FROM users u
                          JOIN user_skills us ON us.user_id = u.id AND us.skill_type = 'teaching'
                          LEFT JOIN departments d ON d.id = u.department_id
-                         WHERE u.role IN ('mentor', 'dual') AND u.status = 'active' AND u.id != ?
+                         WHERE u.role = 'dual' AND u.status = 'active' AND u.id != ?
                          ORDER BY u.avg_rating DESC, u.sessions_as_mentor DESC LIMIT 1"
                     );
                     $stmt->execute([UKN_CURRENT_USER_ID]);
@@ -295,7 +295,7 @@ if (!function_exists('ukn_sidebar_modules_for_context')) {
                     $stmt = $pdo->query(
                         "SELECT DISTINCT u.id, u.full_name AS name, u.avg_rating AS rating
                          FROM users u JOIN user_skills us ON us.user_id = u.id AND us.skill_type = 'teaching'
-                         WHERE u.role IN ('mentor', 'dual') AND u.status = 'active'
+                         WHERE u.role = 'dual' AND u.status = 'active'
                          ORDER BY u.avg_rating DESC, u.sessions_as_mentor DESC LIMIT 3"
                     );
                     $topRated = $stmt->fetchAll();
@@ -349,7 +349,7 @@ if (!function_exists('ukn_sidebar_modules_for_context')) {
                     $stmt = $pdo->query(
                         "SELECT DISTINCT u.id, u.full_name AS name, u.sessions_as_mentor AS sessions
                          FROM users u JOIN user_skills us ON us.user_id = u.id AND us.skill_type = 'teaching'
-                         WHERE u.role IN ('mentor', 'dual') AND u.status = 'active'
+                         WHERE u.role = 'dual' AND u.status = 'active'
                          ORDER BY u.sessions_as_mentor DESC LIMIT 3"
                     );
                     $mostExperienced = [];
@@ -511,7 +511,7 @@ if (!function_exists('ukn_sidebar_modules_for_context')) {
 
                     if ($postRow !== false) {
                         $pid = (int) $postRow['id'];
-                        $authorRole = in_array($postRow['role'], ['mentor', 'dual'], true) ? 'Mentor' : 'Learner';
+                        $authorRole = $postRow['role'] === 'dual' ? 'Mentor' : 'Learner';
                         $authorPoints = $authorRole === 'Mentor' ? (int) $postRow['mentor_points'] : (int) $postRow['learning_points'];
                         $authorId = (int) $postRow['author_id'];
                         // Follow button only for logged-in viewers looking at someone else's post.

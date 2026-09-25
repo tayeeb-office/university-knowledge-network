@@ -32,14 +32,8 @@ if (!function_exists('uknIssueVerificationToken')) {
 if (!function_exists('uknVerificationLink')) {
     function uknVerificationLink(string $rawToken): string
     {
-        $base = UKN_APP_URL;
-        if ($base === '') {
-            // Development fallback only; production must set UKN_APP_URL (backend/config/app.php).
-            $isHttps = !empty($_SERVER['HTTPS']) && strtolower((string) $_SERVER['HTTPS']) !== 'off';
-            $host = preg_replace('/[^A-Za-z0-9.\-:\[\]]/', '', (string) ($_SERVER['HTTP_HOST'] ?? 'localhost'));
-            $base = ($isHttps ? 'https' : 'http') . '://' . $host . uknBaseUrl();
-        }
-        return $base . '/index.php?page=verify-email&token=' . rawurlencode($rawToken);
+        // Production must set UKN_APP_URL (backend/config/app.php); see uknAppUrl().
+        return uknAppUrl() . '/index.php?page=verify-email&token=' . rawurlencode($rawToken);
     }
 }
 if (!function_exists('uknSendVerificationEmail')) {

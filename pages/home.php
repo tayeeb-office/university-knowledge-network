@@ -88,12 +88,22 @@ $remainingBatch = array_slice($communityPosts, 5);
   <div class="card mb-3">
     <div class="card-body ukn-composer__row">
       <span class="ukn-avatar ukn-avatar-sm" aria-hidden="true"><?= htmlspecialchars($currentUser['initials'] ?? '?') ?></span>
+      <?php if (empty($currentUser['loggedIn'])): ?>
+        <?php // Guests cannot post (backend/posts/create.php requires login): send them to Login. ?>
+        <a href="<?= htmlspecialchars(ukn_route_href('login')) ?>" class="form-control ukn-composer__field">
+          Share something with the community&hellip;
+        </a>
+        <a href="<?= htmlspecialchars(ukn_route_href('login')) ?>" class="btn btn-primary btn-sm d-inline-flex align-items-center gap-1">
+          <span class="ms" aria-hidden="true">add</span>Post
+        </a>
+      <?php else: ?>
       <button type="button" class="form-control ukn-composer__field" data-bs-toggle="modal" data-bs-target="#createPostModal">
         Share something with the community&hellip;
       </button>
       <button type="button" class="btn btn-primary btn-sm d-inline-flex align-items-center gap-1" data-bs-toggle="modal" data-bs-target="#createPostModal">
         <span class="ms" aria-hidden="true">add</span>Post
       </button>
+      <?php endif; ?>
     </div>
   </div>
   <div class="ukn-feed-controls" data-feed>

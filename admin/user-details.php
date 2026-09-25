@@ -20,7 +20,7 @@ if ($requestedId !== null) {
 
         $userStmt = $pdo->prepare(
             "SELECT u.id, u.full_name AS name, u.initials, u.email, u.university_id AS universityId,
-                    u.role, u.status, u.suspend_reason AS suspendReason, u.created_at, u.last_active_at,
+                    u.role, u.is_admin, u.status, u.suspend_reason AS suspendReason, u.created_at, u.last_active_at,
                     u.learning_points, u.mentor_points, u.avg_rating, u.sessions_as_learner,
                     u.sessions_as_mentor, u.learners_helped, d.name AS department
              FROM users u
@@ -35,7 +35,7 @@ if ($requestedId !== null) {
             $user['joined'] = date('F j, Y', strtotime($user['created_at']));
             $user['lastActive'] = $user['last_active_at'] ? ukn_time_ago($user['last_active_at']) : 'Never';
             $isLearnerRole = in_array($user['role'], ['learner', 'dual'], true);
-            $isMentorRole = in_array($user['role'], ['mentor', 'dual'], true);
+            $isMentorRole = $user['role'] === 'dual';
 
             if ($isLearnerRole) {
                 $skillsStmt = $pdo->prepare(
@@ -161,7 +161,7 @@ if (!$user) {
     require __DIR__ . '/includes/footer.php';
     return;
 }
-$roleLabels = ['learner' => 'Learner', 'mentor' => 'Mentor', 'dual' => 'Learner + Mentor'];
+$roleLabels = ['learner' => 'Learner', 'dual' => 'Learner & Mentor'];
 $statusLabels = ['active' => 'Active', 'inactive' => 'Inactive', 'suspended' => 'Suspended'];
 $statusClass = ['active' => 'ukn-status-accent', 'inactive' => 'ukn-status-neutral', 'suspended' => 'ukn-status-neutral'];
 $isSuspended = $user['status'] === 'suspended';
@@ -174,7 +174,8 @@ $isSelf = (int) $requestedId === (int) getCurrentUser()['id'];
       <div class="flex-fill ukn-min-w-0">
         <div class="d-flex align-items-center gap-2 flex-wrap">
           <h2 class="ukn-h3 mb-0"><?= htmlspecialchars($user['name']) ?></h2>
-          <span class="ukn-role-chip"><?= htmlspecialchars($roleLabels[$user['role']]) ?></span>
+          <span class="ukn-role-chip"><?= htmlspecialchars($roleLabels[$user['role']] ?? ucfirst((string) $user['role'])) ?></span>
+          <?php if (!empty($user['is_admin'])): ?><span class="ukn-status ukn-status-accent">Admin</span><?php endif; ?>
           <span class="ukn-status <?= $statusClass[$user['status']] ?>" data-user-status-badge><?= htmlspecialchars($statusLabels[$user['status']]) ?></span>
         </div>
         <div class="ukn-body-sm ukn-text-muted mt-1"><?= htmlspecialchars($user['department']) ?> &middot; <?= htmlspecialchars($user['universityId']) ?></div>
@@ -225,7 +226,7 @@ $isSelf = (int) $requestedId === (int) getCurrentUser()['id'];
         <div class="ukn-admin-row"><span class="ukn-body-sm ukn-text-muted">Department</span><span class="fw-bold ms-auto"><?= htmlspecialchars($user['department']) ?></span></div>
         <div class="ukn-admin-row"><span class="ukn-body-sm ukn-text-muted">Joined</span><span class="fw-bold ms-auto"><?= htmlspecialchars($user['joined']) ?></span></div>
         <div class="ukn-admin-row"><span class="ukn-body-sm ukn-text-muted">Last Active</span><span class="fw-bold ms-auto"><?= htmlspecialchars($user['lastActive']) ?></span></div>
-        <div class="ukn-admin-row"><span class="ukn-body-sm ukn-text-muted">Roles</span><span class="fw-bold ms-auto"><?= htmlspecialchars($roleLabels[$user['role']]) ?></span></div>
+        <div class="ukn-admin-row"><span class="ukn-body-sm ukn-text-muted">Roles</span><span class="fw-bold ms-auto"><?= htmlspecialchars(($roleLabels[$user['role']] ?? ucfirst((string) $user['role'])) . (!empty($user['is_admin']) ? ' · Admin' : '')) ?></span></div>
         <?php if ($isSuspended && !empty($user['suspendReason'])): ?>
           <div class="ukn-admin-row"><span class="ukn-body-sm ukn-text-muted">Suspend Reason</span><span class="fw-bold ms-auto"><?= htmlspecialchars($user['suspendReason']) ?></span></div>
         <?php endif; ?>

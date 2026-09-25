@@ -1,6 +1,56 @@
 <?php
 require_once __DIR__ . '/../config/app.php';
 
+if (!function_exists('uknSendMailSmtp')) {
+    /**
+     * 'smtp' transport: sends through the SMTP server in UKN_MAIL_HOST (e.g. Gmail) with PHPMailer,
+     * STARTTLS and certificate verification. Returns false on failure; never throws. Only a
+     * redacted, one-line reason is logged: never the password, the recipient or the message body
+     * (which contains the verification token).
+     */
+    function uknSendMailSmtp(string $to, string $subject, string $body, string $from): bool
+    {
+        $password = (string) getenv('UKN_MAIL_PASSWORD');
+        if (UKN_MAIL_HOST === '' || UKN_MAIL_USERNAME === '' || $password === '') {
+            error_log('[UKN mail] SMTP transport is not configured (UKN_MAIL_HOST / UKN_MAIL_USERNAME / UKN_MAIL_PASSWORD).');
+            return false;
+        }
+
+        require_once __DIR__ . '/PHPMailer/Exception.php';
+        require_once __DIR__ . '/PHPMailer/PHPMailer.php';
+        require_once __DIR__ . '/PHPMailer/SMTP.php';
+
+        $mail = new \PHPMailer\PHPMailer\PHPMailer(true);
+        try {
+            $mail->isSMTP();
+            $mail->SMTPDebug  = \PHPMailer\PHPMailer\SMTP::DEBUG_OFF;
+            $mail->Host       = UKN_MAIL_HOST;
+            $mail->Port       = UKN_MAIL_PORT;
+            $mail->SMTPSecure = \PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_STARTTLS;
+            $mail->SMTPAuth   = true;
+            $mail->Username   = UKN_MAIL_USERNAME;
+            $mail->Password   = $password;
+            $mail->Timeout    = 15;
+            $mail->CharSet    = \PHPMailer\PHPMailer\PHPMailer::CHARSET_UTF8;
+            $mail->XMailer    = ' '; // no library/version header
+            $mail->setFrom($from, str_replace(["\r", "\n"], ' ', UKN_MAIL_FROM_NAME));
+            $mail->addAddress($to);
+            $mail->Subject = $subject;
+            $mail->Body    = $body;
+            $mail->isHTML(false);
+            $mail->send();
+            return true;
+        } catch (\Throwable $e) {
+            $reason = str_replace([$password, UKN_MAIL_USERNAME, $to], '[redacted]', $e->getMessage());
+            $reason = preg_replace('/[^\s@<>"]+@[^\s@<>"]+/', '[redacted]', $reason);
+            error_log('[UKN mail] SMTP send failed: ' . str_replace(["\r", "\n"], ' ', $reason));
+            return false;
+        } finally {
+            $mail->smtpClose();
+        }
+    }
+}
+
 if (!function_exists('uknSendMail')) {
     /**
      * Sends a plain-text email through the transport chosen by UKN_MAIL_TRANSPORT
@@ -26,6 +76,10 @@ if (!function_exists('uknSendMail')) {
                 error_log('[UKN mail] mail() failed for a verification email.');
             }
             return $sent;
+        }
+
+        if (UKN_MAIL_TRANSPORT === 'smtp') {
+            return uknSendMailSmtp($to, $subject, $body, $from);
         }
 
         // 'log' transport (development): write the message to storage/mail/, which is not

@@ -94,7 +94,7 @@ if (!function_exists('uknRecommendMentors')) {
              FROM users u
              JOIN user_skills us ON us.user_id = u.id AND us.skill_type = 'teaching'
              LEFT JOIN departments d ON d.id = u.department_id
-             WHERE u.role IN ('mentor', 'dual') AND u.status = 'active'
+             WHERE u.role = 'dual' AND u.status = 'active'
                AND u.email_verified_at IS NOT NULL AND u.id <> ?
                AND us.skill_id IN ($in)"
         );

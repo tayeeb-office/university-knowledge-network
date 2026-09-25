@@ -44,6 +44,22 @@ $dashboardHref = $activeRole === 'mentor' ? 'index.php?page=mentor-dashboard' : 
   <button type="button" class="dropdown-item" data-bs-toggle="modal" data-bs-target="#roleSwitchModal">
     <span class="ms" aria-hidden="true">swap_horiz</span><span data-role-switch-label>Switch to <?= htmlspecialchars($otherRole) ?></span>
   </button>
+<?php elseif (!empty($currentUser['loggedIn'])): ?>
+  <?php // Learner-only accounts: apply to become a mentor, or see that an application is waiting. ?>
+  <?php if (($currentUser['mentorApplication'] ?? null) === 'pending'): ?>
+    <a href="index.php?page=mentor-application" class="dropdown-item" data-mentor-application-pending>
+      <span class="ms" aria-hidden="true">hourglass_top</span>Mentor Application Pending
+    </a>
+  <?php else: ?>
+    <a href="index.php?page=mentor-application" class="dropdown-item" data-mentor-application-apply>
+      <span class="ms" aria-hidden="true">volunteer_activism</span>Apply to Become a Mentor
+    </a>
+  <?php endif; ?>
+<?php endif; ?>
+<?php if (!empty($currentUser['isAdmin'])): ?>
+  <a href="admin/dashboard.php" class="dropdown-item" data-admin-panel-link>
+    <span class="ms" aria-hidden="true">admin_panel_settings</span>Admin Panel
+  </a>
 <?php endif; ?>
 <button type="button" id="uknThemeToggle" class="dropdown-item" aria-pressed="false">
   <span class="ms" aria-hidden="true">dark_mode</span><span data-theme-label>Theme: Light</span>

@@ -60,15 +60,20 @@ if (!function_exists('setAuthSession')) {
             session_regenerate_id(true);
         }
         $role = $user['role'] ?? 'learner';
-        if (!in_array($role, ['learner', 'mentor', 'dual'], true)) {
+        if (!in_array($role, ['learner', 'dual'], true)) {
             $role = 'learner';
         }
-        $activeRole = ($role === 'mentor') ? 'mentor' : 'learner';
+        // Every login starts in learner mode; learner + mentor accounts switch to mentor mode.
+        $activeRole = 'learner';
         $_SESSION['user_id']      = (int) ($user['id'] ?? 0);
         $_SESSION['role']         = $role;
         $_SESSION['active_role']  = $activeRole;
         $_SESSION['is_admin']     = !empty($user['is_admin']);
         $_SESSION['logged_in_at'] = time();
+        // Binds the session to the current password: getCurrentUser() ends it once the stored
+        // password hash changes (e.g. after a password reset). Only a SHA-256 digest of the hash
+        // is kept, server-side.
+        $_SESSION['auth_fp']      = hash('sha256', (string) ($user['password_hash'] ?? ''));
         // New privilege level, new CSRF token (csrfToken() issues a fresh one on next use).
         unset($_SESSION['csrf_token']);
     }
@@ -85,7 +90,8 @@ if (!function_exists('clearAuthSession')) {
             $_SESSION['role'],
             $_SESSION['active_role'],
             $_SESSION['is_admin'],
-            $_SESSION['logged_in_at']
+            $_SESSION['logged_in_at'],
+            $_SESSION['auth_fp']
         );
         if (session_status() === PHP_SESSION_ACTIVE && !headers_sent()) {
             session_regenerate_id(true);

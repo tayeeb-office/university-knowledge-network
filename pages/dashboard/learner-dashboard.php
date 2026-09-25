@@ -102,7 +102,7 @@ try {
          FROM users u
          JOIN user_skills us ON us.user_id = u.id AND us.skill_type = 'teaching'
          LEFT JOIN departments d ON d.id = u.department_id
-         WHERE u.role IN ('mentor', 'dual') AND u.status = 'active' AND u.id != ?
+         WHERE u.role = 'dual' AND u.status = 'active' AND u.id != ?
          ORDER BY u.avg_rating DESC, u.sessions_as_mentor DESC
          LIMIT 3"
     );

@@ -87,16 +87,17 @@ if (!function_exists('uknCurrentUserFollowingIds')) {
 if (!function_exists('uknParsePostSkills')) {
     /**
      * Pipe-separated skill names from the post form's skill picker → active skill ids.
-     * Returns [ids, error]; error is null when valid.
+     * Related skills are optional: a missing or empty value is valid (no tags). Every name that
+     * is given must still be an active directory skill. Returns [ids, error]; error is null when valid.
      */
     function uknParsePostSkills(PDO $pdo, ?string $raw): array
     {
         if ($raw === null) {
-            return [[], 'Add at least one related skill.'];
+            return [[], null];
         }
         $names = array_values(array_unique(array_filter(array_map('trim', explode('|', $raw)), 'strlen')));
         if ($names === []) {
-            return [[], 'Add at least one related skill.'];
+            return [[], null];
         }
         if (count($names) > UKN_POST_SKILLS_MAX) {
             return [[], 'Add at most ' . UKN_POST_SKILLS_MAX . ' skills.'];

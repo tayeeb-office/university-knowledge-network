@@ -12,7 +12,7 @@ $adminPageTitle = 'Reports';
 $adminPageSub = 'Review reported users, posts and comments across the network.';
 $adminPageStyles = ['../assets/css/admin/tables.css', '../assets/css/admin/forms.css', '../assets/css/admin/reports.css'];
 $adminPageScripts = ['../assets/js/admin/reports.js'];
-$roleLabels = ['learner' => 'Learner', 'mentor' => 'Mentor', 'dual' => 'Dual Role'];
+$roleLabels = ['learner' => 'Learner', 'dual' => 'Learner & Mentor'];
 $userStatusLabels = ['active' => 'Active', 'inactive' => 'Inactive', 'suspended' => 'Suspended'];
 $reasonLabels = [
     'academic-integrity' => 'Academic Integrity Concern',

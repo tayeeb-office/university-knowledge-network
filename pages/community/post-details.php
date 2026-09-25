@@ -106,7 +106,7 @@ try {
             $byParent[$row['parent_id'] ?? 0][] = $row;
         }
         $comments = array_map(static function (array $row) use ($byParent) {
-            $isMentorAuthor = in_array($row['role'], ['mentor', 'dual'], true);
+            $isMentorAuthor = $row['role'] === 'dual';
             $replies = array_map(static function (array $reply) {
                 return [
                     'id' => (int) $reply['id'],

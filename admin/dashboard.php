@@ -15,7 +15,7 @@ $adminPageScripts = [
 ];
 
 $stats = [];
-$roleBreakdown = ['labels' => ['Learner only', 'Mentor only', 'Dual-Role'], 'values' => [0, 0, 0]];
+$roleBreakdown = ['labels' => ['Learner only', 'Learner & Mentor'], 'values' => [0, 0]];
 $sessionActivity = ['labels' => [], 'values' => []];
 $sessionStatus = [];
 $recentUsers = [];
@@ -48,14 +48,14 @@ try {
 
     // --- Stat cards -------------------------------------------------------
     $roleCountsStmt = $pdo->query("SELECT role, COUNT(*) AS c FROM users GROUP BY role");
-    $roleCounts = ['learner' => 0, 'mentor' => 0, 'dual' => 0];
+    $roleCounts = ['learner' => 0, 'dual' => 0];
     foreach ($roleCountsStmt->fetchAll() as $row) {
         if (isset($roleCounts[$row['role']])) {
             $roleCounts[$row['role']] = (int) $row['c'];
         }
     }
     $totalUsers = array_sum($roleCounts);
-    $roleBreakdown['values'] = [$roleCounts['learner'], $roleCounts['mentor'], $roleCounts['dual']];
+    $roleBreakdown['values'] = [$roleCounts['learner'], $roleCounts['dual']];
 
     $totalSkills = (int) $pdo->query("SELECT COUNT(*) FROM skills")->fetchColumn();
     $skillsThisMonthStmt = $pdo->query(
@@ -93,7 +93,7 @@ try {
 
     $stats = [
         ['label' => 'Total Users', 'value' => number_format($totalUsers), 'icon' => 'group',
-            'helper' => number_format($roleCounts['learner']) . ' Learners · ' . number_format($roleCounts['mentor']) . ' Mentors · ' . number_format($roleCounts['dual']) . ' Dual-Role'],
+            'helper' => number_format($roleCounts['learner']) . ' Learners · ' . number_format($roleCounts['dual']) . ' Learners & Mentors'],
         ['label' => 'Total Skills', 'value' => number_format($totalSkills), 'icon' => 'workspaces',
             'trend' => $skillsThisMonth > 0 ? 'Up ' . $skillsThisMonth . ' this month' : 'No change this month'],
         ['label' => 'Total Sessions', 'value' => number_format($totalSessions), 'icon' => 'event', 'trend' => $sessionsTrend],
@@ -127,7 +127,7 @@ try {
     ];
 
     // --- Recent Users ---------------------------------------------------
-    $roleLabels = ['learner' => 'Learner', 'mentor' => 'Mentor', 'dual' => 'Dual Role'];
+    $roleLabels = ['learner' => 'Learner', 'dual' => 'Learner & Mentor'];
     $userStatusLabels = ['active' => 'Active', 'inactive' => 'Inactive', 'suspended' => 'Suspended'];
     $recentUsersStmt = $pdo->query(
         "SELECT u.id, u.full_name AS name, u.initials, u.role, u.status, u.created_at, d.name AS department
@@ -218,7 +218,7 @@ try {
     $activityStmt = $pdo->query(
         "(SELECT 'person_add' AS icon,
                  CONCAT(u.full_name, ' registered as a new ',
-                        CASE u.role WHEN 'mentor' THEN 'Mentor' WHEN 'dual' THEN 'Dual-Role member' ELSE 'Learner' END, '.') AS text,
+                        CASE u.role WHEN 'dual' THEN 'Learner & Mentor' ELSE 'Learner' END, '.') AS text,
                  u.created_at AS ts
           FROM users u ORDER BY u.created_at DESC LIMIT 5)
          UNION ALL
@@ -278,10 +278,10 @@ require __DIR__ . '/includes/header.php';
             data-chart-labels="<?= htmlspecialchars(json_encode($roleBreakdown['labels'])) ?>"
             data-chart-values="<?= htmlspecialchars(json_encode($roleBreakdown['values'])) ?>"
             role="img"
-            aria-label="User role breakdown: <?= (int) $roleBreakdown['values'][0] ?> Learner only, <?= (int) $roleBreakdown['values'][1] ?> Mentor only, <?= (int) $roleBreakdown['values'][2] ?> Dual-Role"
+            aria-label="User role breakdown: <?= (int) $roleBreakdown['values'][0] ?> Learner only, <?= (int) $roleBreakdown['values'][1] ?> Learner &amp; Mentor"
           ></canvas>
         </div>
-        <p class="ukn-body-sm ukn-text-muted mb-0">Each user counted once — <?= number_format(array_sum($roleBreakdown['values'])) ?> total. Dual-role users are shown separately, not double-counted in Learner or Mentor.</p>
+        <p class="ukn-body-sm ukn-text-muted mb-0">Each user counted once — <?= number_format(array_sum($roleBreakdown['values'])) ?> total. Learner &amp; Mentor accounts (approved mentors) keep learner access and are not double-counted.</p>
       </div>
     </div>
   </div>

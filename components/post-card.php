@@ -101,9 +101,42 @@ if (!function_exists('ukn_post_card')) {
                 <span class="ms" aria-hidden="true" data-save-icon><?= $post['saved'] ? 'bookmark' : 'bookmark_border' ?></span>
                 <span data-save-label><?= $post['saved'] ? 'Saved' : 'Save' ?></span>
               </button>
-              <button type="button" class="btn-ghost">
-                <span class="ms" aria-hidden="true">share</span>Share
-              </button>
+              <?php if ($postId > 0 && function_exists('uknAppUrl')):
+                // Only the public post URL and title are shared (built from the post id, never href).
+                $shareUrl = uknAppUrl() . '/index.php?page=post-details&id=' . $postId;
+                $shareTitle = (string) $post['title'];
+                $shareLinks = [
+                    'WhatsApp' => 'https://wa.me/?text=' . rawurlencode($shareTitle . ' ' . $shareUrl),
+                    'Facebook' => 'https://www.facebook.com/sharer/sharer.php?u=' . rawurlencode($shareUrl),
+                    'LinkedIn' => 'https://www.linkedin.com/sharing/share-offsite/?url=' . rawurlencode($shareUrl),
+                    'X'        => 'https://twitter.com/intent/tweet?text=' . rawurlencode($shareTitle) . '&url=' . rawurlencode($shareUrl),
+                ];
+              ?>
+                <div class="dropdown">
+                  <button type="button" class="btn-ghost" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Share this post">
+                    <span class="ms" aria-hidden="true">share</span>Share
+                  </button>
+                  <ul class="dropdown-menu" data-share-menu data-share-url="<?= htmlspecialchars($shareUrl) ?>" data-share-title="<?= htmlspecialchars($shareTitle) ?>">
+                    <li>
+                      <button type="button" class="dropdown-item" data-share-copy>
+                        <span class="ms" aria-hidden="true">link</span>Copy link
+                      </button>
+                    </li>
+                    <?php foreach ($shareLinks as $network => $shareHref): ?>
+                      <li>
+                        <a class="dropdown-item" href="<?= htmlspecialchars($shareHref) ?>" target="_blank" rel="noopener noreferrer" data-share-network="<?= htmlspecialchars(strtolower($network)) ?>">
+                          <span class="ms" aria-hidden="true">open_in_new</span><?= htmlspecialchars($network) ?>
+                        </a>
+                      </li>
+                    <?php endforeach; ?>
+                    <li data-share-native-item hidden>
+                      <button type="button" class="dropdown-item" data-share-native>
+                        <span class="ms" aria-hidden="true">ios_share</span>More options&hellip;
+                      </button>
+                    </li>
+                  </ul>
+                </div>
+              <?php endif; ?>
               <?php if (!empty($post['isOwner'])): ?>
                 <div class="dropdown ms-auto">
                   <button type="button" class="btn-icon btn-icon-sm" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Post options">

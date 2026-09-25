@@ -26,7 +26,7 @@ try {
         "SELECT d.id, d.name, d.code, d.status,
                 COUNT(u.id) AS users,
                 COALESCE(SUM(u.role IN ('learner','dual')), 0) AS learners,
-                COALESCE(SUM(u.role IN ('mentor','dual')), 0) AS mentors
+                COALESCE(SUM(u.role = 'dual'), 0) AS mentors
          FROM departments d
          LEFT JOIN users u ON u.department_id = d.id
          GROUP BY d.id, d.name, d.code, d.status

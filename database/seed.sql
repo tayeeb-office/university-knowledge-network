@@ -115,7 +115,7 @@ VALUES
  '2026-09-14 09:48:00', '2026-01-12 09:00:00'),
 
 (2, 'Rahim Ahmed', 'RA', 'rahim.ahmed@university.edu', 'UKN-2025-0874', @pw,
- 1, 'mentor', 0, '4th Year', 'Python & Data Analysis Mentor',
+ 1, 'dual', 0, '4th Year', 'Python & Data Analysis Mentor',
  'I help students learn Python, database design and practical data analysis through project-based sessions.',
  'active', NULL,
  0, 520, 4.9, 42, 0, 127, 84,
@@ -129,7 +129,7 @@ VALUES
  '2026-09-13 10:00:00', '2026-02-03 09:00:00'),
 
 (4, 'Hasan Mahmud', 'HM', 'hasan.mahmud@university.edu', 'UKN-2025-0653', @pw,
- 2, 'mentor', 0, '4th Year', 'Arduino & Embedded Systems Mentor',
+ 2, 'dual', 0, '4th Year', 'Arduino & Embedded Systems Mentor',
  'I mentor students building their first Arduino projects, focusing on wiring, debouncing and practical debugging over pure theory.',
  'active', NULL,
  0, 365, 4.7, 21, 0, 52, 38,
@@ -142,19 +142,19 @@ VALUES
  '2026-09-14 09:20:00', '2025-10-22 09:00:00'),
 
 (6, 'Sara Khan', 'SK', 'sara.khan@university.edu', 'UKN-2025-0512', @pw,
- 3, 'mentor', 0, NULL, NULL, NULL,
+ 3, 'dual', 0, NULL, NULL, NULL,
  'active', NULL,
  0, 410, 4.8, 0, 0, 84, 55,
  '2026-09-14 05:00:00', '2025-06-14 09:00:00'),
 
 (7, 'Farhan Kabir', 'FK', 'farhan.kabir@university.edu', 'UKN-2025-0388', @pw,
- 1, 'mentor', 0, NULL, NULL, NULL,
+ 1, 'dual', 0, NULL, NULL, NULL,
  'active', NULL,
  0, 462, 4.9, 0, 0, 103, 67,
  '2026-09-14 09:40:00', '2025-04-02 09:00:00'),
 
 (8, 'Nusrat Jahan', 'NJ', 'nusrat.jahan@university.edu', 'UKN-2025-1102', @pw,
- 4, 'mentor', 0, NULL, NULL, NULL,
+ 4, 'dual', 0, NULL, NULL, NULL,
  'active', NULL,
  0, 240, 4.6, 0, 0, 28, 21,
  '2026-09-13 10:00:00', '2025-12-09 09:00:00'),
@@ -196,7 +196,7 @@ VALUES
  '2026-09-14 09:42:00', '2026-09-13 09:00:00'),
 
 (15, 'Kamrul Hasan', 'KH', 'kamrul.hasan@university.edu', 'UKN-2026-0498', @pw,
- 2, 'mentor', 0, NULL, NULL, NULL,
+ 2, 'dual', 0, NULL, NULL, NULL,
  'suspended', 'Policy violation',
  0, 60, 3.9, 0, 0, 4, 3,
  '2026-09-12 10:00:00', '2026-09-12 09:00:00'),

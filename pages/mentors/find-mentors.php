@@ -21,7 +21,7 @@ try {
          FROM users u
          JOIN user_skills us ON us.user_id = u.id AND us.skill_type = 'teaching'
          LEFT JOIN departments d ON d.id = u.department_id
-         WHERE u.role IN ('mentor', 'dual') AND u.status = 'active'
+         WHERE u.role = 'dual' AND u.status = 'active'
          ORDER BY u.avg_rating DESC, u.sessions_as_mentor DESC"
     );
     $mentors = $mentorStmt->fetchAll();
@@ -73,7 +73,7 @@ try {
     foreach ($pdo->query(
         "SELECT DISTINCT d.name FROM departments d
          JOIN users u ON u.department_id = d.id
-         WHERE u.role IN ('mentor', 'dual') AND u.status = 'active'
+         WHERE u.role = 'dual' AND u.status = 'active'
          ORDER BY d.name"
     )->fetchAll(PDO::FETCH_COLUMN) as $deptName) {
         $departmentFilters[] = $deptName;

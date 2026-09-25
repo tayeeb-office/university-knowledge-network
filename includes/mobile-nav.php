@@ -65,16 +65,36 @@ $badgeCounts = [
         <?php endforeach; ?>
       </div>
     <?php endforeach; ?>
-    <?php if ($isDualRoleUser): ?>
-      <button
-        type="button"
-        class="ukn-nav-link ukn-nav-link--footer mt-auto"
-        data-bs-toggle="modal"
-        data-bs-target="#roleSwitchModal"
-      >
-        <span class="ms" aria-hidden="true">swap_horiz</span>
-        <span class="ukn-nav-text" data-role-switch-label>Switch to <?= htmlspecialchars($otherRole) ?></span>
-      </button>
+    <?php if ($currentUser['loggedIn']): ?>
+      <div class="mt-auto">
+        <?php if ($isDualRoleUser): ?>
+          <button
+            type="button"
+            class="ukn-nav-link ukn-nav-link--footer"
+            data-bs-toggle="modal"
+            data-bs-target="#roleSwitchModal"
+          >
+            <span class="ms" aria-hidden="true">swap_horiz</span>
+            <span class="ukn-nav-text" data-role-switch-label>Switch to <?= htmlspecialchars($otherRole) ?></span>
+          </button>
+        <?php elseif (($currentUser['mentorApplication'] ?? null) === 'pending'): ?>
+          <a href="index.php?page=mentor-application" class="ukn-nav-link ukn-nav-link--footer">
+            <span class="ms" aria-hidden="true">hourglass_top</span>
+            <span class="ukn-nav-text">Mentor Application Pending</span>
+          </a>
+        <?php else: ?>
+          <a href="index.php?page=mentor-application" class="ukn-nav-link ukn-nav-link--footer">
+            <span class="ms" aria-hidden="true">volunteer_activism</span>
+            <span class="ukn-nav-text">Apply to Become a Mentor</span>
+          </a>
+        <?php endif; ?>
+        <?php if (!empty($currentUser['isAdmin'])): ?>
+          <a href="admin/dashboard.php" class="ukn-nav-link ukn-nav-link--footer">
+            <span class="ms" aria-hidden="true">admin_panel_settings</span>
+            <span class="ukn-nav-text">Admin Panel</span>
+          </a>
+        <?php endif; ?>
+      </div>
     <?php endif; ?>
   </div>
 </div>

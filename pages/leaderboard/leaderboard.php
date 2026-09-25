@@ -38,7 +38,7 @@ try {
             $row['sessions'] = (int) $row['activity'];
             $row['activityLabel'] = $activityLabel;
             $row['isCurrentUser'] = ((int) $row['id'] === UKN_CURRENT_USER_ID);
-            $profileRoute = in_array($row['role'], ['mentor', 'dual'], true) ? 'mentor-profile' : 'learner-profile';
+            $profileRoute = $row['role'] === 'dual' ? 'mentor-profile' : 'learner-profile';
             $row['href'] = $row['isCurrentUser']
                 ? ukn_route_href('my-profile')
                 : ukn_route_href($profileRoute) . '&id=' . $row['id'];

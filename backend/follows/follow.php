@@ -27,7 +27,9 @@ try {
     $insert = $pdo->prepare('INSERT IGNORE INTO follows (follower_id, following_id) VALUES (?, ?)');
     $insert->execute([$userId, $targetId]);
     if ($insert->rowCount() === 1) {
-        $profileRoute = $user['role'] === 'mentor' ? 'mentor-profile' : 'learner-profile';
+        // Link to the follower's profile for the mode they are acting in (every account has a
+        // learner profile; learner + mentor accounts also have a mentor profile).
+        $profileRoute = getCurrentActiveRole() === 'mentor' ? 'mentor-profile' : 'learner-profile';
         uknNotify($pdo, $targetId, $userId, 'person_add', "{$user['full_name']} started following you.",
             "index.php?page={$profileRoute}&id={$userId}", 'notify_follow_activity', true);
     }

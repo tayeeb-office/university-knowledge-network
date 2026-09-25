@@ -19,7 +19,7 @@ try {
             u.learners_helped AS learnersHelped, u.total_reviews AS totalReviews, d.name AS department
         FROM users u
         LEFT JOIN departments d ON d.id = u.department_id
-        WHERE u.role IN ('mentor', 'dual') AND u.status = 'active' ";
+        WHERE u.role = 'dual' AND u.status = 'active' ";
 
     $stmt = $pdo->prepare($selectBase . "AND u.id = ?");
     $stmt->execute([$requestedId]);

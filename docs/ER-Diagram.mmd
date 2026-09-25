@@ -21,6 +21,8 @@ erDiagram
         DATETIME email_verified_at
         CHAR verification_token_hash UK
         DATETIME verification_expires_at
+        CHAR password_reset_token_hash UK
+        DATETIME password_reset_expires_at
         SMALLINT department_id FK
         ENUM role
         TINYINT is_admin
@@ -231,6 +233,17 @@ erDiagram
         DATETIME window_started_at
         DATETIME updated_at
     }
+    mentor_applications {
+        INT id PK
+        INT user_id FK
+        ENUM status
+        VARCHAR application_message
+        DATETIME requested_at
+        DATETIME reviewed_at
+        INT reviewed_by FK
+        VARCHAR admin_note
+        INT pending_user_id UK
+    }
     departments |o--o{ users : "department_id"
     users ||--o| user_settings : "user_id"
     skill_categories ||--o{ skills : "category_id"
@@ -268,6 +281,8 @@ erDiagram
     users ||--o{ notifications : "user_id"
     users ||--o{ reports : "reporter_id"
     users |o--o{ reports : "reviewed_by"
+    users ||--o{ mentor_applications : "user_id"
+    users |o--o{ mentor_applications : "reviewed_by"
     posts |o..o{ reports : "target_id (target_type=post, no FK)"
     comments |o..o{ reports : "target_id (target_type=comment, no FK)"
     users |o..o{ reports : "target_id (target_type=user, no FK)"

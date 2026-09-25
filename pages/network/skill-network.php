@@ -75,7 +75,7 @@ try {
                                        ORDER BY us.sessions_count DESC, us.proficiency DESC, u.full_name, u.id) AS rn
              FROM user_skills us
              JOIN users u ON u.id = us.user_id
-             WHERE us.skill_type = 'teaching' AND u.status = 'active' AND u.role IN ('mentor', 'dual')
+             WHERE us.skill_type = 'teaching' AND u.status = 'active' AND u.role = 'dual'
          ) ranked
          WHERE rn <= {$networkMentorsPerSkill}
          ORDER BY skill_id, rn"

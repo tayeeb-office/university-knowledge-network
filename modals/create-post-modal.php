@@ -27,8 +27,8 @@
               <span class="ms" aria-hidden="true">error</span>Add some content before publishing.
             </div>
           </div>
-          <div class="ukn-form-group">
-            <label for="createPostSkillInput" class="form-label">Related Skills <span class="ukn-text-danger" aria-hidden="true">*</span></label>
+          <div class="ukn-form-group mb-0">
+            <label for="createPostSkillInput" class="form-label">Related Skills (optional)</label>
             <div class="ukn-tag-input" data-skill-picker>
               <input type="text" id="createPostSkillInput" placeholder="Type a skill, press Enter (e.g. Python, MySQL)" list="createPostSkillOptions" data-skill-input>
             </div>
@@ -40,16 +40,7 @@
               <option value="Data Analysis"></option>
               <option value="Public Speaking"></option>
             </datalist>
-            <input type="hidden" name="skills" data-skill-value data-validate="required">
-            <div class="ukn-field-message is-invalid" data-error-for="skills" hidden>
-              <span class="ms" aria-hidden="true">error</span>Add at least one related skill.
-            </div>
-          </div>
-          <div class="ukn-form-group mb-0">
-            <label class="form-label">Attachment (optional)</label>
-            <div class="ukn-dropzone">
-              <span class="ms" aria-hidden="true">image</span>Drop an image or screenshot here (optional)
-            </div>
+            <input type="hidden" name="skills" data-skill-value>
           </div>
         </div>
         <div class="modal-footer">

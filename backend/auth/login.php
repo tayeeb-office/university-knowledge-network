@@ -81,7 +81,8 @@ try {
     }
 
     if (password_needs_rehash($user['password_hash'], PASSWORD_DEFAULT)) {
-        $userModel->updatePasswordHash((int) $user['id'], password_hash($password, PASSWORD_DEFAULT));
+        $user['password_hash'] = password_hash($password, PASSWORD_DEFAULT);
+        $userModel->updatePasswordHash((int) $user['id'], $user['password_hash']);
     }
     $userModel->updateLastActive((int) $user['id']);
 } catch (Throwable $e) {

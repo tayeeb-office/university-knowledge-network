@@ -31,8 +31,8 @@ $editPost = ($editPost ?? []) + ['title' => '', 'content' => '', 'skills' => []]
               <span class="ms" aria-hidden="true">error</span>Add some content before saving.
             </div>
           </div>
-          <div class="ukn-form-group">
-            <label for="editPostSkillInput" class="form-label">Related Skills <span class="ukn-text-danger" aria-hidden="true">*</span></label>
+          <div class="ukn-form-group mb-0">
+            <label for="editPostSkillInput" class="form-label">Related Skills (optional)</label>
             <div class="ukn-tag-input" data-skill-picker>
               <?php foreach ($editPost['skills'] as $skill): ?>
                 <button type="button" class="ukn-tag-skill" data-skill-tag="<?= htmlspecialchars($skill) ?>" aria-label="Remove <?= htmlspecialchars($skill) ?>">
@@ -49,16 +49,7 @@ $editPost = ($editPost ?? []) + ['title' => '', 'content' => '', 'skills' => []]
               <option value="Data Analysis"></option>
               <option value="Public Speaking"></option>
             </datalist>
-            <input type="hidden" name="skills" data-skill-value data-validate="required" value="<?= htmlspecialchars(implode('|', $editPost['skills'])) ?>">
-            <div class="ukn-field-message is-invalid" data-error-for="skills" hidden>
-              <span class="ms" aria-hidden="true">error</span>Add at least one related skill.
-            </div>
-          </div>
-          <div class="ukn-form-group mb-0">
-            <label class="form-label">Attachment (optional)</label>
-            <div class="ukn-dropzone">
-              <span class="ms" aria-hidden="true">image</span>Drop an image or screenshot here (optional)
-            </div>
+            <input type="hidden" name="skills" data-skill-value value="<?= htmlspecialchars(implode('|', $editPost['skills'])) ?>">
           </div>
         </div>
         <div class="modal-footer">

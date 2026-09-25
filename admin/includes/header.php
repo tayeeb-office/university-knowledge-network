@@ -11,6 +11,7 @@ $adminFlash = uknTakeFlash('flash_toast');
 $adminNavItems = [
     ['icon' => 'dashboard', 'label' => 'Dashboard', 'href' => 'dashboard.php', 'slug' => 'dashboard'],
     ['icon' => 'group', 'label' => 'Users', 'href' => 'users.php', 'slug' => 'users'],
+    ['icon' => 'volunteer_activism', 'label' => 'Mentor Applications', 'href' => 'mentor-applications.php', 'slug' => 'mentor-applications'],
     ['icon' => 'apartment', 'label' => 'Departments', 'href' => 'departments.php', 'slug' => 'departments'],
     ['icon' => 'category', 'label' => 'Skill Categories', 'href' => 'skill-categories.php', 'slug' => 'skill-categories'],
     ['icon' => 'workspaces', 'label' => 'Skills', 'href' => 'skills.php', 'slug' => 'skills'],

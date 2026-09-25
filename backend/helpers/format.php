@@ -48,7 +48,8 @@ if (!function_exists('ukn_excerpt')) {
 if (!function_exists('ukn_role_label')) {
     function ukn_role_label(?string $role): string
     {
-        $labels = ['learner' => 'Learner', 'mentor' => 'Mentor', 'dual' => 'Dual'];
+        // 'dual' = learner + mentor capability (an approved mentor); shown as a mentor in the community.
+        $labels = ['learner' => 'Learner', 'dual' => 'Mentor'];
         return $labels[$role] ?? ucfirst((string) $role);
     }
 }

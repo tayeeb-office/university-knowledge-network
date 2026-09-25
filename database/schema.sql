@@ -6,6 +6,7 @@ SET time_zone = '+00:00';
 SET FOREIGN_KEY_CHECKS = 0;
 DROP VIEW IF EXISTS mentor_rating_summary;
 DROP TABLE IF EXISTS login_attempts;
+DROP TABLE IF EXISTS mentor_applications;
 DROP TABLE IF EXISTS reports;
 DROP TABLE IF EXISTS notifications;
 DROP TABLE IF EXISTS point_transactions;
@@ -54,9 +55,11 @@ CREATE TABLE users (
     email_verified_at       DATETIME NULL,
     verification_token_hash CHAR(64) NULL COMMENT 'SHA-256 hex of the emailed token; cleared once used',
     verification_expires_at DATETIME NULL,
+    password_reset_token_hash CHAR(64) NULL COMMENT 'SHA-256 hex of the emailed reset token; cleared once used',
+    password_reset_expires_at DATETIME NULL,
     department_id       SMALLINT UNSIGNED NULL,
 
-    role                ENUM('learner','mentor','dual') NOT NULL DEFAULT 'learner',
+    role                ENUM('learner','dual') NOT NULL DEFAULT 'learner' COMMENT 'learner = learner only; dual = learner + mentor (approved mentor application)',
     is_admin            TINYINT(1)   NOT NULL DEFAULT 0,
 
     year_of_study       ENUM('1st Year','2nd Year','3rd Year','4th Year') NULL,
@@ -83,6 +86,7 @@ CREATE TABLE users (
     UNIQUE KEY uq_users_email (email),
     UNIQUE KEY uq_users_university_id (university_id),
     UNIQUE KEY uq_users_verification_token (verification_token_hash),
+    UNIQUE KEY uq_users_password_reset_token (password_reset_token_hash),
     KEY idx_users_department (department_id),
     KEY idx_users_role_status (role, status),
     KEY idx_users_full_name (full_name),
@@ -588,6 +592,43 @@ CREATE TABLE reports (
         ON UPDATE CASCADE ON DELETE SET NULL,
 
     CONSTRAINT chk_reports_reviewed
+        CHECK (status = 'pending' OR reviewed_at IS NOT NULL)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+
+-- ---------------------------------------------------------------------------
+-- mentor_applications — a learner-only account (users.role = 'learner') asks to become a
+-- mentor; an admin approves (users.role becomes 'dual' = learner + mentor) or rejects it.
+-- Every application is kept as history, so a rejected learner can apply again (a new row).
+-- pending_user_id is user_id only while the application is pending, so its UNIQUE key allows
+-- at most one pending application per user (MariaDB 10.4 has no partial unique index).
+-- Also in database/patches/simplify-user-roles-and-add-mentor-applications.sql.
+-- ---------------------------------------------------------------------------
+CREATE TABLE mentor_applications (
+    id                  INT UNSIGNED NOT NULL AUTO_INCREMENT,
+    user_id             INT UNSIGNED NOT NULL,
+    status              ENUM('pending','approved','rejected') NOT NULL DEFAULT 'pending',
+    application_message VARCHAR(1000) NULL,
+    requested_at        DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    reviewed_at         DATETIME NULL,
+    reviewed_by         INT UNSIGNED NULL,
+    admin_note          VARCHAR(255) NULL,
+    pending_user_id     INT UNSIGNED AS (IF(status = 'pending', user_id, NULL)) PERSISTENT
+                        COMMENT 'user_id while pending, else NULL (one pending application per user)',
+
+    PRIMARY KEY (id),
+    UNIQUE KEY uq_mentor_applications_pending (pending_user_id),
+    KEY idx_mentor_applications_queue (status, requested_at),
+    KEY idx_mentor_applications_user (user_id, requested_at),
+
+    CONSTRAINT fk_mentor_applications_user
+        FOREIGN KEY (user_id) REFERENCES users (id)
+        ON UPDATE CASCADE ON DELETE CASCADE,
+    CONSTRAINT fk_mentor_applications_reviewer
+        FOREIGN KEY (reviewed_by) REFERENCES users (id)
+        ON UPDATE CASCADE ON DELETE SET NULL,
+
+    CONSTRAINT chk_mentor_applications_reviewed
         CHECK (status = 'pending' OR reviewed_at IS NOT NULL)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 

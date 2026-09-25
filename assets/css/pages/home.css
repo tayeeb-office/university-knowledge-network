@@ -12,9 +12,16 @@
   appearance: none;
   -webkit-appearance: none;
 }
+/* Guest version is a link to Login: a block <a> puts its text at the top, whereas the
+   logged-in <button> centres its content natively. */
+a.ukn-composer__field{
+  display: flex;
+  align-items: center;
+}
 .ukn-composer__field:hover{
   border-color: var(--ukn-border-strong);
   color: var(--ukn-ink);
+  text-decoration: none;
 }
 .ukn-feed-controls .nav-tabs{
   margin-bottom: var(--ukn-space-3);

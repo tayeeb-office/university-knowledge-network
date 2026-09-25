@@ -11,13 +11,14 @@ $adminPageTitle = 'Users';
 $adminPageSub = 'Manage learners, mentors and account status across the network.';
 $adminPageStyles = ['../assets/css/admin/tables.css', '../assets/css/admin/forms.css'];
 $adminPageScripts = ['../assets/js/admin/users.js'];
-$roleLabels = ['learner' => 'Learner', 'mentor' => 'Mentor', 'dual' => 'Dual Role'];
+$roleLabels = ['learner' => 'Learner', 'dual' => 'Learner & Mentor'];
 $statusLabels = ['active' => 'Active', 'inactive' => 'Inactive', 'suspended' => 'Suspended'];
 $statusClass = ['active' => 'ukn-status-accent', 'inactive' => 'ukn-status-neutral', 'suspended' => 'ukn-status-neutral'];
 
 $users = [];
 $departments = [];
-$roleCounts = ['learner' => 0, 'mentor' => 0, 'dual' => 0];
+$roleCounts = ['learner' => 0, 'dual' => 0];
+$adminCount = 0;
 $statusCounts = ['active' => 0, 'inactive' => 0, 'suspended' => 0];
 $usersDbError = false;
 
@@ -26,7 +27,7 @@ try {
 
     $stmt = $pdo->query(
         "SELECT u.id, u.full_name AS name, u.initials, u.email, u.university_id AS universityId,
-                u.role, u.status, u.created_at, u.sessions_as_learner, u.sessions_as_mentor,
+                u.role, u.is_admin, u.status, u.created_at, u.sessions_as_learner, u.sessions_as_mentor,
                 d.name AS department
          FROM users u
          LEFT JOIN departments d ON d.id = u.department_id
@@ -46,6 +47,9 @@ try {
         }
         if (isset($statusCounts[$row['status']])) {
             $statusCounts[$row['status']]++;
+        }
+        if (!empty($row['is_admin'])) {
+            $adminCount++;
         }
     }
     $departments = array_keys($deptSet);
@@ -67,8 +71,8 @@ require __DIR__ . '/includes/header.php';
   <?php
   ukn_stat_card(['label' => 'Total Users', 'value' => number_format(count($users)), 'icon' => 'group']);
   ukn_stat_card(['label' => 'Learners', 'value' => number_format($roleCounts['learner']), 'icon' => 'school']);
-  ukn_stat_card(['label' => 'Mentors', 'value' => number_format($roleCounts['mentor']), 'icon' => 'record_voice_over']);
-  ukn_stat_card(['label' => 'Dual Role', 'value' => number_format($roleCounts['dual']), 'icon' => 'swap_horiz']);
+  ukn_stat_card(['label' => 'Learners & Mentors', 'value' => number_format($roleCounts['dual']), 'icon' => 'record_voice_over']);
+  ukn_stat_card(['label' => 'Admins', 'value' => number_format($adminCount), 'icon' => 'admin_panel_settings']);
   ukn_stat_card(['label' => 'Active', 'value' => number_format($statusCounts['active']), 'icon' => 'check_circle']);
   ukn_stat_card(['label' => 'Suspended', 'value' => number_format($statusCounts['suspended']), 'icon' => 'block']);
   ?>
@@ -85,8 +89,7 @@ require __DIR__ . '/includes/header.php';
       <select id="userRoleFilter" class="form-select form-select-sm" data-user-filter="role">
         <option value="">All Roles</option>
         <option value="learner">Learner</option>
-        <option value="mentor">Mentor</option>
-        <option value="dual">Dual Role</option>
+        <option value="dual">Learner &amp; Mentor</option>
       </select>
       <label class="ukn-visually-hidden" for="userDepartmentFilter">Filter by department</label>
       <select id="userDepartmentFilter" class="form-select form-select-sm" data-user-filter="department">
@@ -162,7 +165,7 @@ require __DIR__ . '/includes/header.php';
               </div>
             </td>
             <td data-label="University ID"><?= htmlspecialchars($user['universityId']) ?></td>
-            <td data-label="Role"><?= htmlspecialchars($roleLabels[$user['role']]) ?></td>
+            <td data-label="Role"><?= htmlspecialchars($roleLabels[$user['role']] ?? ucfirst((string) $user['role'])) ?><?php if (!empty($user['is_admin'])): ?> <span class="ukn-status ukn-status-accent">Admin</span><?php endif; ?></td>
             <td data-label="Department"><?= htmlspecialchars($user['department']) ?></td>
             <td data-label="Status">
               <span class="ukn-status <?= $statusClass[$user['status']] ?>" data-user-status-badge><?= htmlspecialchars($statusLabels[$user['status']]) ?></span>

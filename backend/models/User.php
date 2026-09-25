@@ -155,7 +155,8 @@ class User
         $stmt = $this->pdo->prepare(
             'SELECT u.id, u.full_name, u.initials, u.email, u.university_id, u.role, u.is_admin,
                     u.status, u.email_verified_at, u.department_id, d.name AS department_name,
-                    u.year_of_study, u.avatar_path, u.learning_points, u.mentor_points
+                    u.year_of_study, u.avatar_path, u.learning_points, u.mentor_points,
+                    SHA2(u.password_hash, 256) AS password_fingerprint
              FROM users u
              LEFT JOIN departments d ON d.id = u.department_id
              WHERE u.id = ?
@@ -224,6 +225,98 @@ class User
         $stmt->bindValue(3, $seconds, PDO::PARAM_INT);
         $stmt->execute();
         return $stmt->fetchColumn() !== false;
+    }
+    /**
+     * Stores the SHA-256 hash of a new password reset token (replacing any previous one, so
+     * older reset links stop working) with an expiry $ttlMinutes from now. Only active,
+     * verified accounts can hold a reset token. Returns true if the token was stored.
+     */
+    public function setPasswordResetToken(int $userId, string $tokenHash, int $ttlMinutes): bool
+    {
+        $stmt = $this->pdo->prepare(
+            "UPDATE users
+             SET password_reset_token_hash = ?, password_reset_expires_at = NOW() + INTERVAL ? MINUTE
+             WHERE id = ? AND status = 'active' AND email_verified_at IS NOT NULL"
+        );
+        $stmt->bindValue(1, $tokenHash, PDO::PARAM_STR);
+        $stmt->bindValue(2, $ttlMinutes, PDO::PARAM_INT);
+        $stmt->bindValue(3, $userId, PDO::PARAM_INT);
+        $stmt->execute();
+        return $stmt->rowCount() === 1;
+    }
+    /**
+     * Withdraws a reset token that was just issued (e.g. its email could not be sent), but only
+     * if it is still the user's current token.
+     */
+    public function clearPasswordResetToken(int $userId, string $tokenHash): void
+    {
+        $stmt = $this->pdo->prepare(
+            'UPDATE users SET password_reset_token_hash = NULL, password_reset_expires_at = NULL
+             WHERE id = ? AND password_reset_token_hash = ?'
+        );
+        $stmt->bindValue(1, $userId, PDO::PARAM_INT);
+        $stmt->bindValue(2, $tokenHash, PDO::PARAM_STR);
+        $stmt->execute();
+    }
+    /**
+     * True when the user's current reset token was issued less than $seconds ago (throttles
+     * reset emails per account).
+     */
+    public function passwordResetRecentlyIssued(int $userId, int $ttlMinutes, int $seconds): bool
+    {
+        $stmt = $this->pdo->prepare(
+            'SELECT 1 FROM users
+             WHERE id = ? AND password_reset_expires_at > NOW() + INTERVAL ? MINUTE - INTERVAL ? SECOND'
+        );
+        $stmt->bindValue(1, $userId, PDO::PARAM_INT);
+        $stmt->bindValue(2, $ttlMinutes, PDO::PARAM_INT);
+        $stmt->bindValue(3, $seconds, PDO::PARAM_INT);
+        $stmt->execute();
+        return $stmt->fetchColumn() !== false;
+    }
+    /**
+     * Read-only check used to decide whether to show the reset form (never consumes the token).
+     *
+     * @return string 'valid' | 'expired' | 'invalid' | 'ineligible'
+     */
+    public function passwordResetTokenStatus(string $tokenHash): string
+    {
+        $stmt = $this->pdo->prepare(
+            'SELECT status, email_verified_at, password_reset_expires_at > NOW() AS not_expired
+             FROM users WHERE password_reset_token_hash = ? LIMIT 1'
+        );
+        $stmt->execute([$tokenHash]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        if ($row === false) {
+            return 'invalid';
+        }
+        if ($row['status'] !== 'active' || $row['email_verified_at'] === null) {
+            return 'ineligible';
+        }
+        return (int) $row['not_expired'] === 1 ? 'valid' : 'expired';
+    }
+    /**
+     * Consumes a password reset token. One atomic UPDATE checks the token, its expiry and that
+     * the account is still active and verified, replaces the password hash and clears the
+     * token, so a token can only ever succeed once (a concurrent second request matches no row).
+     * It never activates or verifies an account.
+     *
+     * @return string 'reset' | 'expired' | 'invalid' | 'ineligible'
+     */
+    public function resetPasswordByTokenHash(string $tokenHash, string $newPasswordHash): string
+    {
+        $stmt = $this->pdo->prepare(
+            "UPDATE users
+             SET password_hash = ?, password_reset_token_hash = NULL, password_reset_expires_at = NULL
+             WHERE password_reset_token_hash = ? AND password_reset_expires_at > NOW()
+               AND status = 'active' AND email_verified_at IS NOT NULL"
+        );
+        $stmt->execute([$newPasswordHash, $tokenHash]);
+        if ($stmt->rowCount() === 1) {
+            return 'reset';
+        }
+        $status = $this->passwordResetTokenStatus($tokenHash);
+        return $status === 'valid' ? 'invalid' : $status;
     }
     public function createUserSettings(int $userId): bool
     {

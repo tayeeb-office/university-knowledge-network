@@ -10,12 +10,15 @@ $routes = [
     'login'             => ['file' => 'pages/auth/login.php', 'title' => 'Log In'],
     'register'          => ['file' => 'pages/auth/register.php', 'title' => 'Register'],
     'verify-email'      => ['file' => 'pages/auth/verify-email.php', 'title' => 'Verify Email'],
+    'forgot-password'   => ['file' => 'pages/auth/forgot-password.php', 'title' => 'Forgot Password'],
+    'reset-password'    => ['file' => 'pages/auth/reset-password.php', 'title' => 'Reset Password'],
     'learner-dashboard' => ['file' => 'pages/dashboard/learner-dashboard.php', 'title' => 'Learner Dashboard'],
     'mentor-dashboard'  => ['file' => 'pages/dashboard/mentor-dashboard.php', 'title' => 'Mentor Dashboard'],
     'my-profile'        => ['file' => 'pages/profile/my-profile.php', 'title' => 'My Profile'],
     'edit-profile'      => ['file' => 'pages/profile/edit-profile.php', 'title' => 'Edit Profile'],
     'learner-profile'   => ['file' => 'pages/profile/learner-profile.php', 'title' => 'Learner Profile'],
     'mentor-profile'    => ['file' => 'pages/profile/mentor-profile.php', 'title' => 'Mentor Profile'],
+    'mentor-application' => ['file' => 'pages/profile/mentor-application.php', 'title' => 'Apply to Become a Mentor'],
     'skills'            => ['file' => 'pages/skills/skills.php', 'title' => 'Skills'],
     'learning-skills'   => ['file' => 'pages/skills/learning-skills.php', 'title' => 'My Learning'],
     'teaching-skills'   => ['file' => 'pages/skills/teaching-skills.php', 'title' => 'Teaching Skills'],
@@ -59,6 +62,7 @@ $sidebarContextByPage = [
     'my-profile'        => 'profile',
     'learner-profile'   => 'profile',
     'mentor-profile'    => 'profile',
+    'mentor-application' => 'profile',
 ];
 // Who may open each route; anything not listed is public. 'login' = any logged-in user;
 // 'learner' / 'mentor' = logged in AND currently acting in that role (the active role,
@@ -84,6 +88,7 @@ $routeAccess = [
     'leaderboard'       => 'login',
     'skill-network'     => 'login',
     'settings'          => 'login',
+    'mentor-application' => 'login',
 ];
 
 $requestedPage = (isset($_GET['page']) && is_string($_GET['page'])) ? $_GET['page'] : 'home';
@@ -111,6 +116,18 @@ $authUser = getCurrentUser();
 if ($authUser !== null) {
     $dbRole = $authUser['role'];
     $activeRole = getCurrentActiveRole();
+    // Learner-only accounts: status of their latest mentor application (null = never applied),
+    // used by the profile dropdown and mobile navigation.
+    $mentorApplicationStatus = null;
+    if ($dbRole === 'learner') {
+        require_once __DIR__ . '/backend/helpers/mentor-applications.php';
+        try {
+            $latestApplication = uknLatestMentorApplication(getDatabaseConnection(), (int) $authUser['id']);
+            $mentorApplicationStatus = $latestApplication['status'] ?? null;
+        } catch (Throwable $e) {
+            error_log('[UKN mentor-application status] ' . $e->getMessage());
+        }
+    }
     $currentUser = [
         'loggedIn'   => true,
         'id'         => (int) $authUser['id'],
@@ -118,8 +135,10 @@ if ($authUser !== null) {
         'isAdmin'    => !empty($authUser['is_admin']),
         'isLearner'  => uknUserCanActAs($authUser, 'learner'),
         'isMentor'   => uknUserCanActAs($authUser, 'mentor'),
-        'role'       => $dbRole === 'mentor' ? 'mentor' : 'learner',
+        // Navigation role for accounts without a mode switch (learner-only accounts).
+        'role'       => 'learner',
         'dualRole'   => $dbRole === 'dual',
+        'mentorApplication' => $mentorApplicationStatus,
         'activeRole' => $activeRole,
         'name'       => $authUser['full_name'],
         'initials'   => $authUser['initials'],
@@ -136,6 +155,7 @@ if ($authUser !== null) {
         'isMentor'   => false,
         'role'       => 'visitor',
         'dualRole'   => false,
+        'mentorApplication' => null,
         'activeRole' => 'visitor',
         'name'       => '',
         'initials'   => '',
@@ -146,8 +166,29 @@ if ($authUser !== null) {
 // Id every page's "my …" queries use; 0 for guests (matches no rows).
 define('UKN_CURRENT_USER_ID', $currentUser['id']);
 
-if (in_array($page, ['login', 'register'], true)) {
+if (in_array($page, ['login', 'register', 'forgot-password', 'reset-password'], true)) {
     redirectIfLoggedIn();
+}
+// Password reset link (?page=reset-password&token=…): only checks whether the token can still
+// be used, so the page can show the form or a generic invalid-link message. Opening the link
+// never consumes the token (backend/auth/reset-password.php does, on POST).
+if ($page === 'reset-password') {
+    require_once __DIR__ . '/backend/helpers/password-reset.php';
+    header('Cache-Control: no-store');
+    $resetTokenValid = false;
+    $resetTokenHash = uknHashPasswordResetToken($_GET['token'] ?? null);
+    if ($resetTokenHash !== null) {
+        try {
+            $resetTokenValid = (new User(getDatabaseConnection()))->passwordResetTokenStatus($resetTokenHash) === 'valid';
+        } catch (Throwable $e) {
+            error_log('[UKN reset-password page] ' . $e->getMessage());
+        }
+    }
+    $resetToken = $resetTokenValid ? (string) $_GET['token'] : '';
+    unset($resetTokenHash);
+    if (!$resetTokenValid) {
+        http_response_code(400);
+    }
 }
 // Email verification link (?page=verify-email&token=…). Handled before any output so the
 // response carries a real status code; pages/auth/verify-email.php renders $verificationResult.
@@ -290,6 +331,7 @@ $sessionView = $route['session_view'] ?? null;
   <script src="assets/js/core/mobile-nav.js"></script>
   <script src="assets/js/components/comments.js"></script>
   <script src="assets/js/components/notifications.js"></script>
+  <script src="assets/js/components/post-card.js"></script>
   <script src="assets/js/pages/home.js"></script>
   <script src="assets/js/pages/auth.js"></script>
   <script src="assets/js/pages/dashboard.js"></script>

@@ -35,6 +35,7 @@ a local XAMPP stack.
 - [Installation](#installation)
 - [Configuration](#configuration)
 - [Running the Project](#running-the-project)
+- [Git Workflow](#git-workflow)
 - [Testing](#testing)
 - [Project Completion Status](#project-completion-status)
 - [Known Limitations](#known-limitations)
@@ -72,14 +73,22 @@ UKN connects students who want to learn with students who can teach:
 - Login with password hashing (`password_hash` / `password_verify`), a generic error message
   for unknown email *and* wrong password, and equalised timing for both cases.
 - Login rate limiting (see [Security](#security)).
+- Forgot Password / Reset Password: a single-use reset link (token stored only as a SHA-256 hash,
+  valid for 60 minutes) is emailed to active, verified accounts only; the request form always
+  gives the same answer, so it does not reveal which emails have accounts. A reset signs out
+  every existing session of that account.
 - Logout that destroys the server-side session.
 - The current user is re-read from the database on every request, so changes to status, role
   or admin rights take effect on the user's next request.
 
 ### Roles & Authorization
-- Learner, Mentor and dual-role (learner + mentor) accounts; admin rights are a separate flag.
-- Server-side role switching for dual-role users (the active role is always checked against
-  the database).
+- Every new account is a **Learner**. A learner applies to become a mentor (*Apply to Become a
+  Mentor* in the profile menu); an admin approves or rejects the application. Approved accounts
+  become **Learner & Mentor** — they keep full learner access and gain Mentor mode. There is no
+  mentor-only account.
+- Admin rights are a separate flag, independent of learner/mentor capability.
+- Server-side Learner ↔ Mentor mode switching for Learner & Mentor accounts (the active mode is
+  always checked against the database).
 - Route guards for every page and every action (guest / logged-in / learner / mentor / admin).
 
 ### Profiles
@@ -115,7 +124,9 @@ UKN connects students who want to learn with students who can teach:
   **−10** for the person who cancels.
 
 ### Community
-- Create posts with skill tags; edit and delete your own posts.
+- Create posts with optional skill tags; edit and delete your own posts.
+- Share a post from its Share menu: copy its link, share it to WhatsApp, Facebook, LinkedIn or X,
+  or use the device's native share sheet where the browser supports it.
 - Comments and one level of replies; edit and delete your own comments.
 - Up/down voting (clicking the same vote again removes it) and saved posts.
 - Follow / unfollow members.
@@ -178,15 +189,18 @@ university-knowledge-network-frontend/
 ├── admin/                     Admin panel pages (dashboard, users, departments, …)
 │   └── includes/              Admin layout (header/footer) and shared admin modal
 ├── backend/
-│   ├── auth/                  Register, login, logout, resend verification, role switch
+│   ├── auth/                  Register, login, logout, resend verification, role switch,
+│   │                          password reset (request link, set new password)
+│   ├── mentor-applications/   Apply to become a mentor
 │   ├── profile/ skills/ goals/ availability/
 │   ├── sessions/              Request, accept, reject, complete, cancel, rate
 │   ├── posts/ comments/ follows/ notifications/
 │   ├── admin/                 Admin actions (departments, skill-categories, skills, users,
-│   │                          posts, comments, reports)
+│   │                          mentor-applications, posts, comments, reports)
 │   ├── helpers/               Shared logic: auth, session, CSRF, validation, actions,
 │   │                          community, sessions/points, recommendations, search,
 │   │                          leaderboard, login throttling, error handling, mail, …
+│   │                          PHPMailer/ = bundled PHPMailer 6.12.0 (SMTP transport)
 │   ├── models/                User model
 │   ├── config/                Database connection and environment-driven app settings
 │   └── test-db.php            Command-line-only database connectivity check
@@ -223,11 +237,11 @@ that `POST` to the matching file under `backend/`, which redirects back with a f
 - **Engine / charset:** InnoDB, `utf8mb4` / `utf8mb4_unicode_ci` for every table.
 - **SQL mode:** the application connection enables `STRICT_TRANS_TABLES`, so values that do not
   fit a column raise an error (and roll back) instead of being silently truncated.
-- **Tables (21):**
+- **Tables (22):**
 
 | Area | Tables |
 |---|---|
-| People | `users`, `user_settings`, `departments` |
+| People | `users`, `user_settings`, `departments`, `mentor_applications` |
 | Skills | `skill_categories`, `skills`, `skill_relations`, `user_skills` |
 | Learning & mentoring | `learning_goals`, `mentor_availability`, `mentoring_sessions`, `session_ratings` |
 | Points | `point_transactions` |
@@ -254,7 +268,11 @@ that `POST` to the matching file under `backend/`, which redirects back with a f
   database. `schema.sql` already includes all of them, so a fresh install does not need them.
   An existing database gets the view with
   `mysql -u <db-user> -p ukn_database < database/patches/add-mentor-rating-summary-view.sql`
-  (safe to run more than once).
+  (safe to run more than once). Password reset needs
+  `mysql -u <db-user> -p ukn_database < database/patches/add-password-reset.sql` on a database
+  created before it existed, and mentor applications need
+  `mysql -u <db-user> -p ukn_database < database/patches/simplify-user-roles-and-add-mentor-applications.sql`
+  (it also converts any old mentor-only account to Learner & Mentor).
 - **Design documentation:** ER diagram, relational schema, 3NF justification, index rationale and
   SQL feature coverage are in [Database Design](#database-design).
 
@@ -262,8 +280,8 @@ that `POST` to the matching file under `backend/`, which redirects back with a f
 
 ## Database Design
 
-This section documents the database as it is defined in `database/schema.sql` — 21 base tables,
-37 foreign keys, 22 `CHECK` constraints and one view — and shows where the application uses each
+This section documents the database as it is defined in `database/schema.sql` — 22 base tables,
+39 foreign keys, 23 `CHECK` constraints and one view — and shows where the application uses each
 SQL feature.
 
 ### ER Diagram
@@ -275,6 +293,11 @@ SQL feature.
 - **Editable source:** [`docs/ER-Diagram.mmd`](docs/ER-Diagram.mmd) (Mermaid `erDiagram`; it can
   be edited and re-rendered with any Mermaid renderer, e.g. the Mermaid Live Editor or
   Mermaid CLI).
+- **PNG not yet re-rendered:** the Mermaid source is current and includes the password-reset
+  columns on `users` and the `mentor_applications` table (with its two foreign keys to `users`).
+  `ER-Diagram.png` was rendered before these were added, so it does not show them yet; re-render
+  it from the `.mmd` with a Mermaid renderer. Both are also listed in the
+  [Relational Schema](#relational-schema).
 
 How to read it:
 
@@ -328,7 +351,7 @@ Expand a table to see its columns and constraints (generated from the database's
 </details>
 
 <details>
-<summary><b>2. <code>users</code></b> — 28 columns</summary>
+<summary><b>2. <code>users</code></b> — 30 columns</summary>
 
 | Column | Type | NOT NULL | Key |
 |---|---|:---:|---|
@@ -341,8 +364,10 @@ Expand a table to see its columns and constraints (generated from the database's
 | `email_verified_at` | `datetime` |  |  |
 | `verification_token_hash` | `char(64)` |  | UNIQUE |
 | `verification_expires_at` | `datetime` |  |  |
+| `password_reset_token_hash` | `char(64)` |  | UNIQUE |
+| `password_reset_expires_at` | `datetime` |  |  |
 | `department_id` | `smallint(5) unsigned` |  | FK → `departments.id` |
-| `role` | `enum('learner','mentor','dual')` | ✓ |  |
+| `role` | `enum('learner','dual')` | ✓ |  |
 | `is_admin` | `tinyint(1)` | ✓ |  |
 | `year_of_study` | `enum('1st Year','2nd Year','3rd Year','4th Year')` |  |  |
 | `headline` | `varchar(150)` |  |  |
@@ -366,6 +391,7 @@ Expand a table to see its columns and constraints (generated from the database's
 - **UNIQUE** `uq_users_email` (email)
 - **UNIQUE** `uq_users_university_id` (university_id)
 - **UNIQUE** `uq_users_verification_token` (verification_token_hash)
+- **UNIQUE** `uq_users_password_reset_token` (password_reset_token_hash)
 - **CHECK** `chk_users_avg_rating`: `avg_rating is null or avg_rating >= 1.0 and avg_rating <= 5.0`
 - **CHECK** `chk_users_suspend_reason`: `status <> 'suspended' or suspend_reason is not null`
 - **Indexes:** `idx_users_department` (department_id); `idx_users_full_name` (full_name); `idx_users_learning_points` (learning_points); `idx_users_mentor_points` (mentor_points); `idx_users_role_status` (role, status)
@@ -798,6 +824,31 @@ Expand a table to see its columns and constraints (generated from the database's
 
 </details>
 
+<details>
+<summary><b>22. <code>mentor_applications</code></b> — 9 columns</summary>
+
+| Column | Type | NOT NULL | Key |
+|---|---|:---:|---|
+| `id` | `int(10) unsigned` | ✓ | PK |
+| `user_id` | `int(10) unsigned` | ✓ | FK → `users.id` |
+| `status` | `enum('pending','approved','rejected')` | ✓ |  |
+| `application_message` | `varchar(1000)` |  |  |
+| `requested_at` | `datetime` | ✓ |  |
+| `reviewed_at` | `datetime` |  |  |
+| `reviewed_by` | `int(10) unsigned` |  | FK → `users.id` |
+| `admin_note` | `varchar(255)` |  |  |
+| `pending_user_id` | `int(10) unsigned` (generated: `user_id` while pending, else NULL) |  | UNIQUE |
+
+- **PK:** (id)
+- **FK** `user_id` → `users(id)` ON DELETE CASCADE
+- **FK** `reviewed_by` → `users(id)` ON DELETE SET NULL
+- **UNIQUE** `uq_mentor_applications_pending` (pending_user_id) — at most one *pending* application per user
+  (MariaDB 10.4 has no partial unique index, so a stored generated column carries the rule)
+- **CHECK** `chk_mentor_applications_reviewed`: `status = 'pending' or reviewed_at is not null`
+- **Indexes:** `fk_mentor_applications_reviewer` (reviewed_by); `idx_mentor_applications_queue` (status, requested_at); `idx_mentor_applications_user` (user_id, requested_at)
+
+</details>
+
 **View:** `mentor_rating_summary(mentor_id, avg_rating, total_reviews)` — derived from
 `session_ratings`; see [SQL VIEW](#sql-view).
 
@@ -813,6 +864,7 @@ Summary of the relationships:
 | users → mentor_availability, learning_goals, posts, comments, notifications, point_transactions | 1 : N | `user_id` FK in each table |
 | users (learner) / users (mentor) / skills → mentoring_sessions | 1 : N each | `learner_id`, `mentor_id`, `skill_id` |
 | mentoring_sessions → session_ratings | 1 : 0..1 | `session_ratings.session_id` `UNIQUE` |
+| users → mentor_applications (applicant; reviewing admin) | 1 : N each | `mentor_applications.user_id`; `reviewed_by` (nullable, `ON DELETE SET NULL`) |
 | posts ↔ skills | M : N | `post_skills(post_id, skill_id)` |
 | users ↔ posts (votes, saves) | M : N | `post_votes(user_id, post_id)`, `saved_posts(user_id, post_id)` |
 | users ↔ users (follows) | M : N | `follows(follower_id, following_id)` |
@@ -830,7 +882,9 @@ Summary of the relationships:
   - a user's skills → `user_skills`;
   - weekly time slots → one `mentor_availability` row per slot;
   - votes, saves and follows → `post_votes`, `saved_posts`, `follows`;
-  - related skills → `skill_relations`.
+  - related skills → `skill_relations`;
+  - a user's mentor applications (with their review history) → `mentor_applications`, not
+    repeated "application status" columns on `users`.
 - The `notify_*` columns of `user_settings` are not a repeating group: each is a different,
   fixed preference of a single user (one row per user).
 
@@ -1109,26 +1163,53 @@ Register ──► verification email (token, 24 h) ──► Verify email ─�
    password. Account state (unverified / not active) is only revealed after the correct password.
 4. **Session** — a new session ID is issued at login; the cookie is `HttpOnly`,
    `SameSite=Lax` and `Secure` when served over HTTPS. The session holds the user ID, role
-   information, the CSRF token and short-lived flash messages — never passwords or hashes.
+   information, the CSRF token, short-lived flash messages and a SHA-256 fingerprint of the
+   current password hash (server-side only) — never the password or the password hash itself.
 5. **Current user** — loaded from the database on each request; deleted, suspended, inactive or
-   unverified users are signed out automatically.
+   unverified users are signed out automatically, and so is any session whose password
+   fingerprint no longer matches (the password was changed or reset since that login).
 6. **Log out** — POST with CSRF token; the server-side session is destroyed.
+
+```text
+Forgot Password ──► reset email (token, 60 min) ──► Reset Password form ──► new password ──► Log in
+```
+
+- **Request** (`index.php?page=forgot-password`, POST `backend/auth/request-password-reset.php`)
+  — CSRF-protected; the same message for every email. Only active, verified accounts get a link,
+  at most one per account per 60 seconds and at most 10 requests per client IP per 15 minutes.
+  A new request replaces the previous link. If the email cannot be sent the new token is withdrawn.
+- **Reset** (`index.php?page=reset-password&token=…`, POST `backend/auth/reset-password.php`) —
+  opening the link only shows the form (email scanners cannot use it up); posting it checks the
+  token, its expiry and that the account is still active and verified, applies the registration
+  password rules, stores a new `PASSWORD_DEFAULT` hash and clears the token in one atomic update.
+  The user is not logged in automatically; all existing sessions of the account end.
 
 ---
 
 ## Roles
 
-| Role | Capabilities |
-|---|---|
-| **Learner** | Learning skills, learning goals, mentor recommendations, session requests, ratings |
-| **Mentor** | Teaching skills, availability, learner requests (accept/reject), completing sessions, ratings received |
-| **Dual role** | Both sets; the user switches the *active* role (learner ↔ mentor) and pages/actions follow the active role |
-| **Admin** | Access to `admin/`; granted by a separate database flag, independent of learner/mentor role |
+| Account | Stored as | Capabilities |
+|---|---|---|
+| **Learner** | `users.role = 'learner'` (every new registration) | Learner mode: learning skills, learning goals, mentor recommendations, session requests, ratings. Can apply to become a mentor. |
+| **Learner & Mentor** | `users.role = 'dual'` (after an approved mentor application) | Everything a learner can do **plus** Mentor mode: teaching skills, availability, learner requests (accept/reject), completing sessions, ratings received. The user switches the *active mode* (Learner ↔ Mentor) from the profile menu; pages and actions follow the active mode. |
+| **Admin** | `users.is_admin = 1` (separate flag) | Access to `admin/` (reachable from *Admin Panel* in the profile menu), in any mode. Independent of learner/mentor capability: an admin account is a Learner or a Learner & Mentor like any other. |
+
+The active mode (`learner` / `mentor`) lives only in the server-side session and is re-checked
+against `users.role` on every request; `admin` is never a mode, and admin access is checked
+separately. Every login starts in Learner mode.
+
+**Becoming a mentor** — a Learner opens *Apply to Become a Mentor* in the profile menu
+(`index.php?page=mentor-application`) and explains why they want to mentor (1–1000 characters).
+While the application waits, the menu shows *Mentor Application Pending* and no second
+application can be sent. An admin approves or rejects it in **Admin → Mentor Applications**.
+Approval turns the account into Learner & Mentor (nothing else about it changes) and the mode
+switch appears on the user's next page; rejection leaves the account a Learner, and the learner
+may apply again. Every application is kept as history.
 
 Guests can browse the home feed, skills, public learner/mentor profiles, post details, the
 mentor directory and search. Any logged-in member can additionally use their profile, sessions,
 points, saved/own posts, notifications, the leaderboard and the skill network, and can post,
-comment, vote, save and follow. Role switching is a server-side action that only allows roles
+comment, vote, save and follow. Mode switching is a server-side action that only allows modes
 the account actually has.
 
 ---
@@ -1153,7 +1234,16 @@ pending ──accept (mentor)──► accepted ──complete (mentor, after st
 
 ## Community Workflow
 
-- **Posts** — create with one or more skill tags; the author can edit or delete their own post.
+- **Posts** — create with a title, content and optional skill tags (none, or up to 10); the
+  author can edit or delete their own post. Tags are picked from the existing skills; a skill
+  name still typed in the field (not yet confirmed with Enter or comma) is added when the form is
+  submitted. Every tag must match an existing skill — unknown names are rejected and no new
+  skills are created.
+- **Sharing** — every post card, including Post Details, has a Share menu with *Copy link*,
+  *WhatsApp*, *Facebook*, *LinkedIn* and *X*, plus *More options…* (the native share sheet) only
+  where the browser supports it. Only the post title and its public Post Details link are shared;
+  the link is built from `UKN_APP_URL`, so it works for others only once that is a public URL.
+  Guests can open shared post links.
 - **Comments & replies** — comment on a post or reply to a comment (one reply level); authors
   can edit/delete their own comments.
 - **Voting** — upvote / downvote a post; repeating the same vote removes it.
@@ -1170,14 +1260,16 @@ include comments the community can see.
 ## Admin
 
 The admin panel lives in `admin/` and requires a logged-in user whose account has admin rights
-in the database.
+in the database (`users.is_admin`). Admins reach it from **Admin Panel** in the profile menu (also in
+the mobile navigation), whichever Learner/Mentor mode they are in.
 
 | Area | What admins can do |
 |---|---|
 | **Departments** | Create, edit, activate/deactivate; delete only departments with no members |
 | **Skill Categories** | Create, edit, activate/deactivate; delete only empty categories |
 | **Skills** | Create, edit, activate/deactivate; delete only skills nothing refers to |
-| **Users** | View users and details; suspend (with a required reason) and restore |
+| **Users** | View users and details (Learner / Learner & Mentor, plus an Admin badge); suspend (with a required reason) and restore |
+| **Mentor Applications** | Pending / Approved / Rejected / All; see the applicant's department, year, points, sessions, skills and message; approve (account becomes Learner & Mentor) or reject, with an optional note. An admin cannot review their own application, an applicant who is no longer active or verified cannot be approved, and an application can only be decided once — if two admins decide at the same moment, the second gets "already reviewed". |
 | **Posts** | Review, hide and restore posts (nothing is deleted) |
 | **Comments** | Review, hide and restore comments (replies under a hidden comment are hidden too) |
 | **Reports** | Review, resolve or dismiss reports; when resolving, optionally hide the reported post/comment or suspend the reported user in the same step |
@@ -1231,25 +1323,43 @@ should only be added once the site is served over HTTPS (see
 ## Installation
 
 ### Requirements
-- XAMPP (Apache + MariaDB + PHP 8) or an equivalent Apache/PHP 8/MySQL stack.
-- Apache with `.htaccess` overrides allowed (`AllowOverride All`) and `mod_headers` enabled
-  (both are the XAMPP defaults for `htdocs`).
+- **XAMPP** with Apache, MariaDB/MySQL and **PHP 8** (developed on PHP 8.2 / MariaDB 10.4), or an
+  equivalent Apache + PHP 8 + MySQL/MariaDB stack.
+- **Git**, to clone the repository.
+- Apache with `.htaccess` overrides allowed (`AllowOverride All`) and **`mod_headers`** enabled —
+  both are the XAMPP defaults for `htdocs`.
 - Internet access in the browser (Bootstrap, Chart.js, Cytoscape.js and fonts load from CDNs).
 
 ### Steps
 
-1. **Install XAMPP** and start **Apache** and **MySQL** from the XAMPP Control Panel.
-2. **Place the project** in XAMPP's `htdocs` folder, e.g.
-   `htdocs/university-knowledge-network-frontend/`.
-   The application works out its own base URL, so any folder name works.
-3. **Create the database** (the code expects the name `ukn_database`):
+The examples use the default XAMPP location `C:\xampp`; adjust the drive/folder if XAMPP is
+installed elsewhere.
+
+1. **Install XAMPP.**
+2. **Install Git.**
+3. **Start Apache and MySQL** from the XAMPP Control Panel.
+4. **Clone the repository into XAMPP's `htdocs` folder.** The folder name becomes the URL path, so
+   clone into `university-knowledge-network-frontend` to match the URLs used in this README:
+
+   ```bash
+   cd C:\xampp\htdocs
+   git clone <repository-url> university-knowledge-network-frontend
+   ```
+
+   The project is then at `C:\xampp\htdocs\university-knowledge-network-frontend\`. The
+   application works out its own base URL, so another folder name also works (the URLs change
+   accordingly). No Apache `Alias` is needed when the project is inside `htdocs`; a custom `Alias`
+   pointing to a folder elsewhere is optional and must allow `.htaccess` overrides
+   (`AllowOverride All`).
+5. **Create the database** (the code expects the name `ukn_database`), e.g. in phpMyAdmin
+   (`http://localhost/phpmyadmin` → *SQL*):
 
    ```sql
    CREATE DATABASE ukn_database CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
    ```
 
-4. **Import the schema, then the seed data**, in this order (phpMyAdmin → *Import*, or the
-   `mysql` command-line client):
+6. **Import the schema, then the seed data**, in exactly this order (phpMyAdmin → select
+   `ukn_database` → *Import*, or the `mysql` command-line client from the project folder):
 
    ```bash
    mysql -u <db-user> -p ukn_database < database/schema.sql
@@ -1257,20 +1367,25 @@ should only be added once the site is served over HTTPS (see
    mysql -u <db-user> -p ukn_database < database/seed_demo_data.sql   # optional demo content
    ```
 
+   If `mysql` is not on your `PATH`, use XAMPP's client, e.g. `C:\xampp\mysql\bin\mysql.exe`.
    `seed_demo_data.sql` fills the feature tables with demo sessions, posts, points and so on.
    It deletes the rows it seeds first, so never run it against a database with real user data.
 
-5. **Configure the database connection** in `backend/config/database.php` (host, database name,
+7. **Configure the database connection** in `backend/config/database.php` (host, database name,
    user and password — see [Configuration](#configuration)).
-6. **Create your first account:** open the app, register, then open the verification link from
-   the newest file in `storage/mail/` (development mail log).
-   The seeded demo users cannot log in — they are unverified and have a placeholder password
-   hash; they exist to populate the demo data.
-7. **Grant admin rights** (optional) to your verified account directly in the database:
+8. **Configure mail** (optional). Nothing is needed for local development: verification and
+   password-reset emails are written to `storage/mail/`. To send real emails, see
+   [Gmail SMTP setup](#gmail-smtp-setup-optional).
+9. **Open the application:** `http://localhost/university-knowledge-network-frontend/`
+10. **Create your first account:** register, then open the verification link from the newest file
+    in `storage/mail/` (development mail log).
+    The seeded demo users cannot log in — they are unverified and have a placeholder password
+    hash; they exist to populate the demo data.
+11. **Grant admin rights** (optional) to your verified account directly in the database:
 
-   ```sql
-   UPDATE users SET is_admin = 1 WHERE email = '<your-email>';
-   ```
+    ```sql
+    UPDATE users SET is_admin = 1 WHERE email = '<your-email>';
+    ```
 
 ---
 
@@ -1285,27 +1400,123 @@ username = <database user>
 password = <database password>
 ```
 
-Use a dedicated database user with a strong password outside local development.
+The repository ships with XAMPP's local defaults (`localhost`, `root`, empty password). Change
+them to match your machine if needed. Use a dedicated database user with a strong password
+outside local development.
 
 **Environment variables** (read with `getenv`; with Apache use `SetEnv`) — all optional locally:
 
 | Variable | Purpose | Default |
 |---|---|---|
 | `UKN_APP_URL` | Absolute base URL used in emailed links (e.g. `https://ukn.example.edu`). **Required in production.** | derived from the request |
-| `UKN_MAIL_TRANSPORT` | `log` writes emails to `storage/mail/`; `mail` sends them with PHP `mail()` | `log` |
-| `UKN_MAIL_FROM` | Sender address for outgoing email | `no-reply@localhost` |
+| `UKN_MAIL_TRANSPORT` | `log` writes emails to `storage/mail/`; `mail` sends them with PHP `mail()`; `smtp` sends them through an authenticated SMTP server (e.g. Gmail) with the bundled PHPMailer | `log` |
+| `UKN_MAIL_FROM` | Sender address for outgoing email (for Gmail: the Gmail address itself) | `no-reply@localhost` |
+| `UKN_MAIL_FROM_NAME` | Sender display name | `University Knowledge Network` |
+| `UKN_MAIL_HOST` | SMTP server (`smtp` transport only), e.g. `smtp.gmail.com` | — |
+| `UKN_MAIL_PORT` | SMTP port; STARTTLS with certificate verification is always used | `587` |
+| `UKN_MAIL_USERNAME` | SMTP login (for Gmail: the Gmail address) | — |
+| `UKN_MAIL_PASSWORD` | SMTP password (for Gmail: an **App Password**, never the account password). Set it only in the server configuration, never in the repository | — |
 | `UKN_ENV` | `production` hides PHP errors and shows a generic error page | development behaviour |
+
+**Development mail log:** with the default `UKN_MAIL_TRANSPORT=log`, every email (registration
+verification, resend, password reset) is written as a `.eml` file to `storage/mail/` instead of
+being sent; the newest file contains the latest link. The folder is not web-accessible, and its
+`.gitignore` keeps generated mail files out of Git.
+
+> **Do not commit SMTP credentials, passwords, API keys or other secrets to GitHub.** Mail
+> settings belong in the Apache configuration on each machine (`SetEnv`), never in project files
+> such as `backend/config/app.php` or the project's `.htaccess`, which are part of the repository.
+
+### Gmail SMTP setup (optional)
+
+`UKN_MAIL_TRANSPORT=log` remains the default development/test transport (emails go to
+`storage/mail/`). To deliver emails to real inboxes:
+
+1. Turn on **2-Step Verification** for the Gmail account (Google Account → Security).
+2. Create an **App Password** (Google Account → Security → 2-Step Verification → App passwords).
+   Never use the normal Gmail password.
+3. Put the App Password only into Apache `SetEnv` — never into the repository.
+4. Add a `<Directory>` block for the project to XAMPP's `apache\conf\httpd.conf` (outside the
+   repository), or add the `SetEnv` lines to the project's existing block if you use an `Alias`.
+   Placeholders are shown; use the project's real location and URL:
+
+   ```apache
+   <Directory "C:/xampp/htdocs/university-knowledge-network-frontend">
+       SetEnv UKN_MAIL_TRANSPORT smtp
+       SetEnv UKN_MAIL_HOST smtp.gmail.com
+       SetEnv UKN_MAIL_PORT 587
+       SetEnv UKN_MAIL_USERNAME your-email@example.com
+       SetEnv UKN_MAIL_PASSWORD your-app-password
+       SetEnv UKN_MAIL_FROM your-email@example.com
+       SetEnv UKN_MAIL_FROM_NAME "University Knowledge Network"
+       SetEnv UKN_APP_URL http://localhost/university-knowledge-network-frontend
+   </Directory>
+   ```
+
+   `UKN_MAIL_FROM` should match the authenticated Gmail account (Gmail rewrites other senders).
+   `UKN_APP_URL` must be the URL the application is opened at; emailed links are built from it.
+5. Restart Apache.
+6. Register with a real email address.
+7. Check the inbox (and the spam folder).
+8. Click the verification link.
+9. Log in.
+
+If sending fails, the user sees a generic message, the account stays unverified and "Resend
+verification email" can be used; the reason is written to the PHP error log without the
+password, recipient or verification link. PHPMailer 6.12.0 is bundled in `backend/helpers/PHPMailer/`
+(LGPL-2.1, see its `LICENSE`); `backend/helpers/` is not web-accessible.
 
 ---
 
 ## Running the Project
 
-- Application: `http://localhost/<project-folder>/` (entry point `index.php`; pages are addressed
-  as `index.php?page=<route>`, e.g. `index.php?page=login`).
-- Admin panel: `http://localhost/<project-folder>/admin/dashboard.php` (admin accounts only; there
-  is no admin link in the main navigation).
-- Development emails (verification links): newest file in `storage/mail/`.
-- Database connectivity check (command line only): `php backend/test-db.php`.
+- Application: `http://localhost/university-knowledge-network-frontend/` (entry point
+  `index.php`; pages are addressed as `index.php?page=<route>`, e.g. `index.php?page=login`). With
+  a different folder name, replace `university-knowledge-network-frontend` accordingly.
+- Admin panel: `http://localhost/university-knowledge-network-frontend/admin/dashboard.php`
+  (admin accounts only; there is no admin link in the main navigation).
+- Development emails (verification and password-reset links): newest file in `storage/mail/`
+  (`log` transport; with `smtp` they arrive in the recipient's inbox instead).
+- Database connectivity check (command line only), run from the project folder:
+  `php backend/test-db.php`. If `php` is not on your `PATH`, use XAMPP's bundled PHP instead:
+
+  ```bat
+  C:\xampp\php\php.exe backend\test-db.php
+  ```
+
+  The web application itself does not need PHP on the `PATH`.
+
+---
+
+## Git Workflow
+
+First-time setup (see [Installation](#installation) for where to clone):
+
+```bash
+git clone <repository-url> university-knowledge-network-frontend
+cd university-knowledge-network-frontend
+```
+
+Get the latest changes later:
+
+```bash
+git pull
+```
+
+Contributing a change:
+
+```bash
+git status
+git add .
+git commit -m "Describe the change"
+git push
+```
+
+Check `git status` before committing. **Never commit** local credentials, SMTP or database
+passwords, App Passwords, API keys, generated mail logs (`storage/mail/*.eml`), database dumps
+with real data or other secrets. Mail settings stay in the Apache configuration outside the
+repository (`SetEnv`). `backend/config/database.php` is tracked with XAMPP's default local
+credentials; if you change it for your machine, do not commit a real password.
 
 ---
 
@@ -1336,6 +1547,10 @@ rollbacks, and restore the database to its seed state afterwards.
 Static checks at the end of Phase J: **PHP lint 155/155**, **JavaScript syntax 39/39**,
 **CSS 32/32** files with balanced braces.
 
+Note on Phase F: the 74 / 74 result was recorded when related skills were mandatory. Related
+skills are now optional by design, so one older Phase F assertion (a post without skills is
+rejected) no longer applies to the current behavior.
+
 ---
 
 ## Project Completion Status
@@ -1353,6 +1568,13 @@ Static checks at the end of Phase J: **PHP lint 155/155**, **JavaScript syntax 3
 | I | 52–56 | Security & data integrity | Complete |
 | J | Additional hardening | Production hardening & final security audit | Complete |
 | K | DBMS course requirements | SQL VIEW (used by Leaderboard and Search), ER diagram, relational schema, 3NF and index documentation | Complete |
+
+Phase K deliverables: [SQL VIEW](#sql-view) (defined in [`database/schema.sql`](database/schema.sql)
+and [`database/patches/add-mentor-rating-summary-view.sql`](database/patches/add-mentor-rating-summary-view.sql)),
+ER diagram ([`docs/ER-Diagram.png`](docs/ER-Diagram.png), source
+[`docs/ER-Diagram.mmd`](docs/ER-Diagram.mmd)), [Relational Schema](#relational-schema),
+[Normalization / 3NF Justification](#normalization--3nf-justification) and
+[Indexes and Index Rationale](#indexes-and-index-rationale).
 
 **The original defined roadmap ends at Step 56. Phase J is additional production
 hardening/security audit; Phase K completes the DBMS course deliverables (one SQL view and the
@@ -1375,7 +1597,8 @@ security.
 - **Reports** — admins can review existing reports, but members cannot yet file a report from the
   application.
 - **Notifications** — generated for community activity (comments, replies, new followers) only,
-  not for session events.
+  not for session events or mentor-application decisions (the applicant sees the result in the
+  profile menu and on the application page).
 - **Community points** — the leaderboard's Community Contributors view shows community points
   from the ledger, but no application action currently awards community points.
 - **Admin Sessions page** and **admin Settings page** — read-only/demonstration screens; the
@@ -1401,7 +1624,7 @@ The repository is configured for **local development**. Before a public deployme
 | HSTS | Not enabled. Add `Strict-Transport-Security` only after HTTPS works everywhere. |
 | `UKN_ENV=production` | Set with `SetEnv` so PHP errors are hidden and logged. |
 | `UKN_APP_URL` | Set to the public HTTPS URL used in emails. |
-| Mail | Set `UKN_MAIL_TRANSPORT=mail` and configure PHP mail/SMTP; keep `storage/` non-public. |
+| Mail | Set `UKN_MAIL_TRANSPORT=smtp` (with the `UKN_MAIL_*` SMTP settings) or `mail` (PHP mail/SMTP in php.ini); keep `storage/` and `backend/helpers/` non-public. |
 | Database account | Use a dedicated, least-privilege user with a strong password (not a root account). |
 | Apache | `ServerTokens Prod`, `ServerSignature Off` (server config, outside the project). |
 | PHP | `expose_php = Off`, `display_errors = Off`, `log_errors = On` in `php.ini`. |
