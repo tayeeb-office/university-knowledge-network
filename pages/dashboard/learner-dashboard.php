@@ -6,6 +6,7 @@ require_once __DIR__ . '/../../components/mentor-card.php';
 require_once __DIR__ . '/../../components/empty-state.php';
 require_once __DIR__ . '/../../components/error-state.php';
 require_once __DIR__ . '/../../backend/config/database.php';
+require_once __DIR__ . '/../../backend/helpers/community.php';
 
 
 $learnerStats = [];
@@ -97,7 +98,7 @@ try {
     // pages/mentors/recommendations.php — no scoring/match engine exists in the schema
     // (see DATABASE_READ_INTEGRATION_PLAN.md §2.4), so 'match'/'matchLabel' stay null.
     $mentorStmt = $pdo->prepare(
-        "SELECT DISTINCT u.id, u.full_name AS name, u.initials, u.avg_rating AS rating,
+        "SELECT DISTINCT u.id, u.full_name AS name, u.initials, u.avatar_path, u.avg_rating AS rating,
                 u.mentor_points AS points, u.sessions_as_mentor AS sessions, d.name AS department
          FROM users u
          JOIN user_skills us ON us.user_id = u.id AND us.skill_type = 'teaching'
@@ -128,6 +129,7 @@ try {
             $mentor['primarySkill'] = $skillNames[0] ?? '';
             $mentor['otherSkills'] = array_slice($skillNames, 1);
             $mentor['profileHref'] = ukn_route_href('mentor-profile') . '&id=' . $mentor['id'];
+            $mentor['following'] = uknFollowStateFor((int) $mentor['id']);
         }
         unset($mentor);
     }

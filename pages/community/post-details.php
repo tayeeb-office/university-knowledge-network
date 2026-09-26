@@ -51,6 +51,19 @@ $commentOwnerForms = static function (array $item): void {
     </form>
     <?php
 };
+// Report a comment or reply someone else wrote (modals/report-modal.php → backend/reports/create.php).
+$commentReportButton = static function (array $item): void {
+    if (UKN_CURRENT_USER_ID <= 0 || !empty($item['isOwner'])) {
+        return;
+    }
+    ?>
+    <button
+      type="button" class="btn-ghost"
+      data-bs-toggle="modal" data-bs-target="#reportModal"
+      data-report-target-type="comment" data-report-target-id="<?= (int) $item['id'] ?>"
+    >Report</button>
+    <?php
+};
 
 $requestedId = isset($_GET['id']) && is_numeric($_GET['id']) ? (int) $_GET['id'] : 0;
 $post = false;
@@ -61,7 +74,7 @@ try {
     $pdo = getDatabaseConnection();
 
     $selectBase = "SELECT p.id, p.title, p.content AS excerpt, p.vote_score AS score, p.comment_count AS comments,
-            p.created_at, u.id AS author_id, u.full_name AS author, u.initials, u.role, d.name AS department
+            p.created_at, u.id AS author_id, u.full_name AS author, u.initials, u.avatar_path, u.role, d.name AS department
         FROM posts p
         JOIN users u ON u.id = p.user_id
         LEFT JOIN departments d ON d.id = u.department_id
@@ -92,7 +105,7 @@ try {
 
         $commentsStmt = $pdo->prepare(
             "SELECT c.id, c.parent_id, c.content AS text, c.created_at, u.id AS author_id,
-                    u.full_name AS author, u.initials, u.role
+                    u.full_name AS author, u.initials, u.avatar_path, u.role
              FROM comments c
              JOIN users u ON u.id = c.user_id
              WHERE c.post_id = ? AND c.status = 'visible'
@@ -113,6 +126,7 @@ try {
                     'isOwner' => UKN_CURRENT_USER_ID > 0 && (int) $reply['author_id'] === UKN_CURRENT_USER_ID,
                     'author' => $reply['author'],
                     'initials' => $reply['initials'],
+                    'avatar_path' => $reply['avatar_path'],
                     'role' => ukn_role_label($reply['role']),
                     'time' => ukn_time_ago($reply['created_at']),
                     'text' => $reply['text'],
@@ -123,6 +137,7 @@ try {
                 'isOwner' => UKN_CURRENT_USER_ID > 0 && (int) $row['author_id'] === UKN_CURRENT_USER_ID,
                 'author' => $row['author'],
                 'initials' => $row['initials'],
+                'avatar_path' => $row['avatar_path'],
                 'role' => ukn_role_label($row['role']),
                 'authorHref' => ukn_route_href($isMentorAuthor ? 'mentor-profile' : 'learner-profile') . '&id=' . $row['author_id'],
                 'time' => ukn_time_ago($row['created_at']),
@@ -165,7 +180,7 @@ try {
         <?= uknReturnToField() ?>
         <input type="hidden" name="post_id" value="<?= (int) $post['id'] ?>">
         <div class="ukn-cluster align-items-start" data-comment-composer data-current-user-name="<?= htmlspecialchars($currentUser['name'] ?? '') ?>" data-current-user-initials="<?= htmlspecialchars($currentUser['initials'] ?? '') ?>">
-          <span class="ukn-avatar flex-shrink-0" aria-hidden="true"><?= htmlspecialchars($currentUser['initials'] ?? '') ?></span>
+          <?= uknAvatarHtml($currentUser['avatarPath'] ?? null, (string) ($currentUser['initials'] ?? ''), 'ukn-avatar flex-shrink-0') ?>
           <div class="flex-fill ukn-min-w-0">
             <label for="newCommentText" class="ukn-visually-hidden">Add to the discussion</label>
             <textarea class="form-control" id="newCommentText" name="content" maxlength="<?= UKN_COMMENT_MAX ?>" placeholder="Add to the discussion..."></textarea>
@@ -187,7 +202,7 @@ try {
         <div class="card">
           <div class="card-body">
             <div class="ukn-cluster mb-2">
-              <span class="ukn-avatar ukn-avatar-sm" aria-hidden="true"><?= htmlspecialchars($comment['initials']) ?></span>
+              <?= uknAvatarHtml($comment['avatar_path'], (string) $comment['initials'], 'ukn-avatar ukn-avatar-sm') ?>
               <div>
                 <a href="<?= htmlspecialchars($comment['authorHref']) ?>" class="fw-bold text-body"><?= htmlspecialchars($comment['author']) ?></a>
                 <span class="ukn-role-chip"><?= htmlspecialchars($comment['role']) ?></span>
@@ -199,7 +214,7 @@ try {
               <?php if (!empty($currentUser['loggedIn'])): ?>
                 <button type="button" class="btn-ghost" data-comment-reply-toggle>Reply</button>
               <?php endif; ?>
-              <button type="button" class="btn-ghost" data-comment-report>Report</button>
+              <?php $commentReportButton($comment); ?>
               <?php $commentOwnerControls($comment); ?>
             </div>
             <?php $commentOwnerForms($comment); ?>
@@ -227,7 +242,7 @@ try {
             <div class="card mt-2 ms-2 ms-md-4" data-reply>
               <div class="card-body">
                 <div class="ukn-cluster mb-2">
-                  <span class="ukn-avatar ukn-avatar-sm" aria-hidden="true"><?= htmlspecialchars($reply['initials']) ?></span>
+                  <?= uknAvatarHtml($reply['avatar_path'], (string) $reply['initials'], 'ukn-avatar ukn-avatar-sm') ?>
                   <div>
                     <strong class="text-body"><?= htmlspecialchars($reply['author']) ?></strong>
                     <span class="ukn-role-chip"><?= htmlspecialchars($reply['role']) ?></span>
@@ -238,6 +253,8 @@ try {
                 <?php if (!empty($reply['isOwner'])): ?>
                   <div class="d-flex align-items-center gap-3 flex-wrap mt-2"><?php $commentOwnerControls($reply); ?></div>
                   <?php $commentOwnerForms($reply); ?>
+                <?php elseif (!empty($currentUser['loggedIn'])): ?>
+                  <div class="d-flex align-items-center gap-3 flex-wrap mt-2"><?php $commentReportButton($reply); ?></div>
                 <?php endif; ?>
               </div>
             </div>
@@ -247,4 +264,7 @@ try {
     <?php endforeach; ?>
   </div>
 </div>
+<?php if (!empty($currentUser['loggedIn'])): ?>
+  <?php include __DIR__ . '/../../modals/report-modal.php'; ?>
+<?php endif; ?>
 <?php endif; ?>

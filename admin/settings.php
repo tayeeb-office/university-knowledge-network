@@ -91,7 +91,6 @@ require __DIR__ . '/includes/header.php';
             ukn_admin_settings_switch('allowRegistrations', 'Allow New Registrations', 'Preview only — does not disable the Register page.', true);
             ukn_admin_settings_switch('enableCommunityPosts', 'Enable Community Posts', 'Preview only — the public Community feed stays available.', true);
             ukn_admin_settings_switch('enableMentorRequests', 'Enable Mentor Requests', 'Preview only — existing Learner Request behavior is unaffected.', true);
-            ukn_admin_settings_switch('enableSkillNetwork', 'Enable Skill Network', 'Preview only — the Skill Network page stays available.', true);
             ukn_admin_settings_switch('enableLeaderboard', 'Enable Leaderboard', 'Preview only — the Leaderboard page stays available.', true);
           ?>
         </div>
@@ -224,9 +223,9 @@ require __DIR__ . '/includes/header.php';
     <div class="tab-pane fade" id="paneProfile" role="tabpanel" aria-labelledby="tabProfile">
       <div class="card mb-3">
         <div class="card-body d-flex align-items-center gap-3 flex-wrap">
-          <span class="ukn-avatar ukn-avatar-lg flex-shrink-0" aria-hidden="true">AU</span>
+          <?= uknAvatarHtml($adminUser['avatar_path'] ?? null, (string) ($adminUser['initials'] ?? ''), 'ukn-avatar ukn-avatar-lg flex-shrink-0') ?>
           <div class="flex-fill ukn-min-w-0">
-            <div class="fw-bold">Admin User</div>
+            <div class="fw-bold"><?= htmlspecialchars((string) ($adminUser['full_name'] ?? '')) ?></div>
             <div class="ukn-body-sm ukn-text-muted">Administrator</div>
           </div>
           <button type="button" class="btn btn-outline-secondary btn-sm flex-shrink-0" data-bs-toggle="modal" data-bs-target="#changePasswordModal">Change Password</button>

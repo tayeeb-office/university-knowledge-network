@@ -208,7 +208,7 @@
   });
   // Posts to backend/availability/save.php, which re-validates everything server-side.
   availabilityForm.addEventListener('submit', function (event) {
-    if (availabilityForm.querySelector('.is-invalid')) {
+    if (availabilityForm.querySelector('[data-slot-start].is-invalid, [data-slot-end].is-invalid')) {
       event.preventDefault();
       if (window.UKN && window.UKN.showToast) {
         window.UKN.showToast('Fix the highlighted time slots before saving.', 'danger');

@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/../backend/helpers/avatars.php';
 if (!function_exists('ukn_post_card')) {
     function ukn_post_card(array $post, array $options = []): void
     {
@@ -43,7 +44,7 @@ if (!function_exists('ukn_post_card')) {
           </div>
           <div class="ukn-post-card__body">
             <div class="ukn-post-card__meta">
-              <span class="ukn-avatar ukn-avatar-sm" aria-hidden="true"><?= htmlspecialchars($post['initials']) ?></span>
+              <?= uknAvatarHtml($post['avatar_path'] ?? null, (string) $post['initials'], 'ukn-avatar ukn-avatar-sm') ?>
               <?php if ($post['authorHref']): ?>
                 <a href="<?= htmlspecialchars($post['authorHref']) ?>" class="text-body fw-bold"><?= htmlspecialchars($post['author']) ?></a>
               <?php else: ?>
@@ -136,6 +137,11 @@ if (!function_exists('ukn_post_card')) {
                     </li>
                   </ul>
                 </div>
+              <?php endif; ?>
+              <?php if ($isDetail && $postId > 0 && empty($post['isOwner']) && defined('UKN_CURRENT_USER_ID') && UKN_CURRENT_USER_ID > 0): ?>
+                <button type="button" class="btn-ghost" data-bs-toggle="modal" data-bs-target="#reportModal" data-report-target-type="post" data-report-target-id="<?= $postId ?>">
+                  <span class="ms" aria-hidden="true">flag</span>Report
+                </button>
               <?php endif; ?>
               <?php if (!empty($post['isOwner'])): ?>
                 <div class="dropdown ms-auto">

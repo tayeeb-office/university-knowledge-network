@@ -3,13 +3,18 @@ require_once __DIR__ . '/../../components/mentor-card.php';
 require_once __DIR__ . '/../../components/empty-state.php';
 require_once __DIR__ . '/../../components/error-state.php';
 require_once __DIR__ . '/../../backend/helpers/recommendations.php';
+require_once __DIR__ . '/../../backend/helpers/community.php';
 
 // Ranked for the session user only (route is learner-guarded in index.php); the scoring is
 // documented in backend/helpers/recommendations.php.
 $recommendation = ['needs' => [], 'mentors' => []];
 $recommendationsDbError = false;
+$followStates = [];
 try {
     $recommendation = uknRecommendMentors(UKN_CURRENT_USER_ID);
+    foreach ($recommendation['mentors'] as $mentor) {
+        $followStates[(int) $mentor['id']] = uknFollowStateFor((int) $mentor['id']);
+    }
 } catch (Throwable $e) {
     error_log('[UKN recommendations] ' . $e->getMessage());
     $recommendationsDbError = true;
@@ -40,6 +45,7 @@ foreach ($recommendation['mentors'] as $rank => $mentor) {
         'id' => $mentor['id'],
         'name' => $mentor['name'],
         'initials' => $mentor['initials'],
+        'avatar_path' => $mentor['avatar_path'] ?? null,
         'department' => $mentor['department'],
         'primarySkill' => $matchedNames[0],
         'otherSkills' => array_values(array_diff($mentor['teachingSkills'], [$matchedNames[0]])),
@@ -53,6 +59,7 @@ foreach ($recommendation['mentors'] as $rank => $mentor) {
         'score' => $mentor['score'],
         'matchLabel' => $rank === 0 ? 'Best Match' : null,
         'reasons' => $reasons,
+        'following' => $followStates[(int) $mentor['id']] ?? null,
     ];
 }
 $topMentor = $recommendedMentors ? array_shift($recommendedMentors) : null;

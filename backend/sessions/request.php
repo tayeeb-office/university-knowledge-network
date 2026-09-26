@@ -2,6 +2,7 @@
 require_once __DIR__ . '/../helpers/actions.php';
 require_once __DIR__ . '/../helpers/skills.php';
 require_once __DIR__ . '/../helpers/sessions.php';
+require_once __DIR__ . '/../helpers/private-contacts.php';
 
 // Step 29: the current learner requests a session with a mentor (status 'pending').
 uknRequirePostMethod();
@@ -35,6 +36,14 @@ if (!validateLength($message, 0, 1000)) {
 
 try {
     $pdo = getDatabaseConnection();
+    // The mentor contacts the learner by the private mobile number, so a request needs one.
+    if (!uknUserHasMobile($pdo, $learnerId)) {
+        uknFlashToast('danger', 'Add your mobile number in Settings before requesting a mentoring session.');
+        if (!headers_sent()) {
+            header('Location: ' . uknRouteUrl('settings') . '#mobile', true, 302);
+        }
+        exit;
+    }
     $future = $pdo->prepare('SELECT TIMESTAMP(?, ?) > NOW()');
     $future->execute([$date, $time . ':00']);
     if ((int) $future->fetchColumn() !== 1) {

@@ -440,7 +440,14 @@ three are real columns/tables (`departments.name`, `posts.comment_count`, `users
 
 ---
 
-### 2.10 Skill Network (Cytoscape.js)
+### 2.10 Skill Network (Cytoscape.js) — REMOVED
+
+> **Removed from the application.** The Skill Network page (`pages/network/skill-network.php`),
+> `assets/js/pages/network.js`, `assets/css/pages/network.css` and the Cytoscape.js CDN script no
+> longer exist; `index.php?page=skill-network` returns the normal 404 page. The shared tables it
+> read (`skills`, `skill_categories`, `skill_relations`, `user_skills`, `mentoring_sessions`) are
+> unchanged and still used elsewhere (e.g. Skill Details → Related Topics). The notes below are kept
+> as history.
 
 | Page | Mock source | Tables | Notes |
 |---|---|---|---|
@@ -600,7 +607,7 @@ Ordered by (a) zero/lowest current-user dependency first, (b) highest confidence
 
 1. **Skills directory & skill details** (`skills.php`, `skill-details.php`) — fully public, simple joins.
 2. **Mentor discovery** (`find-mentors.php`) — fully public, no current-user dependency at all.
-3. **Skill network graph** (`skill-network.php`) — fully public, isolated (only touches one `<div>`'s data attributes).
+3. ~~**Skill network graph** (`skill-network.php`) — fully public, isolated (only touches one `<div>`'s data attributes).~~ *(Feature later removed — see §2.10.)*
 4. **Learner/mentor public profiles** (`learner-profile.php`, `mentor-profile.php`) — public, `?id=`-keyed, good IDOR-safety practice case.
 5. **Search results** (`search-results.php`) — public, exercises FULLTEXT + multiple query types.
 6. **Leaderboard** (`leaderboard.php`) — public ranking, good aggregation practice.

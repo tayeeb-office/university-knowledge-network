@@ -12,6 +12,16 @@
     }
   });
   var photoObjectUrl = null;
+  // Profile photo: the file input and remove_avatar are submitted with the profile form
+  // (backend/profile/update.php validates the file again). A newly chosen file wins over Remove.
+  var PHOTO_TYPES = ['image/jpeg', 'image/png'];
+  var PHOTO_MAX_BYTES = 2 * 1024 * 1024;
+  function setPhotoRemoveFlag(value) {
+    var flag = document.querySelector('[data-photo-remove-flag]');
+    if (flag) {
+      flag.value = value;
+    }
+  }
 
   function showPhotoPreview(avatar, file) {
     if (photoObjectUrl) {
@@ -51,6 +61,7 @@
       if (fileInput) {
         fileInput.value = '';
       }
+      setPhotoRemoveFlag('1');
     }
   });
   document.addEventListener('change', function (event) {
@@ -58,9 +69,18 @@
     if (!input || !input.files || !input.files[0]) {
       return;
     }
+    var file = input.files[0];
+    if (PHOTO_TYPES.indexOf(file.type) === -1 || file.size > PHOTO_MAX_BYTES) {
+      input.value = '';
+      if (window.UKN && window.UKN.showToast) {
+        window.UKN.showToast('Choose a JPG or PNG image of 2 MB or less.', 'danger');
+      }
+      return;
+    }
+    setPhotoRemoveFlag('');
     var avatar = document.querySelector('[data-photo-preview]');
     if (avatar) {
-      showPhotoPreview(avatar, input.files[0]);
+      showPhotoPreview(avatar, file);
     }
   });
   document.addEventListener('submit', function (event) {

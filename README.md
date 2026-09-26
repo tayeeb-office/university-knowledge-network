@@ -56,8 +56,8 @@ UKN connects students who want to learn with students who can teach:
 - A single account can hold **both roles** and switch between them.
 - A **community** feed lets members post questions and knowledge, comment, reply, vote, save
   posts and follow each other, with **notifications** for activity on their content.
-- **Discovery** features — search, a points leaderboard and an interactive skill network — help
-  members find skills, mentors and discussions.
+- **Discovery** features — search and a points leaderboard — help members find skills, mentors
+  and discussions.
 - An **admin panel** manages departments, skill categories, skills and users, and moderates posts,
   comments and reports.
 
@@ -67,7 +67,8 @@ UKN connects students who want to learn with students who can teach:
 
 ### Authentication
 - Registration with server-side validation (name, university email, university ID, department,
-  password rules, terms acceptance) and duplicate email / university ID checks.
+  mobile number, password rules, terms acceptance) and duplicate email / university ID checks.
+- The mobile number is private (see [Private contact details](#private-contact-details)).
 - Email verification with a single-use, expiring token (stored only as a SHA-256 hash).
   Unverified accounts cannot log in; a new link can be requested.
 - Login with password hashing (`password_hash` / `password_verify`), a generic error message
@@ -92,8 +93,14 @@ UKN connects students who want to learn with students who can teach:
 - Route guards for every page and every action (guest / logged-in / learner / mentor / admin).
 
 ### Profiles
-- My Profile, Edit Profile (name, department, year of study, bio, skills) and public learner /
-  mentor profile pages.
+- My Profile, Edit Profile (name, department, year of study, bio, skills, profile photo) and
+  public learner / mentor profile pages.
+- Profile photo: JPG or PNG, at least 200×200 px, up to 2 MB, checked on the server (real content
+  type, image size, complete file). It is stored in `uploads/profiles/` under a random name and
+  `users.avatar_path` holds only `profiles/<name>`; replacing or removing it deletes the old file
+  after the database update. The photo is shown in the header, account menu, mobile menu, My
+  Profile, Edit Profile, the public learner/mentor profile and the admin header; everywhere
+  else (and when there is no photo) the initials avatar is used.
 
 ### Skills & Learning Goals
 - Skill directory with categories and skill detail pages.
@@ -111,7 +118,8 @@ UKN connects students who want to learn with students who can teach:
   Factors without data for a mentor are left out and the rest renormalised.
 
 ### Mentoring Sessions
-- Learners request sessions (mentor, skill, date, time, duration of 30/45/60 minutes, message).
+- Learners request sessions (mentor, skill, date, time, duration of 30/45/60 minutes, message);
+  a request needs a stored mobile number, which only that session's mentor can see.
 - Mentors accept or reject pending requests; either side can cancel as allowed by the lifecycle;
   the mentor marks a session completed once it has started.
 
@@ -128,6 +136,7 @@ UKN connects students who want to learn with students who can teach:
 - Share a post from its Share menu: copy its link, share it to WhatsApp, Facebook, LinkedIn or X,
   or use the device's native share sheet where the browser supports it.
 - Comments and one level of replies; edit and delete your own comments.
+- Report a post, comment or reply written by someone else (reason + optional details) for admin review.
 - Up/down voting (clicking the same vote again removes it) and saved posts.
 - Follow / unfollow members.
 
@@ -145,11 +154,6 @@ UKN connects students who want to learn with students who can teach:
 - Top Learners, Top Mentors and Community Contributors, computed from the points ledger,
   with **This Week / This Month / All Time** periods, deterministic tie-breaking and the
   current member's own standing.
-
-### Skill Network
-- Interactive graph (Cytoscape.js) of active skills and their curated relationships, with
-  mentor/learner counts, the mentors teaching each skill, a category filter and search, plus an
-  accessible text list of the same network.
 
 ### Administration
 - Seven admin areas: departments, skill categories, skills, user management, post moderation,
@@ -169,13 +173,12 @@ UKN connects students who want to learn with students who can teach:
 |---|---|
 | Frontend | HTML5, CSS3, **Bootstrap 5.3** (CSS + JS bundle), vanilla JavaScript |
 | Charts | **Chart.js 4** (admin dashboard) |
-| Graph | **Cytoscape.js 3** (skill network) |
 | Fonts / icons | Google Fonts (incl. Material Symbols) |
 | Backend | **PHP 8** (developed and tested on PHP 8.2), server-rendered pages + form POST actions |
 | Database | **MariaDB / MySQL** via **PDO** (developed and tested on MariaDB 10.4, InnoDB, `utf8mb4`) |
 | Web server | Apache (XAMPP) with `.htaccess` support |
 
-Bootstrap, Chart.js and Cytoscape.js are loaded from the jsDelivr CDN; there is no build step
+Bootstrap and Chart.js are loaded from the jsDelivr CDN; there is no build step
 and no package manager.
 
 ---
@@ -194,7 +197,7 @@ university-knowledge-network-frontend/
 │   ├── mentor-applications/   Apply to become a mentor
 │   ├── profile/ skills/ goals/ availability/
 │   ├── sessions/              Request, accept, reject, complete, cancel, rate
-│   ├── posts/ comments/ follows/ notifications/
+│   ├── posts/ comments/ follows/ notifications/ reports/
 │   ├── admin/                 Admin actions (departments, skill-categories, skills, users,
 │   │                          mentor-applications, posts, comments, reports)
 │   ├── helpers/               Shared logic: auth, session, CSRF, validation, actions,
@@ -206,7 +209,7 @@ university-knowledge-network-frontend/
 │   └── test-db.php            Command-line-only database connectivity check
 ├── pages/                     Page templates rendered by index.php (auth, dashboard, profile,
 │                              skills, learning, mentors, sessions, community, notifications,
-│                              search, leaderboard, network, points, ratings, settings, errors)
+│                              search, leaderboard, points, ratings, settings, errors)
 ├── components/                Reusable render functions (post card, mentor card, session card, …)
 ├── includes/                  Shared layout: header, sidebars, dropdowns, mobile nav, footer
 ├── modals/                    Bootstrap modals (create/edit post, session request, rating, …)
@@ -220,7 +223,7 @@ university-knowledge-network-frontend/
 │   ├── seed_demo_data.sql     Optional demo content for every feature table
 │   └── patches/               Idempotent upgrade patches for existing databases
 ├── storage/mail/              Development mail log (not web-accessible)
-├── uploads/                   Reserved upload folders (no upload feature yet; scripts blocked)
+├── uploads/                   Upload folders (profile photos in profiles/; scripts blocked)
 ├── docs/                      ER diagram (ER-Diagram.png + Mermaid source), design hand-off,
 │                              references and screenshots (not web-accessible)
 ├── component-preview.dev.php  Development-only static component preview (mock data)
@@ -237,11 +240,11 @@ that `POST` to the matching file under `backend/`, which redirects back with a f
 - **Engine / charset:** InnoDB, `utf8mb4` / `utf8mb4_unicode_ci` for every table.
 - **SQL mode:** the application connection enables `STRICT_TRANS_TABLES`, so values that do not
   fit a column raise an error (and roll back) instead of being silently truncated.
-- **Tables (22):**
+- **Tables (23):**
 
 | Area | Tables |
 |---|---|
-| People | `users`, `user_settings`, `departments`, `mentor_applications` |
+| People | `users`, `user_settings`, `user_private_contacts`, `departments`, `mentor_applications` |
 | Skills | `skill_categories`, `skills`, `skill_relations`, `user_skills` |
 | Learning & mentoring | `learning_goals`, `mentor_availability`, `mentoring_sessions`, `session_ratings` |
 | Points | `point_transactions` |
@@ -272,7 +275,9 @@ that `POST` to the matching file under `backend/`, which redirects back with a f
   `mysql -u <db-user> -p ukn_database < database/patches/add-password-reset.sql` on a database
   created before it existed, and mentor applications need
   `mysql -u <db-user> -p ukn_database < database/patches/simplify-user-roles-and-add-mentor-applications.sql`
-  (it also converts any old mentor-only account to Learner & Mentor).
+  (it also converts any old mentor-only account to Learner & Mentor). Private mobile numbers need
+  `mysql -u <db-user> -p ukn_database < database/patches/add-user-private-contacts.sql`; existing
+  accounts get no number, and each user adds one in Settings before requesting a session.
 - **Design documentation:** ER diagram, relational schema, 3NF justification, index rationale and
   SQL feature coverage are in [Database Design](#database-design).
 
@@ -280,8 +285,8 @@ that `POST` to the matching file under `backend/`, which redirects back with a f
 
 ## Database Design
 
-This section documents the database as it is defined in `database/schema.sql` — 22 base tables,
-39 foreign keys, 23 `CHECK` constraints and one view — and shows where the application uses each
+This section documents the database as it is defined in `database/schema.sql` — 23 base tables,
+40 foreign keys, 25 `CHECK` constraints and one view — and shows where the application uses each
 SQL feature.
 
 ### ER Diagram
@@ -394,6 +399,7 @@ Expand a table to see its columns and constraints (generated from the database's
 - **UNIQUE** `uq_users_password_reset_token` (password_reset_token_hash)
 - **CHECK** `chk_users_avg_rating`: `avg_rating is null or avg_rating >= 1.0 and avg_rating <= 5.0`
 - **CHECK** `chk_users_suspend_reason`: `status <> 'suspended' or suspend_reason is not null`
+- **CHECK** `chk_users_role`: `role in ('learner','dual')` — also rejects an invalid role (e.g. `'mentor'`) from a non-strict SQL session, which would otherwise store the ENUM's empty value
 - **Indexes:** `idx_users_department` (department_id); `idx_users_full_name` (full_name); `idx_users_learning_points` (learning_points); `idx_users_mentor_points` (mentor_points); `idx_users_role_status` (role, status)
 
 </details>
@@ -849,6 +855,24 @@ Expand a table to see its columns and constraints (generated from the database's
 
 </details>
 
+<details>
+<summary><b>23. <code>user_private_contacts</code></b> — 4 columns</summary>
+
+| Column | Type | NOT NULL | Key |
+|---|---|:---:|---|
+| `user_id` | `int(10) unsigned` | ✓ | PK, FK → `users.id` |
+| `mobile_number` | `varchar(20)` | ✓ |  |
+| `created_at` | `datetime` | ✓ |  |
+| `updated_at` | `datetime` | ✓ |  |
+
+- **PK:** (user_id)
+- **FK** `user_id` → `users(id)` ON DELETE CASCADE
+- **CHECK** `chk_user_private_contacts_mobile`: `mobile_number` matches `^[+]8801[3-9][0-9]{8}$` (Bangladesh mobile, E.164)
+- Not unique: a shared/family number may belong to more than one account.
+- Kept out of `users` so that no general user query can return it; see [Private contact details](#private-contact-details).
+
+</details>
+
 **View:** `mentor_rating_summary(mentor_id, avg_rating, total_reviews)` — derived from
 `session_ratings`; see [SQL VIEW](#sql-view).
 
@@ -858,6 +882,7 @@ Summary of the relationships:
 |---|---|---|
 | departments → users | 1 : N (optional) | `users.department_id` (nullable, `ON DELETE SET NULL`) |
 | users → user_settings | 1 : 0..1 | `user_settings.user_id` is both PK and FK |
+| users → user_private_contacts | 1 : 0..1 | `user_private_contacts.user_id` is both PK and FK (accounts from before this table have no row) |
 | skill_categories → skills | 1 : N | `skills.category_id` |
 | skills ↔ skills | M : N | `skill_relations(source_skill_id, target_skill_id)` |
 | users ↔ skills | M : N with attributes | `user_skills(user_id, skill_id, skill_type)` |
@@ -933,7 +958,7 @@ per row. Each one has a single, known source and a defined writer:
 | `session_ratings.reviewer_id`, `mentor_id`, `skill_id` | the rated `mentoring_sessions` row | Copied from the session when the rating is inserted (`backend/sessions/rate.php:46-53`); a session's learner, mentor and skill are never updated after it is created | Lets ratings be filtered by mentor/skill (`idx_session_ratings_mentor`) and aggregated by the view without joining sessions |
 | `mentoring_sessions.reference_code` | the session `id` (`UKN-S-` + 1000 + id) | Set once, right after the insert (`backend/sessions/request.php:76`) | Human-readable, unique reference |
 | `skills.slug` | `skills.name` (plus a `-2`, `-3` … suffix on collision) | Admin skill create/update (`backend/helpers/admin-taxonomy.php`) | Stable, unique URL key |
-| `posts.report_count`, `comments.report_count` | `reports` for that target | **No application writer.** Values come from the demo seed only; there is no member-facing report feature yet | Displayed in the admin moderation lists |
+| `posts.report_count`, `comments.report_count` | `reports` for that target (any status) | +1 in the report transaction (`backend/reports/create.php`); reviewing a report does not change it | Displayed in the admin moderation lists |
 
 Honest notes on consistency:
 - Every application writer updates the cached value **in the same transaction** as the source
@@ -943,7 +968,9 @@ Honest notes on consistency:
   - For this reason the leaderboard, search and recommendations aggregate the source tables
     (`point_transactions`, `session_ratings`, via the view) instead of these columns.
   - This is also listed under [Known Limitations](#known-limitations).
-- `report_count` is not maintained by the application (see the table).
+- `report_count` counts every report filed on the item and is never decremented. Reports are only
+  removed when their reporter account is deleted (ON DELETE CASCADE), which the application does
+  not offer.
 
 ### SQL VIEW
 
@@ -1081,7 +1108,7 @@ behavior on larger data. No performance measurements were made, so none are clai
 | `idx_posts_popular` | `status`, `vote_score` | Visible posts ordered by score |
 | `idx_comments_post` | `post_id`, `created_at` | A post's comments in chronological order |
 | `idx_session_ratings_mentor` | `mentor_id`, `created_at` | A mentor's ratings (and the `GROUP BY mentor_id` of the view) |
-| `idx_user_skills_skill_type` | `skill_id`, `skill_type` | Mentors/learners of a skill (skill pages, skill network, recommendations) |
+| `idx_user_skills_skill_type` | `skill_id`, `skill_type` | Mentors/learners of a skill (skill pages, recommendations) |
 | `idx_learning_goals_user_status` | `user_id`, `status` | A member's active / completed goals |
 | `idx_reports_queue` | `status`, `created_at` | Admin report queue (pending first, by date) |
 | `idx_reports_target` | `target_type`, `target_id` | Finding the reports for one post/comment/user |
@@ -1156,7 +1183,8 @@ The test suites proved the rollbacks by injecting failures with temporary databa
 Register ──► verification email (token, 24 h) ──► Verify email ──► Log in ──► Session ──► Log out
 ```
 
-1. **Register** — validated server-side; the account is created unverified.
+1. **Register** — validated server-side; the account is created unverified. The account, its
+   settings row and its private mobile number are written in one transaction.
 2. **Verify** — the emailed link contains a single-use token; only its SHA-256 hash is stored.
    In development, emails are written to `storage/mail/` instead of being sent.
 3. **Log in** — CSRF-protected; rate limited; generic error for unknown email or wrong
@@ -1208,7 +1236,7 @@ may apply again. Every application is kept as history.
 
 Guests can browse the home feed, skills, public learner/mentor profiles, post details, the
 mentor directory and search. Any logged-in member can additionally use their profile, sessions,
-points, saved/own posts, notifications, the leaderboard and the skill network, and can post,
+points, saved/own posts, notifications and the leaderboard, and can post,
 comment, vote, save and follow. Mode switching is a server-side action that only allows modes
 the account actually has.
 
@@ -1230,6 +1258,30 @@ pending ──accept (mentor)──► accepted ──complete (mentor, after st
 - Cancelling an accepted session less than 6 hours before it starts costs the canceller 10 points.
 - Only the participants of a session can view or act on it.
 
+### Private contact details
+
+- **Collected:** every new registration asks for a mobile number (*“Your mobile number is private
+  and will only be shared with the mentor you request a session with.”*). Accepted forms are
+  `01XXXXXXXXX`, `8801XXXXXXXXX` and `+8801XXXXXXXXX` (spaces/hyphens ignored); it is validated
+  on the server and stored only as `+8801XXXXXXXXX`.
+- **Stored:** in `user_private_contacts` (one row per user), not in `users`, so profile, search,
+  leaderboard, mentor-list, community, notification and admin queries cannot return it. Only
+  `backend/helpers/private-contacts.php` reads the table.
+- **Owner:** views, adds and changes their number in **Settings → Account → Mobile Number**
+  (POST + CSRF, always the signed-in user's own row). Accounts created before this feature have
+  no number and must add one there before they can request a mentoring session; the request is
+  refused with *“Add your mobile number in Settings before requesting a mentoring session.”*
+- **Mentor:** sees the learner's number (*Learner Contact*, a `tel:` link) only on **Session
+  Details** of a session where they are the mentor, and only while it is `pending` or `accepted`.
+  The query checks the session id, `mentor_id` = the signed-in user and the status, and takes the
+  learner from that session row, so changing ids in the URL or form reveals nothing. It is hidden
+  once the session is `completed`, `rejected` or `cancelled`, and it never appears in session
+  lists, requests, profiles or admin pages. Admin rights alone do not reveal it; the learner's own
+  session view does not repeat it.
+- **Not encrypted at rest:** mobile numbers are access-controlled at the application level but
+  remain visible to database administrators (the project has no key-management system to hold an
+  encryption key). Numbers are never written to the application's logs or messages.
+
 ---
 
 ## Community Workflow
@@ -1246,6 +1298,12 @@ pending ──accept (mentor)──► accepted ──complete (mentor, after st
   Guests can open shared post links.
 - **Comments & replies** — comment on a post or reply to a comment (one reply level); authors
   can edit/delete their own comments.
+- **Reporting** — logged-in members can report a post (Post Details) or someone else's comment or
+  reply: a reason from the `reports.reason` list plus optional details (up to 500 characters).
+  The report is stored in `reports` (`target_type` + `target_id`, reporter = the session user,
+  status `pending`) and the item's `report_count` goes up in the same transaction. Only visible
+  content can be reported, never your own, and each member can report an item once. Reporting
+  never hides or changes the content itself — that is an admin decision (see [Admin](#admin)).
 - **Voting** — upvote / downvote a post; repeating the same vote removes it.
 - **Saving** — save / unsave posts to a personal "Saved Posts" list.
 - **Following** — follow / unfollow other members.
@@ -1272,7 +1330,7 @@ the mobile navigation), whichever Learner/Mentor mode they are in.
 | **Mentor Applications** | Pending / Approved / Rejected / All; see the applicant's department, year, points, sessions, skills and message; approve (account becomes Learner & Mentor) or reject, with an optional note. An admin cannot review their own application, an applicant who is no longer active or verified cannot be approved, and an application can only be decided once — if two admins decide at the same moment, the second gets "already reviewed". |
 | **Posts** | Review, hide and restore posts (nothing is deleted) |
 | **Comments** | Review, hide and restore comments (replies under a hidden comment are hidden too) |
-| **Reports** | Review, resolve or dismiss reports; when resolving, optionally hide the reported post/comment or suspend the reported user in the same step |
+| **Reports** | Filter by type, status (Pending / Resolved / Dismissed), reason and date; resolve or dismiss a pending report; when resolving, optionally hide the reported post/comment or suspend the reported user in the same step. A report is decided once (`pending` → `resolved` or `dismissed`, recording the admin and time); a second decision — including one made at the same moment by another admin — gets "already reviewed". Dismissing never changes the content. |
 
 Moderation never deletes content: hidden items are restorable, reports stay traceable even if
 their target is later removed, and an admin cannot suspend their own account.
@@ -1297,7 +1355,7 @@ Implemented in the application (Phases I and J):
 | Login rate limiting | Attempts are counted per account + source, per account and per source in the database (hashed keys, works across sessions and parallel requests); throttling is temporary and gives the same response for existing and non-existing accounts |
 | Error handling | Users only see generic error messages; with `UKN_ENV=production`, PHP errors are never displayed and uncaught errors show a generic 500 page while details go to the error log |
 | Direct access | Repository metadata, database files, documentation and include-only PHP folders are not web-accessible; directory listing is disabled |
-| Uploads | No upload feature exists; scripts placed in `uploads/` can never execute |
+| Uploads | Profile photos only: JPG/PNG checked by content type, `getimagesize()`, minimum size and file completeness, max 2 MB, saved under a random server-generated name (the uploaded name is never used); scripts placed in `uploads/` can never execute |
 
 ---
 
@@ -1328,7 +1386,7 @@ should only be added once the site is served over HTTPS (see
 - **Git**, to clone the repository.
 - Apache with `.htaccess` overrides allowed (`AllowOverride All`) and **`mod_headers`** enabled —
   both are the XAMPP defaults for `htdocs`.
-- Internet access in the browser (Bootstrap, Chart.js, Cytoscape.js and fonts load from CDNs).
+- Internet access in the browser (Bootstrap, Chart.js and fonts load from CDNs).
 
 ### Steps
 
@@ -1539,7 +1597,7 @@ rollbacks, and restore the database to its seed state afterwards.
 | Step 28 | Mentor recommendations | 40 / 40 |
 | Phase E | Session lifecycle, ratings, points | 69 / 69 |
 | Phase F | Posts, comments, votes, saves, follows, notifications | 74 / 74 |
-| Phase G | Search, leaderboard, skill network | 75 / 75 |
+| Phase G | Search, leaderboard (and the skill network of Step 44, since removed) | 75 / 75 |
 | Phase H | Admin CRUD, user management, moderation, reports | 190 / 190 |
 | Phase I | CSRF, validation, authorization/IDOR, integrity/concurrency, XSS | 53 / 53 |
 | Phase J | Rate limiting, sessions, headers/CSP, disclosure, enumeration | 47 / 47 |
@@ -1563,7 +1621,7 @@ rejected) no longer applies to the current behavior.
 | D | 28 | Mentor recommendation | Complete |
 | E | 29–33 | Mentoring sessions, ratings, points | Complete |
 | F | 34–41 | Community & notifications | Complete |
-| G | 42–44 | Search, leaderboard, skill network | Complete |
+| G | 42–44 | Search, leaderboard (the Step 44 skill network was later removed) | Complete |
 | H | 45–51 | Administration | Complete |
 | I | 52–56 | Security & data integrity | Complete |
 | J | Additional hardening | Production hardening & final security audit | Complete |
@@ -1590,12 +1648,14 @@ security.
 
 ## Known Limitations
 
-- **Settings page** — displays account, appearance, notification and privacy options but does not
-  save them (no backend yet). The change-password dialog is likewise not connected to a backend.
-- **Profile photo** — the photo control only previews the chosen image in the browser; there is no
-  upload or storage of profile photos.
-- **Reports** — admins can review existing reports, but members cannot yet file a report from the
-  application.
+- **Settings page** — apart from the mobile number, displays account, appearance, notification
+  and privacy options but does not save them (no backend yet). The change-password dialog is likewise not connected to a backend.
+- **Profile photos** — shown only where the signed-in user's or a profile page's avatar is
+  displayed; cards, comments, lists and search still use initials. Images are validated but not
+  re-encoded (the PHP GD extension is not enabled).
+- **Reports** — members can report posts and comments, not users (user reports exist only in the
+  demo data). A reviewed report cannot be reopened, and the reporter is not notified of the
+  decision.
 - **Notifications** — generated for community activity (comments, replies, new followers) only,
   not for session events or mentor-application decisions (the applicant sees the result in the
   profile menu and on the application page).
@@ -1607,6 +1667,8 @@ security.
   and average rating columns) come from seeded counter columns, while leaderboards and
   recommendations use the ledger and ratings tables; for the demo seed accounts these can differ.
 - **Registration** tells a visitor when an email or university ID is already registered.
+- **Mobile numbers** — Bangladesh mobile numbers only; stored unencrypted (visible to database
+  administrators, see [Private contact details](#private-contact-details)).
 - **Content-Security-Policy** still allows inline *styles* (`'unsafe-inline'` in `style-src`),
   because some templates use `style=""` attributes; CDN resources have no Subresource Integrity
   attributes.

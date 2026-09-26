@@ -1,5 +1,16 @@
 <?php
-$activeRole = !empty($currentUser['dualRole']) ? ($currentUser['activeRole'] ?? 'learner') : ($currentUser['role'] ?? 'learner');
+require_once __DIR__ . '/../../backend/config/database.php';
+require_once __DIR__ . '/../../backend/helpers/private-contacts.php';
+// The owner's private mobile number (only ever read here for the signed-in user).
+$ownMobile = null;
+$ownMobileError = false;
+try {
+    $ownMobile = uknGetOwnMobile(getDatabaseConnection(), UKN_CURRENT_USER_ID);
+} catch (Throwable $e) {
+    error_log('[UKN settings] could not load the private contact (' . get_class($e) . ')');
+    $ownMobileError = true;
+}
+$activeRole =!empty($currentUser['dualRole']) ? ($currentUser['activeRole'] ?? 'learner') : ($currentUser['role'] ?? 'learner');
 $isMentor = $activeRole === 'mentor';
 $otherRole = $isMentor ? 'Learner' : 'Mentor';
 $profile = [
@@ -30,7 +41,7 @@ $notificationOptions = $isMentor
 </div>
 <div class="card mb-3">
   <div class="card-body d-flex align-items-center gap-3 flex-wrap">
-    <span class="ukn-avatar ukn-avatar-lg flex-shrink-0" aria-hidden="true"><?= htmlspecialchars($profile['initials']) ?></span>
+    <?= uknAvatarHtml($currentUser['avatarPath'] ?? null, (string) $profile['initials'], 'ukn-avatar ukn-avatar-lg flex-shrink-0') ?>
     <div class="flex-fill ukn-min-w-0">
       <div class="fw-bold"><?= htmlspecialchars($profile['name']) ?></div>
       <div class="ukn-body-sm ukn-text-muted"><?= htmlspecialchars($profile['department']) ?> &middot; <?= htmlspecialchars($profile['email']) ?></div>
@@ -62,6 +73,29 @@ $notificationOptions = $isMentor
           <div class="ukn-body-sm ukn-text-muted">••••••••</div>
         </div>
         <button type="button" class="btn btn-outline-secondary btn-sm flex-shrink-0" data-bs-toggle="modal" data-bs-target="#changePasswordModal">Change Password</button>
+      </div>
+      <div class="ukn-settings-row" id="mobile">
+        <form action="backend/profile/mobile.php" method="post" class="w-100" data-validated-form novalidate>
+          <?= csrfField() ?>
+          <label for="settingsMobile" class="form-label mb-1">Mobile Number</label>
+          <div class="ukn-body-sm ukn-text-muted mb-2">
+            Private. Only the mentor of a session you request can see it, while that request or session is open.
+            <?php if ($ownMobile === null && !$ownMobileError): ?>
+              <strong>Add your number before requesting a mentoring session.</strong>
+            <?php endif; ?>
+          </div>
+          <div class="d-flex gap-2 flex-wrap align-items-start">
+            <input
+              type="tel" class="form-control flex-fill w-auto" id="settingsMobile" name="mobile_number"
+              placeholder="01XXXXXXXXX" autocomplete="tel" inputmode="tel" maxlength="20"
+              value="<?= htmlspecialchars((string) $ownMobile) ?>" data-validate="required"
+            >
+            <button type="submit" class="btn btn-outline-secondary btn-sm flex-shrink-0"><?= $ownMobile === null ? 'Add Number' : 'Update Number' ?></button>
+          </div>
+          <div class="ukn-field-message is-invalid mt-1" data-error-for="mobile_number" hidden>
+            <span class="ms" aria-hidden="true">error</span>Enter your mobile number.
+          </div>
+        </form>
       </div>
       <div class="ukn-settings-row">
         <div class="ukn-settings-row__text">

@@ -42,7 +42,6 @@ if (!function_exists('ukn_nav_groups_for_role')) {
                     ['title' => 'You', 'items' => [
                         $item('notifications', 'Notifications', 'notifications', $badgeCounts['notifications'] ?? null),
                         $item('person', 'Profile', 'my-profile'),
-                        $item('hub', 'Skill Network', 'skill-network'),
                         $item('settings', 'Settings', 'settings'),
                     ]],
                 ];
@@ -68,7 +67,6 @@ if (!function_exists('ukn_nav_groups_for_role')) {
                     ['title' => 'You', 'items' => [
                         $item('notifications', 'Notifications', 'notifications', $badgeCounts['notifications'] ?? null),
                         $item('person', 'Profile', 'my-profile'),
-                        $item('hub', 'Skill Network', 'skill-network'),
                         $item('settings', 'Settings', 'settings'),
                     ]],
                 ];

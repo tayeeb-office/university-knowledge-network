@@ -26,7 +26,7 @@ try {
     $pdo = getDatabaseConnection();
 
     $stmt = $pdo->query(
-        "SELECT u.id, u.full_name AS name, u.initials, u.email, u.university_id AS universityId,
+        "SELECT u.id, u.full_name AS name, u.initials, u.avatar_path, u.email, u.university_id AS universityId,
                 u.role, u.is_admin, u.status, u.created_at, u.sessions_as_learner, u.sessions_as_mentor,
                 d.name AS department
          FROM users u
@@ -157,7 +157,7 @@ require __DIR__ . '/includes/header.php';
           >
             <td data-label="User">
               <div class="d-flex align-items-center gap-2">
-                <span class="ukn-avatar flex-shrink-0" aria-hidden="true"><?= htmlspecialchars($user['initials']) ?></span>
+                <?= uknAvatarHtml($user['avatar_path'] ?? null, (string) $user['initials'], 'ukn-avatar flex-shrink-0') ?>
                 <span class="ukn-min-w-0">
                   <span class="d-block fw-bold ukn-truncate"><?= htmlspecialchars($user['name']) ?></span>
                   <span class="d-block ukn-body-sm ukn-text-muted ukn-truncate"><?= htmlspecialchars($user['email']) ?></span>

@@ -16,7 +16,7 @@ try {
 
     $postsStmt = $pdo->prepare(
         "SELECT p.id, p.title, p.content, p.vote_score AS score, p.comment_count AS comments,
-                p.created_at, u.full_name AS author, u.initials, u.role, d.name AS department
+                p.created_at, u.full_name AS author, u.initials, u.avatar_path, u.role, d.name AS department
          FROM posts p
          JOIN users u ON u.id = p.user_id
          LEFT JOIN departments d ON d.id = u.department_id

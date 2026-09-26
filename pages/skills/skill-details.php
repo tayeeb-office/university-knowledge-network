@@ -61,7 +61,7 @@ try {
 
         $postsStmt = $pdo->prepare(
             "SELECT p.id, p.title, p.content, p.vote_score AS score, p.comment_count AS comments,
-                    p.created_at, u.id AS author_id, u.full_name AS author, u.initials, u.role, d.name AS department
+                    p.created_at, u.id AS author_id, u.full_name AS author, u.initials, u.avatar_path, u.role, d.name AS department
              FROM post_skills ps
              JOIN posts p ON p.id = ps.post_id
              JOIN users u ON u.id = p.user_id
@@ -82,7 +82,7 @@ try {
         $skill['discussionPosts'] = uknDecoratePosts($skill['discussionPosts']);
 
         $mentorsStmt = $pdo->prepare(
-            "SELECT u.id, u.full_name AS name, u.initials, u.avg_rating AS rating, u.mentor_points AS points,
+            "SELECT u.id, u.full_name AS name, u.initials, u.avatar_path, u.avg_rating AS rating, u.mentor_points AS points,
                     u.sessions_as_mentor AS sessions, d.name AS department
              FROM user_skills us
              JOIN users u ON u.id = us.user_id
@@ -95,6 +95,7 @@ try {
         $topMentors = array_map(static function (array $row) use ($skill) {
             $row['primarySkill'] = $skill['name'];
             $row['profileHref'] = ukn_route_href('mentor-profile') . '&id=' . $row['id'];
+            $row['following'] = uknFollowStateFor((int) $row['id']);
             return $row;
         }, $mentorsStmt->fetchAll());
     }

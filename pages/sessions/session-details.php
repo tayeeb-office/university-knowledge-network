@@ -4,6 +4,7 @@ require_once __DIR__ . '/../../components/empty-state.php';
 require_once __DIR__ . '/../../components/session-card.php';
 require_once __DIR__ . '/../../backend/config/database.php';
 require_once __DIR__ . '/../../backend/helpers/format.php';
+require_once __DIR__ . '/../../backend/helpers/private-contacts.php';
 
 $activeRole = !empty($currentUser['dualRole']) ? ($currentUser['activeRole'] ?? 'learner') : ($currentUser['role'] ?? 'learner');
 $isMentorView = $activeRole === 'mentor';
@@ -11,6 +12,7 @@ $isMentorView = $activeRole === 'mentor';
 $requestedId = isset($_GET['id']) && is_numeric($_GET['id']) ? (int) $_GET['id'] : 0;
 $session = false;
 $sessionDetailsDbError = false;
+$learnerMobile = null;
 
 try {
     $pdo = getDatabaseConnection();
@@ -19,8 +21,9 @@ try {
             ms.duration_minutes, ms.request_message, ms.cancel_reason,
             ms.requested_at, ms.responded_at, ms.completed_at, ms.updated_at,
             sk.id AS skill_id, sk.name AS skill,
-            ul.id AS learner_id, ul.full_name AS learner_name, ul.initials AS learner_initials, dl.name AS learner_department,
-            um.id AS mentor_id, um.full_name AS mentor_name, um.initials AS mentor_initials, dm.name AS mentor_department,
+            ul.id AS learner_id, ul.full_name AS learner_name, ul.initials AS learner_initials, ul.avatar_path AS learner_avatar, dl.name AS learner_department,
+            ul.year_of_study AS learner_year, ul.learning_points AS learner_points, ul.sessions_as_learner AS learner_sessions,
+            um.id AS mentor_id, um.full_name AS mentor_name, um.initials AS mentor_initials, um.avatar_path AS mentor_avatar, dm.name AS mentor_department,
             um.avg_rating AS mentor_rating, um.sessions_as_mentor AS mentor_sessions, um.mentor_points,
             sr.overall AS rating_value
         FROM mentoring_sessions ms
@@ -46,13 +49,26 @@ try {
         $canActOnSession = $viewerSide === $activeRole;
         $isMentorView = $viewerSide === 'mentor';
         $displayStatus = $session['status'] === 'accepted' ? 'upcoming' : $session['status'];
+        // Private contact: only this session's mentor, only while it is pending/accepted; the
+        // query re-checks both against the session row and takes the learner from it.
+        if ($viewerSide === 'mentor') {
+            $learnerMobile = uknSessionLearnerMobileForMentor($pdo, (int) $session['id'], UKN_CURRENT_USER_ID);
+        }
 
+        // Sidebar shows the other participant: the mentor sees the learner (learning skills, as
+        // on the learner profile), the learner sees the mentor (teaching skills).
         $skillsStmt = $pdo->prepare(
             "SELECT s.name FROM user_skills us JOIN skills s ON s.id = us.skill_id
-             WHERE us.user_id = ? AND us.skill_type = 'teaching' ORDER BY s.name"
+             WHERE us.user_id = ? AND us.skill_type = ? ORDER BY s.name"
         );
-        $skillsStmt->execute([$session['mentor_id']]);
-        $mentorSkills = $skillsStmt->fetchAll(PDO::FETCH_COLUMN);
+        $mentorSkills = $learnerSkills = [];
+        if ($isMentorView) {
+            $skillsStmt->execute([$session['learner_id'], 'learning']);
+            $learnerSkills = $skillsStmt->fetchAll(PDO::FETCH_COLUMN);
+        } else {
+            $skillsStmt->execute([$session['mentor_id'], 'teaching']);
+            $mentorSkills = $skillsStmt->fetchAll(PDO::FETCH_COLUMN);
+        }
 
         switch ($displayStatus) {
             case 'pending':
@@ -88,12 +104,19 @@ try {
             'learner' => [
                 'name' => $session['learner_name'],
                 'department' => (string) ($session['learner_department'] ?? ''),
+                'initials' => $session['learner_initials'],
+                'avatar_path' => $session['learner_avatar'],
+                'year' => (string) ($session['learner_year'] ?? ''),
+                'sessions' => (int) $session['learner_sessions'],
+                'points' => (int) $session['learner_points'],
+                'skills' => implode(', ', $learnerSkills),
                 'href' => ukn_route_href('learner-profile') . '&id=' . $session['learner_id'],
             ],
             'mentor' => [
                 'name' => $session['mentor_name'],
                 'department' => (string) ($session['mentor_department'] ?? ''),
                 'initials' => $session['mentor_initials'],
+                'avatar_path' => $session['mentor_avatar'],
                 'rating' => $session['mentor_rating'],
                 'sessions' => (int) $session['mentor_sessions'],
                 'points' => (int) $session['mentor_points'],
@@ -182,6 +205,13 @@ if ($session !== false) {
             </div>
           </div>
         <?php endforeach; ?>
+        <?php if ($learnerMobile !== null): ?>
+          <div class="mt-3 p-3 ukn-bg-surface-2 ukn-rounded-md" data-session-learner-contact>
+            <div class="ukn-eyebrow mb-2">Learner Contact</div>
+            <p class="ukn-body mb-1">Mobile: <a href="tel:<?= htmlspecialchars($learnerMobile) ?>"><?= htmlspecialchars($learnerMobile) ?></a></p>
+            <p class="ukn-body-sm ukn-text-muted mb-0">Shared for this mentoring session.</p>
+          </div>
+        <?php endif; ?>
         <?php if ($session['message']): ?>
           <div class="mt-3 p-3 ukn-bg-surface-2 ukn-rounded-md">
             <div class="ukn-eyebrow mb-2"><?= $session['status'] === 'cancelled' ? 'Cancellation Note' : 'Request Message' ?></div>
@@ -242,11 +272,27 @@ if ($session !== false) {
     </div>
   </div>
   <div class="col-lg-4">
-    <div class="card">
+    <div class="card" data-session-participant-card="<?= $isMentorView ? 'learner' : 'mentor' ?>">
       <div class="card-body">
+        <?php if ($isMentorView): ?>
+        <div class="ukn-eyebrow mb-3">Learner</div>
+        <div class="d-flex align-items-center gap-3 mb-3">
+          <?= uknAvatarHtml($session['learner']['avatar_path'], (string) $session['learner']['initials'], 'ukn-avatar ukn-avatar-lg flex-shrink-0') ?>
+          <div class="ukn-min-w-0">
+            <div class="fw-bold ukn-truncate"><?= htmlspecialchars($session['learner']['name']) ?></div>
+            <div class="ukn-body-sm"><?= htmlspecialchars(implode(' · ', array_filter([$session['learner']['department'], $session['learner']['year']], 'strlen'))) ?></div>
+          </div>
+        </div>
+        <div class="ukn-body-sm pt-3 ukn-border-top">
+          <?php if ($session['learner']['skills'] !== ''): ?>Learning <?= htmlspecialchars($session['learner']['skills']) ?><br><?php endif; ?>
+          <?= (int) $session['learner']['sessions'] ?> completed sessions<br>
+          <?= (int) $session['learner']['points'] ?> learning points
+        </div>
+        <a href="<?= htmlspecialchars($session['learner']['href']) ?>" class="btn btn-outline-secondary btn-sm w-100 mt-3">View Profile</a>
+        <?php else: ?>
         <div class="ukn-eyebrow mb-3">Mentor</div>
         <div class="d-flex align-items-center gap-3 mb-3">
-          <span class="ukn-avatar ukn-avatar-lg flex-shrink-0" aria-hidden="true"><?= htmlspecialchars($session['mentor']['initials']) ?></span>
+          <?= uknAvatarHtml($session['mentor']['avatar_path'], (string) $session['mentor']['initials'], 'ukn-avatar ukn-avatar-lg flex-shrink-0') ?>
           <div class="ukn-min-w-0">
             <div class="fw-bold ukn-truncate"><?= htmlspecialchars($session['mentor']['name']) ?></div>
             <div class="ukn-body-sm">★ <?= htmlspecialchars((string) $session['mentor']['rating']) ?></div>
@@ -258,6 +304,7 @@ if ($session !== false) {
           <?= (int) $session['mentor']['points'] ?> mentor points
         </div>
         <a href="<?= htmlspecialchars($session['mentor']['href']) ?>" class="btn btn-outline-secondary btn-sm w-100 mt-3">View Profile</a>
+        <?php endif; ?>
       </div>
     </div>
   </div>

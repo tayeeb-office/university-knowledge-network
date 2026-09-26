@@ -84,6 +84,26 @@ $oldValue = static fn (string $key): string => htmlspecialchars((string) ($regis
           </div>
         </div>
         <div class="ukn-form-group">
+          <label for="registerMobile" class="form-label">Mobile Number</label>
+          <input
+            type="tel"
+            class="form-control<?= $invalidIf('mobile') ?>"
+            id="registerMobile"
+            name="mobileNumber"
+            placeholder="01XXXXXXXXX"
+            autocomplete="tel"
+            inputmode="tel"
+            maxlength="20"
+            value="<?= $oldValue('mobileNumber') ?>"
+            data-validate="required"
+            aria-describedby="registerMobileHelp"
+          >
+          <div class="ukn-body-sm ukn-text-muted mt-1" id="registerMobileHelp">Your mobile number is private and will only be shared with the mentor you request a session with.</div>
+          <div class="ukn-field-message is-invalid" data-error-for="mobileNumber"<?= $hiddenUnless('mobile') ?>>
+            <span class="ms" aria-hidden="true">error</span><?= htmlspecialchars($errorFor('mobile') ?? 'Please enter your mobile number.') ?>
+          </div>
+        </div>
+        <div class="ukn-form-group">
           <label for="registerDepartment" class="form-label">Department</label>
           <select class="form-select<?= $invalidIf('department') ?>" id="registerDepartment" name="department" data-validate="required">
             <option value="" <?= ($registerOld['department'] ?? '') === '' ? 'selected ' : '' ?>disabled>Select your department</option>

@@ -19,7 +19,7 @@ if ($requestedId !== null) {
         $pdo = getDatabaseConnection();
 
         $userStmt = $pdo->prepare(
-            "SELECT u.id, u.full_name AS name, u.initials, u.email, u.university_id AS universityId,
+            "SELECT u.id, u.full_name AS name, u.initials, u.avatar_path, u.email, u.university_id AS universityId,
                     u.role, u.is_admin, u.status, u.suspend_reason AS suspendReason, u.created_at, u.last_active_at,
                     u.learning_points, u.mentor_points, u.avg_rating, u.sessions_as_learner,
                     u.sessions_as_mentor, u.learners_helped, d.name AS department
@@ -170,7 +170,7 @@ $isSelf = (int) $requestedId === (int) getCurrentUser()['id'];
 <div class="card mb-4">
   <div class="card-body">
     <div class="d-flex align-items-start gap-3 flex-wrap" data-user-row data-user-id="<?= $requestedId ?>" data-user-status="<?= htmlspecialchars($user['status']) ?>">
-      <span class="ukn-avatar ukn-avatar-lg flex-shrink-0" aria-hidden="true"><?= htmlspecialchars($user['initials']) ?></span>
+      <?= uknAvatarHtml($user['avatar_path'] ?? null, (string) $user['initials'], 'ukn-avatar ukn-avatar-lg flex-shrink-0') ?>
       <div class="flex-fill ukn-min-w-0">
         <div class="d-flex align-items-center gap-2 flex-wrap">
           <h2 class="ukn-h3 mb-0"><?= htmlspecialchars($user['name']) ?></h2>

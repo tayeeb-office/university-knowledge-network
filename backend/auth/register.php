@@ -6,6 +6,7 @@ require_once __DIR__ . '/../helpers/validation.php';
 require_once __DIR__ . '/../helpers/auth.php';
 require_once __DIR__ . '/../models/User.php';
 require_once __DIR__ . '/../helpers/verification.php';
+require_once __DIR__ . '/../helpers/private-contacts.php';
 if (!function_exists('uknRegisterFail')) {
     function uknRegisterFail(array $errors, array $old = []): void
     {
@@ -43,6 +44,7 @@ $input = [
     'email'         => sanitizeInput($_POST['email'] ?? ''),
     'university_id' => sanitizeInput($_POST['universityId'] ?? ''),
     'department'    => sanitizeInput($_POST['department'] ?? ''),
+    'mobile'        => uknPostString('mobileNumber'),
 
     'password'         => is_string($_POST['password'] ?? null) ? $_POST['password'] : '',
     'confirm_password' => is_string($_POST['confirmPassword'] ?? null) ? $_POST['confirmPassword'] : '',
@@ -53,9 +55,18 @@ $old = [
     'email'        => $input['email'],
     'universityId' => $input['university_id'],
     'department'   => $input['department'],
+    'mobileNumber' => sanitizeInput($input['mobile'] ?? ''),
 ];
 
 $validation = validateRegistrationData($input);
+// Private mobile number (user_private_contacts), stored normalised as +8801XXXXXXXXX.
+$mobile = uknNormalizeMobile($input['mobile']);
+if ($mobile === null) {
+    $validation['errors']['mobile'] = trim((string) $input['mobile']) === ''
+        ? 'Please enter your mobile number.'
+        : 'Enter a valid Bangladesh mobile number, e.g. 01XXXXXXXXX or +8801XXXXXXXXX.';
+    $validation['valid'] = false;
+}
 if (!$validation['valid']) {
     uknRegisterFail($validation['errors'], $old);
 }
@@ -96,6 +107,8 @@ try {
             'department_id' => $departmentId,
         ]);
         $userModel->createUserSettings($userId);
+        // Same transaction: an account is never created without its mobile number.
+        uknSaveOwnMobile($pdo, $userId, $mobile);
         $verificationToken = uknIssueVerificationToken($userModel, $userId);
         $pdo->commit();
     } catch (Throwable $e) {

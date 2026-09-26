@@ -33,7 +33,8 @@ if (!function_exists('uknRecountPostComments')) {
 if (!function_exists('uknDecoratePosts')) {
     /**
      * Adds the viewer's own state to post rows (keyed by 'id'): voteState (-1/0/1), saved, and
-     * isOwner when the row carries 'author_id'. Two batched queries for the whole list.
+     * isOwner and following (viewer follows the author) when the row carries 'author_id'.
+     * Two batched queries for the whole list, plus the request's cached following set.
      */
     function uknDecoratePosts(array $posts): array
     {
@@ -42,6 +43,7 @@ if (!function_exists('uknDecoratePosts')) {
             foreach ($posts as &$post) {
                 $post += ['voteState' => 0, 'saved' => false];
                 $post['isOwner'] = false;
+                $post['following'] = false;
             }
             return $posts;
         }
@@ -61,6 +63,7 @@ if (!function_exists('uknDecoratePosts')) {
             $post['saved'] = isset($savedIds[$id]);
             if (array_key_exists('author_id', $post)) {
                 $post['isOwner'] = (int) $post['author_id'] === $userId;
+                $post['following'] = (bool) uknFollowStateFor((int) $post['author_id']);
             }
         }
         return $posts;
@@ -82,6 +85,21 @@ if (!function_exists('uknCurrentUserFollowingIds')) {
             $following = array_flip(array_map('intval', $stmt->fetchAll(PDO::FETCH_COLUMN)));
         }
         return $following;
+    }
+}
+if (!function_exists('uknFollowStateFor')) {
+    /**
+     * Whether the logged-in user follows $targetId: null when no Follow button applies (guest, or
+     * the viewer's own account), otherwise true/false. Follows are user-to-user, so the active
+     * Learner/Mentor mode never matters. Reads the cached set above (no query per target).
+     */
+    function uknFollowStateFor(int $targetId): ?bool
+    {
+        $user = getCurrentUser();
+        if ($user === null || $targetId <= 0 || $targetId === (int) $user['id']) {
+            return null;
+        }
+        return isset(uknCurrentUserFollowingIds()[$targetId]);
     }
 }
 if (!function_exists('uknParsePostSkills')) {

@@ -67,10 +67,10 @@ if (!function_exists('uknLeaderboardRows')) {
         $ratingGroup = $pointType === 'mentor' ? ', r.avg_rating' : '';
         $base = uknLeaderboardBaseSql($pointType, $period, "LEFT JOIN departments d ON d.id = u.department_id {$ratingJoin}");
         $stmt = $pdo->prepare(
-            "SELECT u.id, u.full_name AS name, u.initials, u.role, d.name AS category,
+            "SELECT u.id, u.full_name AS name, u.initials, u.avatar_path, u.role, d.name AS category,
                     SUM(pt.amount) AS points, {$activity} AS activity{$ratingSelect}
              {$base}
-             GROUP BY u.id, u.full_name, u.initials, u.role, d.name{$ratingGroup}
+             GROUP BY u.id, u.full_name, u.initials, u.avatar_path, u.role, d.name{$ratingGroup}
              HAVING points > 0
              ORDER BY points DESC, u.full_name ASC, u.id ASC
              LIMIT " . max(1, min(100, $limit))

@@ -1,11 +1,16 @@
 <?php
 require_once __DIR__ . '/../helpers/actions.php';
 require_once __DIR__ . '/../helpers/skills.php';
+require_once __DIR__ . '/../helpers/avatars.php';
 
 // Updates the logged-in user's own profile (Edit Profile page). The user is always the
 // session user; email and university ID are identity fields and cannot be changed here.
 // The page's skill picker edits the skills of the current active role (learning for
 // learners, teaching for mentors), synced in the same transaction.
+// Profile photo: an uploaded file (field "avatar") replaces the stored one; remove_avatar=1
+// clears it (a new file wins over removal). The new file is stored only after every check
+// passes, users.avatar_path changes in the same transaction, and the old file is deleted only
+// after the commit; if anything fails the new file is removed and the old avatar is kept.
 uknRequirePostMethod();
 requireLogin();
 uknRequireActionCsrf('edit-profile');
@@ -39,6 +44,14 @@ if (mb_strlen($bio, 'UTF-8') > UKN_MAX_BIO) {
 if (array_key_exists('skills', $_POST) && $skillsRaw === null) {
     $errors['skills'] = 'Invalid skills list.';
 }
+$avatarUpload = uknAvatarValidateUpload($_FILES['avatar'] ?? null);
+if (isset($avatarUpload['error'])) {
+    $errors['avatar'] = $avatarUpload['error'];
+}
+$removeAvatar = $avatarUpload === null && uknPostString('remove_avatar') === '1';
+$newAvatar = null;
+$oldAvatar = null;
+$changeAvatar = false;
 
 try {
     $pdo = getDatabaseConnection();
@@ -66,12 +79,31 @@ try {
     $userId = (int) getCurrentUser()['id'];
     $skillType = getCurrentActiveRole() === 'mentor' ? 'teaching' : 'learning';
 
+    if ($avatarUpload !== null) {
+        $newAvatar = uknAvatarStore($avatarUpload);
+        if ($newAvatar === null) {
+            $fail(['avatar' => 'The photo could not be saved. Please try again.'], $old);
+        }
+    }
+    $changeAvatar = $newAvatar !== null || $removeAvatar;
+
     $pdo->beginTransaction();
+    if ($changeAvatar) {
+        $current = $pdo->prepare('SELECT avatar_path FROM users WHERE id = ? FOR UPDATE');
+        $current->execute([$userId]);
+        $oldAvatar = $current->fetchColumn();
+    }
     $stmt = $pdo->prepare(
-        'UPDATE users SET full_name = ?, initials = ?, department_id = ?, year_of_study = ?, bio = ?
+        'UPDATE users SET full_name = ?, initials = ?, department_id = ?, year_of_study = ?, bio = ?'
+        . ($changeAvatar ? ', avatar_path = ?' : '') . '
          WHERE id = ?'
     );
-    $stmt->execute([$name, uknDeriveInitials($name), $departmentId, $year === '' ? null : $year, $bio === '' ? null : $bio, $userId]);
+    $params = [$name, uknDeriveInitials($name), $departmentId, $year === '' ? null : $year, $bio === '' ? null : $bio];
+    if ($changeAvatar) {
+        $params[] = $newAvatar;
+    }
+    $params[] = $userId;
+    $stmt->execute($params);
 
     if ($skillIds !== null) {
         $existingStmt = $pdo->prepare('SELECT skill_id FROM user_skills WHERE user_id = ? AND skill_type = ?');
@@ -92,8 +124,12 @@ try {
     if (isset($pdo) && $pdo->inTransaction()) {
         $pdo->rollBack();
     }
+    uknAvatarDelete($newAvatar);
     error_log('[UKN profile/update] ' . $e->getMessage());
     $fail(['form' => 'Your profile could not be saved. Please try again.'], $old);
+}
+if ($changeAvatar && $oldAvatar !== $newAvatar) {
+    uknAvatarDelete($oldAvatar);
 }
 uknFlashToast('success', 'Profile updated.');
 uknRedirectToRoute('my-profile');

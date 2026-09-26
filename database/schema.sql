@@ -24,6 +24,7 @@ DROP TABLE IF EXISTS user_skills;
 DROP TABLE IF EXISTS skill_relations;
 DROP TABLE IF EXISTS skills;
 DROP TABLE IF EXISTS skill_categories;
+DROP TABLE IF EXISTS user_private_contacts;
 DROP TABLE IF EXISTS user_settings;
 DROP TABLE IF EXISTS users;
 DROP TABLE IF EXISTS departments;
@@ -100,7 +101,11 @@ CREATE TABLE users (
     CONSTRAINT chk_users_avg_rating
         CHECK (avg_rating IS NULL OR (avg_rating >= 1.0 AND avg_rating <= 5.0)),
     CONSTRAINT chk_users_suspend_reason
-        CHECK (status <> 'suspended' OR suspend_reason IS NOT NULL)
+        CHECK (status <> 'suspended' OR suspend_reason IS NOT NULL),
+    -- Explicit so a non-strict session cannot store the ENUM's empty error value ('' / index 0)
+    -- for an invalid role such as 'mentor'; the application connection is strict anyway.
+    CONSTRAINT chk_users_role
+        CHECK (role IN ('learner', 'dual'))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 
@@ -123,6 +128,29 @@ CREATE TABLE user_settings (
     CONSTRAINT fk_user_settings_user
         FOREIGN KEY (user_id) REFERENCES users (id)
         ON UPDATE CASCADE ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+
+-- ---------------------------------------------------------------------------
+-- user_private_contacts — private mobile number, one optional row per user, kept out of
+-- `users` so no general user query can return it. Shown only to its owner (Settings) and to
+-- the mentor of that learner's pending/accepted session. Stored as +8801XXXXXXXXX; not
+-- unique (shared numbers exist). Also in database/patches/add-user-private-contacts.sql.
+-- ---------------------------------------------------------------------------
+CREATE TABLE user_private_contacts (
+    user_id       INT UNSIGNED NOT NULL,
+    mobile_number VARCHAR(20)  NOT NULL COMMENT 'private; +8801XXXXXXXXX',
+    created_at    DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at    DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+    PRIMARY KEY (user_id),
+
+    CONSTRAINT fk_user_private_contacts_user
+        FOREIGN KEY (user_id) REFERENCES users (id)
+        ON UPDATE CASCADE ON DELETE CASCADE,
+
+    CONSTRAINT chk_user_private_contacts_mobile
+        CHECK (mobile_number REGEXP '^[+]8801[3-9][0-9]{8}$')
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 

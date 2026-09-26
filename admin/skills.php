@@ -189,11 +189,11 @@ require __DIR__ . '/includes/header.php';
                         data-delete-form="skillStatus-<?= $id ?>"
                         <?php if ($isActive): ?>
                         data-delete-title="Deactivate <?= htmlspecialchars($skill['name']) ?>?"
-                        data-delete-message="<?= htmlspecialchars($skill['name'] . ' leaves the skill directory, search, the skill network and skill pickers. Its ' . number_format($skill['learners']) . ' learners and ' . number_format($skill['mentors']) . ' mentors keep it on their profiles; goals, posts and sessions are unchanged.') ?>"
+                        data-delete-message="<?= htmlspecialchars($skill['name'] . ' leaves the skill directory, search and skill pickers. Its ' . number_format($skill['learners']) . ' learners and ' . number_format($skill['mentors']) . ' mentors keep it on their profiles; goals, posts and sessions are unchanged.') ?>"
                         data-delete-confirm-label="Deactivate Skill"
                         <?php else: ?>
                         data-delete-title="Activate <?= htmlspecialchars($skill['name']) ?>?"
-                        data-delete-message="The skill becomes available in the directory, search, the skill network and skill pickers again."
+                        data-delete-message="The skill becomes available in the directory, search and skill pickers again."
                         data-delete-confirm-label="Activate Skill"
                         <?php endif; ?>
                       ><?= $isActive ? 'Deactivate' : 'Activate' ?></button>

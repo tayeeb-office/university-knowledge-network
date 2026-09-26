@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/../backend/helpers/avatars.php';
 $currentUser = $currentUser ?? [
     'loggedIn'   => false,
     'role'       => 'visitor',
@@ -27,7 +28,7 @@ $badgeCounts = [
   <div class="offcanvas-header">
     <?php if ($currentUser['loggedIn']): ?>
       <div class="ukn-cluster">
-        <span class="ukn-avatar" aria-hidden="true"><?= htmlspecialchars($currentUser['initials']) ?></span>
+        <?= uknAvatarHtml($currentUser['avatarPath'] ?? null, $currentUser['initials'], 'ukn-avatar') ?>
         <span class="ukn-mobile-nav__user-text">
           <span class="d-block fw-bold" id="uknMobileNavLabel"><?= htmlspecialchars($currentUser['name']) ?></span>
           <span class="ukn-body-sm"><?= htmlspecialchars($currentUser['meta']) ?></span>

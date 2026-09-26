@@ -196,6 +196,7 @@
       }
       var name = trigger.getAttribute('data-request-name') || '';
       var initials = trigger.getAttribute('data-request-initials') || '';
+      var avatarUrl = trigger.getAttribute('data-request-avatar-url') || '';
       var department = trigger.getAttribute('data-request-department') || '';
       var skill = trigger.getAttribute('data-request-skill') || '';
       var rating = trigger.getAttribute('data-request-rating') || '';
@@ -210,7 +211,14 @@
       var ratingEl = sessionRequestModal.querySelector('[data-request-rating-el]');
       var skillSelect = sessionRequestModal.querySelector('#sessionRequestSkill');
       if (avatarEl) {
-        avatarEl.textContent = initials;
+        // The mentor's stored photo (server-built URL of a validated avatar) or the initials.
+        avatarEl.textContent = avatarUrl ? '' : initials;
+        if (avatarUrl) {
+          var avatarImg = document.createElement('img');
+          avatarImg.src = avatarUrl;
+          avatarImg.alt = '';
+          avatarEl.appendChild(avatarImg);
+        }
       }
       if (nameEl) {
         nameEl.textContent = name;

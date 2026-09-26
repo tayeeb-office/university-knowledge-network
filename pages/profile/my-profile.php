@@ -144,6 +144,7 @@ try {
             $postRow['href'] = 'index.php?page=post-details&id=' . $postRow['id'];
             $postRow['author'] = $currentUser['name'] ?? 'Member';
             $postRow['initials'] = $currentUser['initials'] ?? '?';
+            $postRow['avatar_path'] = $currentUser['avatarPath'] ?? null;
             $postRow['role'] = $isMentor ? 'Mentor' : 'Learner';
             $postRow['department'] = $department;
             $postRow['isOwner'] = true;
@@ -169,7 +170,7 @@ $skillsSectionHref = ukn_route_href($isMentor ? 'teaching-skills' : 'learning-sk
 <div class="card mb-4">
   <div class="card-body">
     <div class="d-flex align-items-start gap-3 flex-wrap">
-      <span class="ukn-avatar ukn-avatar-xl flex-shrink-0" aria-hidden="true"><?= htmlspecialchars($currentUser['initials'] ?? '') ?></span>
+      <?= uknAvatarHtml($currentUser['avatarPath'] ?? null, (string) ($currentUser['initials'] ?? ''), 'ukn-avatar ukn-avatar-xl flex-shrink-0') ?>
       <div class="flex-fill ukn-min-w-0">
         <div class="d-flex align-items-center gap-2 flex-wrap">
           <h1 class="ukn-h3 mb-0"><?= htmlspecialchars($currentUser['name'] ?? '') ?></h1>

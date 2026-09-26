@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/../backend/helpers/avatars.php';
 if (!function_exists('ukn_rating_item')) {
     function ukn_rating_item(array $review): void
     {
@@ -22,7 +23,7 @@ if (!function_exists('ukn_rating_item')) {
         >
           <div class="card-body">
             <div class="d-flex align-items-center gap-2 mb-2">
-              <span class="ukn-avatar" aria-hidden="true"><?= htmlspecialchars($review['initials']) ?></span>
+              <?= uknAvatarHtml($review['avatar_path'] ?? null, (string) $review['initials'], 'ukn-avatar') ?>
               <div class="flex-fill ukn-min-w-0">
                 <div class="fw-bold ukn-truncate">
                   <?php if ($review['reviewerHref']): ?>

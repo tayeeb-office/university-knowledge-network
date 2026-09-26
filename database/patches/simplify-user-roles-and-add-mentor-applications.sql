@@ -12,7 +12,9 @@
 --      else: status, is_admin, verification, profile, skills, sessions, ratings and even
 --      updated_at stay as they were);
 --   3. shrink the role ENUM to ('learner','dual') — only while it still contains 'mentor'
---      and no 'mentor' row is left.
+--      and no 'mentor' row is left;
+--   4. add CHECK chk_users_role (role IN ('learner','dual')) once the ENUM is shrunk, so even a
+--      non-strict session cannot store the ENUM's empty error value for an invalid role.
 -- No application rows are created for accounts that are already 'dual'.
 
 CREATE TABLE IF NOT EXISTS mentor_applications (
@@ -68,6 +70,21 @@ PREPARE ukn_stmt FROM @ukn_sql;
 EXECUTE ukn_stmt;
 DEALLOCATE PREPARE ukn_stmt;
 
+-- 4. Enforce the role values in the database itself (not only through the strict application
+--    connection). Added once, after step 3, when every row already holds 'learner' or 'dual'.
+SET @ukn_sql := IF(
+    (SELECT COUNT(*) FROM information_schema.CHECK_CONSTRAINTS
+      WHERE CONSTRAINT_SCHEMA = DATABASE() AND TABLE_NAME = 'users' AND CONSTRAINT_NAME = 'chk_users_role') = 0
+    AND (SELECT COUNT(*) FROM information_schema.COLUMNS
+      WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'users' AND COLUMN_NAME = 'role'
+        AND COLUMN_TYPE = 'enum(''learner'',''dual'')') = 1,
+    'ALTER TABLE users ADD CONSTRAINT chk_users_role CHECK (role IN (''learner'', ''dual''))',
+    'DO 0'
+);
+PREPARE ukn_stmt FROM @ukn_sql;
+EXECUTE ukn_stmt;
+DEALLOCATE PREPARE ukn_stmt;
+
 
 SELECT
     (SELECT COLUMN_TYPE FROM information_schema.COLUMNS
@@ -75,4 +92,7 @@ SELECT
     (SELECT COUNT(*) FROM information_schema.TABLES
       WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'mentor_applications')             AS mentor_applications_table,
     (SELECT COUNT(*) FROM users WHERE role = 'learner')                                    AS learners,
-    (SELECT COUNT(*) FROM users WHERE role = 'dual')                                       AS learners_and_mentors;
+    (SELECT COUNT(*) FROM users WHERE role = 'dual')                                       AS learners_and_mentors,
+    (SELECT COUNT(*) FROM information_schema.CHECK_CONSTRAINTS
+      WHERE CONSTRAINT_SCHEMA = DATABASE() AND TABLE_NAME = 'users'
+        AND CONSTRAINT_NAME = 'chk_users_role')                                            AS role_check_present;

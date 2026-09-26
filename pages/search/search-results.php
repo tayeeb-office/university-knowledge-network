@@ -132,7 +132,7 @@ if ($q !== '') {
         // the mentor_rating_summary VIEW), the same sources the leaderboard (Step 43) and
         // recommendations (Step 28) use.
         $mentorsStmt = $pdo->prepare(
-            "SELECT u.id, u.full_name AS name, u.initials, r.avg_rating AS rating, COALESCE(lp.points, 0) AS points,
+            "SELECT u.id, u.full_name AS name, u.initials, u.avatar_path, r.avg_rating AS rating, COALESCE(lp.points, 0) AS points,
                     d.name AS department
              FROM users u
              LEFT JOIN departments d ON d.id = u.department_id
@@ -169,6 +169,8 @@ if ($q !== '') {
                 $mentor['otherSkills'] = array_slice($skillNames, 1);
                 $mentor['department'] = (string) ($mentor['department'] ?? '');
                 $mentor['profileHref'] = ukn_route_href('mentor-profile') . '&id=' . $mentor['id'];
+                // Follow button for logged-in viewers, except on their own result.
+                $mentor['following'] = uknFollowStateFor((int) $mentor['id']);
             }
             unset($mentor);
         }
@@ -207,9 +209,7 @@ if ($q !== '') {
                 $learner['skills'] = $skillsByLearner[$learner['id']] ?? [];
                 $learner['department'] = (string) ($learner['department'] ?? '');
                 // Follow button for logged-in viewers, except on their own result.
-                $learner['following'] = !empty($currentUser['loggedIn']) && (int) $learner['id'] !== UKN_CURRENT_USER_ID
-                    ? isset(uknCurrentUserFollowingIds()[(int) $learner['id']])
-                    : null;
+                $learner['following'] = uknFollowStateFor((int) $learner['id']);
                 $learner['profileHref'] = ukn_route_href('learner-profile') . '&id=' . $learner['id'];
             }
             unset($learner);
@@ -252,7 +252,8 @@ foreach ($mockMentors as $mentor) {
         'type' => 'mentor', 'rank' => $rank, 'title' => $mentor['name'], 'mentorId' => (int) $mentor['id'],
         'meta' => $mentor['department'] . ' · teaches ' . $mentor['primarySkill'] . ($mentor['rating'] !== null ? ' · ★ ' . $mentor['rating'] : '') . ' · ' . $mentor['points'] . ' points',
         'href' => $mentor['profileHref'],
-        'initials' => $mentor['initials'], 'department' => $mentor['department'], 'skill' => $mentor['primarySkill'], 'rating' => $mentor['rating'],
+        'initials' => $mentor['initials'], 'avatar_path' => $mentor['avatar_path'] ?? null, 'department' => $mentor['department'], 'skill' => $mentor['primarySkill'], 'rating' => $mentor['rating'],
+        'following' => $mentor['following'], 'memberId' => (int) $mentor['id'],
     ];
 }
 foreach ($mockLearners as $learner) {

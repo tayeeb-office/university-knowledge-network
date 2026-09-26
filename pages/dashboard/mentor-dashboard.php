@@ -5,6 +5,7 @@ require_once __DIR__ . '/../../components/learner-card.php';
 require_once __DIR__ . '/../../components/empty-state.php';
 require_once __DIR__ . '/../../components/error-state.php';
 require_once __DIR__ . '/../../backend/config/database.php';
+require_once __DIR__ . '/../../backend/helpers/community.php';
 
 
 $mentorStats = [];
@@ -114,7 +115,7 @@ try {
     // occurrence in PHP rather than a GROUP_CONCAT-style query, matching the simple-query +
     // PHP-post-processing style already used by pages/mentors/recommendations.php).
     $recentLearnersStmt = $pdo->prepare(
-        "SELECT ms.created_at, l.id, l.full_name AS name, l.initials, l.learning_points AS points,
+        "SELECT ms.created_at, l.id, l.full_name AS name, l.initials, l.avatar_path, l.learning_points AS points,
                 l.sessions_as_learner AS sessions, d.name AS department, sk.name AS skill
          FROM mentoring_sessions ms
          JOIN users l ON l.id = ms.learner_id
@@ -136,11 +137,14 @@ try {
         $recentLearners[] = [
             'name' => $row['name'],
             'initials' => $row['initials'],
+            'avatar_path' => $row['avatar_path'],
             'department' => (string) ($row['department'] ?? ''),
             'skills' => [$row['skill']],
             'points' => (int) $row['points'],
             'sessions' => (int) $row['sessions'],
             'profileHref' => ukn_route_href('learner-profile') . '&id=' . $row['id'],
+            'id' => (int) $row['id'],
+            'following' => uknFollowStateFor((int) $row['id']),
         ];
     }
 

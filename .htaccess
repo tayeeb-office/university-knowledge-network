@@ -20,7 +20,7 @@ RedirectMatch 404 "/\.(git|svn|hg)(/|$)"
     Header always set Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=(), usb=(), interest-cohort=()"
 
     # CSP matched to what the app actually loads (see the Phase J report):
-    #  - scripts: own files + jsDelivr (Bootstrap, Chart.js, Cytoscape). No inline scripts or
+    #  - scripts: own files + jsDelivr (Bootstrap, Chart.js). No inline scripts or
     #    eval exist, so none are allowed.
     #  - styles: own files, jsDelivr (Bootstrap CSS), Google Fonts CSS; 'unsafe-inline' only
     #    because a few templates use style="" attributes (progress bars) and libraries set

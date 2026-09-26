@@ -1,4 +1,6 @@
 <?php
+require_once __DIR__ . '/../backend/helpers/avatars.php';
+require_once __DIR__ . '/follow-button.php';
 if (!function_exists('ukn_mentor_card')) {
     function ukn_mentor_card(array $mentor, array $options = []): void
     {
@@ -6,7 +8,7 @@ if (!function_exists('ukn_mentor_card')) {
             'initials' => '?', 'department' => '', 'primarySkill' => '', 'otherSkills' => [],
             'rating' => null, 'sessions' => null, 'points' => null, 'availability' => '',
             'profileHref' => '#', 'match' => null, 'matchLabel' => null, 'skillOptions' => null,
-            'id' => null, 'score' => null, 'reasons' => [],
+            'id' => null, 'score' => null, 'reasons' => [], 'following' => null,
         ];
         $isRecommendation = ($options['variant'] ?? 'default') === 'recommendation';
         $requestSkillOptions = $mentor['skillOptions'] ?? array_values(array_filter(array_merge([$mentor['primarySkill']], $mentor['otherSkills'])));
@@ -18,7 +20,7 @@ if (!function_exists('ukn_mentor_card')) {
         <div class="card ukn-card-interactive mb-3"<?= $recommendationAttrs ?>>
           <div class="card-body">
             <div class="d-flex gap-3 align-items-start">
-              <span class="ukn-avatar ukn-avatar-lg flex-shrink-0" aria-hidden="true"><?= htmlspecialchars($mentor['initials']) ?></span>
+              <?= uknAvatarHtml($mentor['avatar_path'] ?? null, (string) $mentor['initials'], 'ukn-avatar ukn-avatar-lg flex-shrink-0') ?>
               <div class="flex-fill ukn-min-w-0">
                 <div class="d-flex align-items-baseline gap-2 flex-wrap">
                   <h3 class="ukn-person-card__name ukn-truncate"><?= htmlspecialchars($mentor['name']) ?></h3>
@@ -73,7 +75,7 @@ if (!function_exists('ukn_mentor_card')) {
                 <span class="ms ukn-text-success" aria-hidden="true">event_available</span><?= htmlspecialchars($mentor['availability']) ?>
               </div>
             <?php endif; ?>
-            <div class="d-flex gap-2">
+            <div class="d-flex flex-wrap gap-2">
               <button
                 type="button"
                 class="btn btn-primary btn-sm flex-fill"
@@ -82,12 +84,16 @@ if (!function_exists('ukn_mentor_card')) {
                 data-request-mentor-id="<?= $mentor['id'] !== null ? (int) $mentor['id'] : '' ?>"
                 data-request-name="<?= htmlspecialchars($mentor['name']) ?>"
                 data-request-initials="<?= htmlspecialchars($mentor['initials']) ?>"
+                data-request-avatar-url="<?= htmlspecialchars((string) uknAvatarUrl($mentor['avatar_path'] ?? null)) ?>"
                 data-request-department="<?= htmlspecialchars($mentor['department']) ?>"
                 data-request-skill="<?= htmlspecialchars($mentor['primarySkill']) ?>"
                 data-request-rating="<?= $mentor['rating'] !== null ? htmlspecialchars((string) $mentor['rating']) : '' ?>"
                 data-request-skill-options="<?= htmlspecialchars(implode('|', $requestSkillOptions)) ?>"
               >Request Session</button>
               <a href="<?= htmlspecialchars($mentor['profileHref']) ?>" class="btn btn-outline-secondary btn-sm flex-fill">View Profile</a>
+              <?php if ($mentor['following'] !== null && !empty($mentor['id'])): ?>
+                <?php ukn_follow_form((int) $mentor['id'], (bool) $mentor['following'], 'btn btn-sm w-100 ' . ($mentor['following'] ? 'btn-outline-secondary' : 'btn-outline-primary'), 'd-flex flex-fill'); ?>
+              <?php endif; ?>
             </div>
           </div>
         </div>

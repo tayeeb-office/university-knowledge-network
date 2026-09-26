@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/../backend/helpers/avatars.php';
 if (!function_exists('ukn_leaderboard_row')) {
     function ukn_leaderboard_row(array $row, array $options = []): void
     {
@@ -15,7 +16,7 @@ if (!function_exists('ukn_leaderboard_row')) {
             ?>
             <div class="ukn-leaderboard-podium-card<?= $topClass ?><?= $youClass ?>">
               <div class="ukn-eyebrow ukn-leaderboard-podium-card__place">#<?= $rank ?> &middot; <?= $ordinal ?></div>
-              <span class="ukn-avatar ukn-avatar-lg" aria-hidden="true"><?= htmlspecialchars($row['initials']) ?></span>
+              <?= uknAvatarHtml($row['avatar_path'] ?? null, (string) $row['initials'], 'ukn-avatar ukn-avatar-lg') ?>
               <div class="fw-bold mt-2">
                 <?php if ($row['href']): ?>
                   <a href="<?= htmlspecialchars($row['href']) ?>"><?= htmlspecialchars($row['name']) ?></a>
@@ -41,7 +42,7 @@ if (!function_exists('ukn_leaderboard_row')) {
         ?>
         <div class="ukn-leaderboard-row<?= $topClass ?><?= $youClass ?>" data-leaderboard-row data-rank-name="<?= htmlspecialchars(strtolower($row['name'])) ?>" data-rank-category="<?= htmlspecialchars(strtolower($row['category'])) ?>">
           <span class="ukn-leaderboard-row__rank">#<?= $rank ?></span>
-          <span class="ukn-avatar flex-shrink-0" aria-hidden="true"><?= htmlspecialchars($row['initials']) ?></span>
+          <?= uknAvatarHtml($row['avatar_path'] ?? null, (string) $row['initials'], 'ukn-avatar flex-shrink-0') ?>
           <div class="flex-fill ukn-min-w-0">
             <div class="fw-bold ukn-truncate">
               <?php if ($row['href']): ?>

@@ -35,7 +35,7 @@ SET FOREIGN_KEY_CHECKS = 1;
 START TRANSACTION;
 
 -- ---------------------------------------------------------------------------
--- skill_relations (skill-network graph edges)
+-- skill_relations (related skills)
 -- ---------------------------------------------------------------------------
 INSERT INTO skill_relations (source_skill_id, target_skill_id, strength, reason) VALUES
 (1, 5,  'Strong',  'Python is commonly used for data analysis workflows.'),

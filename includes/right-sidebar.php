@@ -495,7 +495,7 @@ if (!function_exists('ukn_sidebar_modules_for_context')) {
                     $modules = [];
                     $postId = isset($_GET['id']) && is_numeric($_GET['id']) ? (int) $_GET['id'] : 0;
 
-                    $selectBase = "SELECT p.id, u.id AS author_id, u.full_name AS name, u.initials, u.role,
+                    $selectBase = "SELECT p.id, u.id AS author_id, u.full_name AS name, u.initials, u.avatar_path, u.role,
                                 u.learning_points, u.mentor_points, d.name AS department
                          FROM posts p JOIN users u ON u.id = p.user_id
                          LEFT JOIN departments d ON d.id = u.department_id
@@ -514,19 +514,19 @@ if (!function_exists('ukn_sidebar_modules_for_context')) {
                         $authorRole = $postRow['role'] === 'dual' ? 'Mentor' : 'Learner';
                         $authorPoints = $authorRole === 'Mentor' ? (int) $postRow['mentor_points'] : (int) $postRow['learning_points'];
                         $authorId = (int) $postRow['author_id'];
-                        // Follow button only for logged-in viewers looking at someone else's post.
-                        $canFollow = !empty($currentUser['loggedIn']) && $authorId !== UKN_CURRENT_USER_ID;
                         $modules[] = [
                             'type' => 'author-card',
                             'title' => 'About Author',
                             'items' => [[
                                 'id' => $authorId,
                                 'initials' => $postRow['initials'],
+                                'avatar_path' => $postRow['avatar_path'],
                                 'name' => $postRow['name'],
                                 'department' => (string) ($postRow['department'] ?? ''),
                                 'role' => $authorRole,
                                 'points' => (string) $authorPoints,
-                                'following' => $canFollow ? isset(uknCurrentUserFollowingIds()[$authorId]) : null,
+                                // Follow button only for logged-in viewers looking at someone else's post.
+                                'following' => uknFollowStateFor($authorId),
                             ]],
                         ];
 
@@ -822,7 +822,7 @@ if (!function_exists('ukn_render_sidebar_module')) {
               <?php foreach ($module['items'] as $author): ?>
                 <div class="ukn-shell-module__item d-block">
                   <div class="ukn-cluster mb-2">
-                    <span class="ukn-avatar ukn-avatar-lg" aria-hidden="true"><?= htmlspecialchars($author['initials']) ?></span>
+                    <?= uknAvatarHtml($author['avatar_path'] ?? null, (string) $author['initials'], 'ukn-avatar ukn-avatar-lg') ?>
                     <span>
                       <span class="d-block fw-bold"><?= htmlspecialchars($author['name']) ?></span>
                       <span class="ukn-body-sm"><?= htmlspecialchars($author['department']) ?></span>

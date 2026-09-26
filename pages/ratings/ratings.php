@@ -58,7 +58,7 @@ try {
 
     $reviewsStmt = $pdo->prepare(
         "SELECT sr.session_id, sr.overall, sr.teaching, sr.communication, sr.helpfulness, sr.review,
-                sr.created_at, ur.id AS reviewer_id, ur.full_name AS reviewer, ur.initials,
+                sr.created_at, ur.id AS reviewer_id, ur.full_name AS reviewer, ur.initials, ur.avatar_path,
                 sk.id AS skill_id, sk.name AS skill
          FROM session_ratings sr
          JOIN users ur ON ur.id = sr.reviewer_id
@@ -71,6 +71,7 @@ try {
         return [
             'reviewer' => $row['reviewer'],
             'initials' => $row['initials'],
+            'avatar_path' => $row['avatar_path'],
             'reviewerHref' => ukn_route_href('learner-profile') . '&id=' . $row['reviewer_id'],
             'overall' => (float) $row['overall'],
             'teaching' => $row['teaching'] !== null ? (int) $row['teaching'] : null,

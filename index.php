@@ -4,6 +4,7 @@ require_once __DIR__ . '/backend/helpers/format.php';
 require_once __DIR__ . '/backend/helpers/session.php';
 require_once __DIR__ . '/backend/helpers/csrf.php';
 require_once __DIR__ . '/backend/helpers/auth.php';
+require_once __DIR__ . '/backend/helpers/avatars.php';
 
 $routes = [
     'home'              => ['file' => 'pages/home.php', 'title' => 'Home'],
@@ -38,7 +39,6 @@ $routes = [
     'notifications'     => ['file' => 'pages/notifications/notifications.php', 'title' => 'Notifications'],
     'search'            => ['file' => 'pages/search/search-results.php', 'title' => 'Search Results'],
     'leaderboard'       => ['file' => 'pages/leaderboard/leaderboard.php', 'title' => 'Leaderboard'],
-    'skill-network'     => ['file' => 'pages/network/skill-network.php', 'title' => 'Skill Network'],
     'settings'          => ['file' => 'pages/settings/settings.php', 'title' => 'Settings'],
     '403'               => ['file' => 'pages/errors/403.php', 'title' => 'Access Restricted'],
     '404'               => ['file' => 'pages/errors/404.php', 'title' => 'Page Not Found'],
@@ -86,7 +86,6 @@ $routeAccess = [
     'saved-posts'       => 'login',
     'notifications'     => 'login',
     'leaderboard'       => 'login',
-    'skill-network'     => 'login',
     'settings'          => 'login',
     'mentor-application' => 'login',
 ];
@@ -142,6 +141,7 @@ if ($authUser !== null) {
         'activeRole' => $activeRole,
         'name'       => $authUser['full_name'],
         'initials'   => $authUser['initials'],
+        'avatarPath' => $authUser['avatar_path'] ?? null,
         'department' => (string) ($authUser['department_name'] ?? ''),
         'meta'       => ucfirst($activeRole) . ($authUser['department_name'] ? ' · ' . $authUser['department_name'] : ''),
     ];
@@ -159,6 +159,7 @@ if ($authUser !== null) {
         'activeRole' => 'visitor',
         'name'       => '',
         'initials'   => '',
+        'avatarPath' => null,
         'department' => '',
         'meta'       => '',
     ];
@@ -305,7 +306,6 @@ $sessionView = $route['session_view'] ?? null;
   <link rel="stylesheet" href="assets/css/pages/notifications.css">
   <link rel="stylesheet" href="assets/css/pages/search.css">
   <link rel="stylesheet" href="assets/css/pages/leaderboard.css">
-  <link rel="stylesheet" href="assets/css/pages/network.css">
   <link rel="stylesheet" href="assets/css/pages/errors.css">
 </head>
 <body<?= $currentUser['loggedIn'] ? ' data-active-role="' . htmlspecialchars($currentUser['activeRole']) . '"' : '' ?>>
@@ -318,7 +318,6 @@ $sessionView = $route['session_view'] ?? null;
   <?php endif; ?>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/cytoscape@3.30.2/dist/cytoscape.min.js"></script>
   <script src="assets/js/app.js"></script>
   <script src="assets/js/core/theme.js"></script>
   <script src="assets/js/core/dropdown.js"></script>
@@ -346,6 +345,5 @@ $sessionView = $route['session_view'] ?? null;
   <script src="assets/js/pages/settings.js"></script>
   <script src="assets/js/pages/search.js"></script>
   <script src="assets/js/pages/leaderboard.js"></script>
-  <script src="assets/js/pages/network.js"></script>
 </body>
 </html>

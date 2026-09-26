@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/../../backend/helpers/auth.php';
+require_once __DIR__ . '/../../backend/helpers/avatars.php';
 requireAdmin();
 $adminActiveNav = $adminActiveNav ?? '';
 $adminPageTitle = $adminPageTitle ?? 'Admin';
@@ -74,7 +75,7 @@ $adminNavItems = [
         <span class="ukn-visually-hidden" data-theme-label>Theme: Light</span>
       </button>
       <div class="ukn-admin-identity">
-        <span class="ukn-avatar" aria-hidden="true"><?= htmlspecialchars((string) ($adminUser['initials'] ?? '')) ?></span>
+        <?= uknAvatarHtml($adminUser['avatar_path'] ?? null, (string) ($adminUser['initials'] ?? ''), 'ukn-avatar') ?>
         <span class="ukn-admin-identity__text d-none d-md-block">
           <span class="d-block fw-bold"><?= htmlspecialchars((string) ($adminUser['full_name'] ?? '')) ?></span>
           <span class="d-block ukn-body-sm ukn-text-muted">Administrator</span>

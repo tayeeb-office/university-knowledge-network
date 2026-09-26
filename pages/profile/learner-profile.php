@@ -16,7 +16,7 @@ $learnerDbError = false;
 try {
     $pdo = getDatabaseConnection();
 
-    $selectBase = "SELECT u.id, u.full_name AS name, u.initials, u.year_of_study AS year, u.bio,
+    $selectBase = "SELECT u.id, u.full_name AS name, u.initials, u.avatar_path, u.year_of_study AS year, u.bio,
             u.learning_points, u.sessions_as_learner, d.name AS department
         FROM users u
         LEFT JOIN departments d ON d.id = u.department_id
@@ -112,7 +112,7 @@ try {
 <div class="card mb-4">
   <div class="card-body">
     <div class="d-flex align-items-start gap-3 flex-wrap">
-      <span class="ukn-avatar ukn-avatar-xl flex-shrink-0" aria-hidden="true"><?= htmlspecialchars($learner['initials']) ?></span>
+      <?= uknAvatarHtml($learner['avatar_path'], $learner['initials'], 'ukn-avatar ukn-avatar-xl flex-shrink-0') ?>
       <div class="flex-fill ukn-min-w-0">
         <div class="d-flex align-items-center gap-2 flex-wrap">
           <h1 class="ukn-h3 mb-0"><?= htmlspecialchars($learner['name']) ?></h1>
@@ -121,9 +121,8 @@ try {
         <div class="ukn-body-sm mt-1"><?= htmlspecialchars($learner['department']) ?> &middot; <?= htmlspecialchars($learner['year']) ?></div>
         <p class="ukn-body-sm mt-2 mb-0"><?= htmlspecialchars($learner['bio']) ?></p>
       </div>
-      <?php if (!empty($currentUser['loggedIn']) && (int) $learner['id'] !== UKN_CURRENT_USER_ID):
-        $isFollowing = isset(uknCurrentUserFollowingIds()[(int) $learner['id']]);
-      ?>
+      <?php $isFollowing = uknFollowStateFor((int) $learner['id']);
+      if ($isFollowing !== null): ?>
       <div class="flex-shrink-0">
         <?php ukn_follow_form((int) $learner['id'], $isFollowing, 'btn btn-sm ' . ($isFollowing ? 'btn-outline-secondary' : 'btn-primary')); ?>
       </div>
@@ -156,7 +155,7 @@ try {
 <div>
   <h2 class="ukn-h4 mb-3">Recent Posts</h2>
   <?php ukn_post_card($learner['post'] + [
-      'author' => $learner['name'], 'initials' => $learner['initials'], 'role' => 'Learner',
+      'author' => $learner['name'], 'initials' => $learner['initials'], 'avatar_path' => $learner['avatar_path'], 'role' => 'Learner',
       'department' => $learner['department'], 'isOwner' => false,
   ]); ?>
 </div>

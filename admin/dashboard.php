@@ -130,7 +130,7 @@ try {
     $roleLabels = ['learner' => 'Learner', 'dual' => 'Learner & Mentor'];
     $userStatusLabels = ['active' => 'Active', 'inactive' => 'Inactive', 'suspended' => 'Suspended'];
     $recentUsersStmt = $pdo->query(
-        "SELECT u.id, u.full_name AS name, u.initials, u.role, u.status, u.created_at, d.name AS department
+        "SELECT u.id, u.full_name AS name, u.initials, u.avatar_path, u.role, u.status, u.created_at, d.name AS department
          FROM users u LEFT JOIN departments d ON d.id = u.department_id
          ORDER BY u.created_at DESC LIMIT 5"
     );
@@ -139,6 +139,7 @@ try {
             'id' => (int) $row['id'],
             'name' => $row['name'],
             'initials' => $row['initials'],
+            'avatar_path' => $row['avatar_path'],
             'role' => $roleLabels[$row['role']] ?? ucfirst($row['role']),
             'department' => (string) ($row['department'] ?? ''),
             'joined' => date('M j, Y', strtotime($row['created_at'])),
@@ -323,7 +324,7 @@ require __DIR__ . '/includes/header.php';
           <tr>
             <td data-label="User">
               <div class="d-flex align-items-center gap-2">
-                <span class="ukn-avatar flex-shrink-0" aria-hidden="true"><?= htmlspecialchars($user['initials']) ?></span>
+                <?= uknAvatarHtml($user['avatar_path'] ?? null, (string) $user['initials'], 'ukn-avatar flex-shrink-0') ?>
                 <span><?= htmlspecialchars($user['name']) ?></span>
               </div>
             </td>

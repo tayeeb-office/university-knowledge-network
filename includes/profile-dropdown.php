@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/../backend/helpers/avatars.php';
 $currentUser = $currentUser ?? [
     'loggedIn'   => false,
     'role'       => 'visitor',
@@ -15,7 +16,7 @@ $dashboardHref = $activeRole === 'mentor' ? 'index.php?page=mentor-dashboard' : 
 ?>
 <div class="ukn-dropdown-panel__header">
   <span class="ukn-cluster">
-    <span class="ukn-avatar ukn-avatar-lg" aria-hidden="true"><?= htmlspecialchars($currentUser['initials']) ?></span>
+    <?= uknAvatarHtml($currentUser['avatarPath'] ?? null, $currentUser['initials'], 'ukn-avatar ukn-avatar-lg') ?>
     <span>
       <span class="d-block fw-bold"><?= htmlspecialchars($currentUser['name']) ?></span>
       <span class="ukn-body-sm"><?= htmlspecialchars($currentUser['meta']) ?></span>

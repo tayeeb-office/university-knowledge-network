@@ -5,6 +5,8 @@ require_once __DIR__ . '/../../components/error-state.php';
 require_once __DIR__ . '/../../components/empty-state.php';
 require_once __DIR__ . '/../../backend/config/database.php';
 require_once __DIR__ . '/../../backend/helpers/format.php';
+require_once __DIR__ . '/../../backend/helpers/community.php';
+require_once __DIR__ . '/../../components/follow-button.php';
 
 $requestedId = isset($_GET['id']) && is_numeric($_GET['id']) ? (int) $_GET['id'] : 0;
 $mentor = false;
@@ -14,7 +16,7 @@ $dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', '
 try {
     $pdo = getDatabaseConnection();
 
-    $selectBase = "SELECT u.id, u.full_name AS name, u.initials, u.year_of_study AS year, u.headline AS title,
+    $selectBase = "SELECT u.id, u.full_name AS name, u.initials, u.avatar_path, u.year_of_study AS year, u.headline AS title,
             u.bio, u.avg_rating AS rating, u.mentor_points AS points, u.sessions_as_mentor AS sessions,
             u.learners_helped AS learnersHelped, u.total_reviews AS totalReviews, d.name AS department
         FROM users u
@@ -91,7 +93,7 @@ try {
         }
 
         $reviewsStmt = $pdo->prepare(
-            "SELECT ur.full_name AS reviewer, ur.initials, sr.overall, sk.name AS skill,
+            "SELECT ur.full_name AS reviewer, ur.initials, ur.avatar_path, sr.overall, sk.name AS skill,
                     sr.created_at, sr.review
              FROM session_ratings sr
              JOIN users ur ON ur.id = sr.reviewer_id
@@ -117,7 +119,7 @@ $stars = static function (float $value): string {
 };
 $requestMentor = $mentor === false ? [] : [
     'id' => (int) $mentor['id'],
-    'name' => $mentor['name'], 'initials' => $mentor['initials'], 'department' => $mentor['department'],
+    'name' => $mentor['name'], 'initials' => $mentor['initials'], 'avatar_path' => $mentor['avatar_path'], 'department' => $mentor['department'],
     'skill' => $mentor['skills'][0]['name'] ?? '', 'rating' => $mentor['rating'], 'skillOptions' => $mentor['skillOptions'],
 ];
 ?>
@@ -136,7 +138,7 @@ $requestMentor = $mentor === false ? [] : [
 <div class="card mb-4">
   <div class="card-body">
     <div class="d-flex align-items-start gap-3 flex-wrap">
-      <span class="ukn-avatar ukn-avatar-xl flex-shrink-0" aria-hidden="true"><?= htmlspecialchars($mentor['initials']) ?></span>
+      <?= uknAvatarHtml($mentor['avatar_path'], $mentor['initials'], 'ukn-avatar ukn-avatar-xl flex-shrink-0') ?>
       <div class="flex-fill ukn-min-w-0">
         <div class="d-flex align-items-center gap-2 flex-wrap">
           <h1 class="ukn-h3 mb-0"><?= htmlspecialchars($mentor['name']) ?></h1>
@@ -154,6 +156,10 @@ $requestMentor = $mentor === false ? [] : [
       </div>
       <div class="d-flex flex-column gap-2 flex-shrink-0">
         <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#sessionRequestModal">Request Session</button>
+        <?php $isFollowing = uknFollowStateFor((int) $mentor['id']);
+        if ($isFollowing !== null): ?>
+          <?php ukn_follow_form((int) $mentor['id'], $isFollowing, 'btn btn-sm w-100 ' . ($isFollowing ? 'btn-outline-secondary' : 'btn-outline-primary'), 'd-flex'); ?>
+        <?php endif; ?>
       </div>
     </div>
   </div>

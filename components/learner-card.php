@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/../backend/helpers/avatars.php';
 require_once __DIR__ . '/follow-button.php';
 if (!function_exists('ukn_learner_card')) {
     function ukn_learner_card(array $learner): void
@@ -11,7 +12,7 @@ if (!function_exists('ukn_learner_card')) {
         <div class="card ukn-card-interactive mb-3">
           <div class="card-body">
             <div class="d-flex gap-3 align-items-start">
-              <span class="ukn-avatar ukn-avatar-lg flex-shrink-0" aria-hidden="true"><?= htmlspecialchars($learner['initials']) ?></span>
+              <?= uknAvatarHtml($learner['avatar_path'] ?? null, (string) $learner['initials'], 'ukn-avatar ukn-avatar-lg flex-shrink-0') ?>
               <div class="flex-fill ukn-min-w-0">
                 <div class="d-flex align-items-baseline gap-2 flex-wrap">
                   <h3 class="ukn-person-card__name ukn-truncate"><?= htmlspecialchars($learner['name']) ?></h3>

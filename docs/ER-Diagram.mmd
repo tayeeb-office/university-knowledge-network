@@ -55,6 +55,12 @@ erDiagram
         ENUM theme
         DATETIME updated_at
     }
+    user_private_contacts {
+        INT user_id PK, FK
+        VARCHAR mobile_number
+        DATETIME created_at
+        DATETIME updated_at
+    }
     skill_categories {
         TINYINT id PK
         VARCHAR name UK
@@ -246,6 +252,7 @@ erDiagram
     }
     departments |o--o{ users : "department_id"
     users ||--o| user_settings : "user_id"
+    users ||--o| user_private_contacts : "user_id"
     skill_categories ||--o{ skills : "category_id"
     skills ||--o{ skill_relations : "source_skill_id"
     skills ||--o{ skill_relations : "target_skill_id"

@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/../backend/helpers/search.php';
+require_once __DIR__ . '/../backend/helpers/avatars.php';
 $currentUser = $currentUser ?? [
     'loggedIn'   => false,
     'role'       => 'visitor',
@@ -89,7 +90,7 @@ $showRightSidebar = $showRightSidebar ?? true;
           aria-controls="uknProfileDropdown"
           aria-label="Account menu"
         >
-          <span class="ukn-avatar ukn-avatar-sm" aria-hidden="true"><?= htmlspecialchars($currentUser['initials']) ?></span>
+          <?= uknAvatarHtml($currentUser['avatarPath'] ?? null, $currentUser['initials'], 'ukn-avatar ukn-avatar-sm') ?>
           <span class="ms" aria-hidden="true">expand_more</span>
         </button>
         <div id="uknProfileDropdown" class="dropdown-menu dropdown-menu-end ukn-dropdown-panel p-0" aria-labelledby="uknProfileToggle">

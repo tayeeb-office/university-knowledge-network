@@ -14,7 +14,7 @@ try {
 
     $postsStmt = $pdo->query(
         "SELECT p.id, p.title, p.content, p.vote_score AS score, p.comment_count AS comments,
-                p.created_at, u.id AS author_id, u.full_name AS author, u.initials, u.role,
+                p.created_at, u.id AS author_id, u.full_name AS author, u.initials, u.avatar_path, u.role,
                 d.name AS department
          FROM posts p
          JOIN users u ON u.id = p.user_id
@@ -87,7 +87,7 @@ $remainingBatch = array_slice($communityPosts, 5);
 <?php else: ?>
   <div class="card mb-3">
     <div class="card-body ukn-composer__row">
-      <span class="ukn-avatar ukn-avatar-sm" aria-hidden="true"><?= htmlspecialchars($currentUser['initials'] ?? '?') ?></span>
+      <?= uknAvatarHtml($currentUser['avatarPath'] ?? null, (string) ($currentUser['initials'] ?? '?'), 'ukn-avatar ukn-avatar-sm') ?>
       <?php if (empty($currentUser['loggedIn'])): ?>
         <?php // Guests cannot post (backend/posts/create.php requires login): send them to Login. ?>
         <a href="<?= htmlspecialchars(ukn_route_href('login')) ?>" class="form-control ukn-composer__field">

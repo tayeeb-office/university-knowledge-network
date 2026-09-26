@@ -90,7 +90,7 @@ if (!function_exists('uknRecommendMentors')) {
         $skillIds = array_keys($needs);
         $in = implode(',', array_fill(0, count($skillIds), '?'));
         $stmt = $pdo->prepare(
-            "SELECT u.id, u.full_name, u.initials, d.name AS department, us.skill_id, us.proficiency
+            "SELECT u.id, u.full_name, u.initials, u.avatar_path, d.name AS department, us.skill_id, us.proficiency
              FROM users u
              JOIN user_skills us ON us.user_id = u.id AND us.skill_type = 'teaching'
              LEFT JOIN departments d ON d.id = u.department_id
@@ -103,7 +103,7 @@ if (!function_exists('uknRecommendMentors')) {
         foreach ($stmt->fetchAll() as $row) {
             $id = (int) $row['id'];
             $mentors[$id] ??= [
-                'id' => $id, 'name' => $row['full_name'], 'initials' => $row['initials'],
+                'id' => $id, 'name' => $row['full_name'], 'initials' => $row['initials'], 'avatar_path' => $row['avatar_path'],
                 'department' => (string) ($row['department'] ?? ''), 'matched' => [],
             ];
             $mentors[$id]['matched'][(int) $row['skill_id']] = $row['proficiency'];

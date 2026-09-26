@@ -4,6 +4,7 @@ require_once __DIR__ . '/../../components/empty-state.php';
 require_once __DIR__ . '/../../components/error-state.php';
 require_once __DIR__ . '/../../backend/config/database.php';
 require_once __DIR__ . '/../../backend/helpers/format.php';
+require_once __DIR__ . '/../../backend/helpers/community.php';
 
 $mentors = [];
 $skillFilters = ['All Skills'];
@@ -16,7 +17,7 @@ try {
     $pdo = getDatabaseConnection();
 
     $mentorStmt = $pdo->query(
-        "SELECT DISTINCT u.id, u.full_name AS name, u.initials, u.avg_rating AS rating,
+        "SELECT DISTINCT u.id, u.full_name AS name, u.initials, u.avatar_path, u.avg_rating AS rating,
                 u.mentor_points AS points, u.sessions_as_mentor AS sessions, d.name AS department
          FROM users u
          JOIN user_skills us ON us.user_id = u.id AND us.skill_type = 'teaching'
@@ -58,6 +59,7 @@ try {
             $mentor['otherSkills'] = array_slice($skillNames, 1);
             $mentor['availability'] = ukn_availability_bucket($daysByMentor[$mentor['id']] ?? []);
             $mentor['profileHref'] = ukn_route_href('mentor-profile') . '&id=' . $mentor['id'];
+            $mentor['following'] = uknFollowStateFor((int) $mentor['id']);
         }
         unset($mentor);
     }

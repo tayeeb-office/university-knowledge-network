@@ -31,7 +31,7 @@ try {
     // and the reviewer's name. Never selects password, token or verification hashes.
     $stmt = $pdo->prepare(
         "SELECT a.id, a.user_id, a.status, a.application_message, a.requested_at, a.reviewed_at, a.admin_note,
-                u.full_name, u.initials, u.role, u.is_admin, u.status AS account_status,
+                u.full_name, u.initials, u.avatar_path, u.role, u.is_admin, u.status AS account_status,
                 u.email_verified_at IS NOT NULL AS verified, u.year_of_study, u.learning_points,
                 u.sessions_as_learner, d.name AS department,
                 (SELECT COUNT(*) FROM user_skills us WHERE us.user_id = u.id AND us.skill_type = 'learning') AS learning_skills,
@@ -89,7 +89,7 @@ require __DIR__ . '/includes/header.php';
     <div class="card mb-3" data-mentor-application="<?= (int) $app['id'] ?>" data-application-status="<?= htmlspecialchars($app['status']) ?>">
       <div class="card-body">
         <div class="d-flex align-items-start gap-3 flex-wrap">
-          <span class="ukn-avatar" aria-hidden="true"><?= htmlspecialchars($app['initials']) ?></span>
+          <?= uknAvatarHtml($app['avatar_path'] ?? null, (string) $app['initials'], 'ukn-avatar') ?>
           <div class="flex-fill ukn-min-w-0">
             <div class="d-flex align-items-center gap-2 flex-wrap">
               <a href="user-details.php?id=<?= (int) $app['user_id'] ?>" class="fw-bold text-body"><?= htmlspecialchars($app['full_name']) ?></a>

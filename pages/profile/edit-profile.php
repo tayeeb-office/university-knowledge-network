@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/../../components/error-state.php';
 require_once __DIR__ . '/../../backend/config/database.php';
+require_once __DIR__ . '/../../backend/helpers/avatars.php';
 
 $activeRole = !empty($currentUser['dualRole']) ? ($currentUser['activeRole'] ?? 'learner') : ($currentUser['role'] ?? 'learner');
 $isMentor = $activeRole === 'mentor';
@@ -12,6 +13,7 @@ $currentStudentId = '';
 $currentDepartment = '';
 $currentYear = '';
 $currentBio = '';
+$currentAvatar = null;
 $skillsLabel = $isMentor ? 'Skills you are teaching' : 'Skills you are learning';
 $currentSkills = [];
 $skillOptions = [];
@@ -25,7 +27,7 @@ try {
     )->fetchAll(PDO::FETCH_COLUMN);
 
     $userStmt = $pdo->prepare(
-        "SELECT u.full_name, u.university_id, u.year_of_study, u.bio, d.name AS department
+        "SELECT u.full_name, u.university_id, u.year_of_study, u.bio, u.avatar_path, d.name AS department
          FROM users u LEFT JOIN departments d ON d.id = u.department_id
          WHERE u.id = ?"
     );
@@ -38,6 +40,7 @@ try {
         $currentDepartment = (string) ($user['department'] ?? '');
         $currentYear = (string) ($user['year_of_study'] ?? '');
         $currentBio = (string) ($user['bio'] ?? '');
+        $currentAvatar = $user['avatar_path'];
 
         $skillsStmt = $pdo->prepare(
             "SELECT s.name FROM user_skills us JOIN skills s ON s.id = us.skill_id
@@ -86,8 +89,9 @@ $profileErrorFor = static fn (string $key): ?string => isset($profileErrors[$key
         <?php if ($profileErrorFor('form') !== null): ?>
           <div class="mb-3"><?php ukn_error_state(['title' => $profileErrorFor('form')]); ?></div>
         <?php endif; ?>
-        <form id="editProfileForm" data-profile-form action="backend/profile/update.php" method="post" novalidate>
+        <form id="editProfileForm" data-profile-form action="backend/profile/update.php" method="post" enctype="multipart/form-data" novalidate>
           <?= csrfField() ?>
+          <input type="hidden" name="remove_avatar" value="" data-photo-remove-flag>
           <div class="ukn-form-row">
             <div class="ukn-form-group">
               <label for="editProfileName" class="form-label">Full Name <span class="ukn-text-danger" aria-hidden="true">*</span></label>
@@ -176,11 +180,15 @@ $profileErrorFor = static fn (string $key): ?string => isset($profileErrors[$key
     <div class="card">
       <div class="card-body text-center">
         <div class="ukn-eyebrow mb-3">Profile Photo</div>
-        <span class="ukn-avatar ukn-avatar-photo" aria-hidden="true" data-photo-preview data-photo-initials="<?= htmlspecialchars($currentUser['initials'] ?? '') ?>"><?= htmlspecialchars($currentUser['initials'] ?? '') ?></span>
-        <input type="file" accept="image/*" hidden data-photo-input>
+        <?= uknAvatarHtml($currentAvatar, (string) ($currentUser['initials'] ?? ''), 'ukn-avatar ukn-avatar-photo', 'data-photo-preview data-photo-initials="' . htmlspecialchars((string) ($currentUser['initials'] ?? '')) . '"') ?>
+        <!-- Kept in this card, submitted with the profile form (form attribute). -->
+        <input type="file" name="avatar" accept="image/jpeg,image/png" form="editProfileForm" hidden data-photo-input>
         <button type="button" class="btn btn-outline-secondary btn-sm w-100 mt-3" data-photo-upload-trigger>Upload New Photo</button>
         <button type="button" class="btn btn-outline-danger btn-sm w-100 mt-2" data-photo-remove-trigger>Remove Photo</button>
         <div class="ukn-body-sm mt-3">JPG or PNG, at least 200&times;200px, under 2MB.</div>
+        <?php if ($profileErrorFor('avatar') !== null): ?>
+          <div class="ukn-field-message is-invalid justify-content-center" data-photo-error><span class="ms" aria-hidden="true">error</span><?= htmlspecialchars($profileErrorFor('avatar')) ?></div>
+        <?php endif; ?>
       </div>
     </div>
   </div>

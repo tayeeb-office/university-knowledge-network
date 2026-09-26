@@ -15,3 +15,12 @@ desktop.ini
 
 # Logs
 *.log
+
+# Runtime user uploads: keep the directories (via .gitkeep) but never the uploaded files.
+# uploads/.htaccess stays tracked; generated mail is already ignored by storage/mail/.gitignore.
+uploads/profiles/*
+!uploads/profiles/.gitkeep
+uploads/posts/*
+!uploads/posts/.gitkeep
+uploads/certificates/*
+!uploads/certificates/.gitkeep

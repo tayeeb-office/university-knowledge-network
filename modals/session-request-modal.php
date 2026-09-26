@@ -1,8 +1,9 @@
 <?php
 // Filled per trigger by modal.js (data-request-* attributes); a page may preset $requestMentor
 // (the mentor profile does). The server re-validates the mentor and skill (backend/sessions/request.php).
+require_once __DIR__ . '/../backend/helpers/avatars.php';
 $requestMentor = ($requestMentor ?? []) + [
-    'id' => null, 'name' => '', 'initials' => '', 'department' => '', 'skill' => '', 'rating' => null, 'skillOptions' => [],
+    'id' => null, 'name' => '', 'initials' => '', 'avatar_path' => null, 'department' => '', 'skill' => '', 'rating' => null, 'skillOptions' => [],
 ];
 ?>
 <div class="modal fade" id="sessionRequestModal" tabindex="-1" aria-labelledby="sessionRequestModalLabel" aria-hidden="true">
@@ -20,7 +21,7 @@ $requestMentor = ($requestMentor ?? []) + [
         </div>
         <div class="modal-body">
           <div class="ukn-cluster mb-4 p-3 ukn-bg-surface-2 ukn-rounded-md">
-            <span class="ukn-avatar ukn-avatar-lg" aria-hidden="true" data-request-avatar><?= htmlspecialchars($requestMentor['initials']) ?></span>
+            <?= uknAvatarHtml($requestMentor['avatar_path'], (string) $requestMentor['initials'], 'ukn-avatar ukn-avatar-lg', 'data-request-avatar') ?>
             <div>
               <div class="fw-bold" data-request-name-el><?= htmlspecialchars($requestMentor['name']) ?></div>
               <div class="ukn-body-sm" data-request-meta-el><?= $requestMentor['skill'] !== '' ? htmlspecialchars($requestMentor['skill']) . ' Mentor · ' : '' ?><?= htmlspecialchars($requestMentor['department']) ?></div>
