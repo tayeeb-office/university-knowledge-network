@@ -10,6 +10,7 @@ DROP TABLE IF EXISTS mentor_applications;
 DROP TABLE IF EXISTS reports;
 DROP TABLE IF EXISTS notifications;
 DROP TABLE IF EXISTS point_transactions;
+DROP TABLE IF EXISTS learner_recommendations;
 DROP TABLE IF EXISTS follows;
 DROP TABLE IF EXISTS saved_posts;
 DROP TABLE IF EXISTS post_votes;
@@ -530,6 +531,36 @@ CREATE TABLE follows (
         ON UPDATE CASCADE ON DELETE CASCADE,
 
     CONSTRAINT chk_follows_not_self CHECK (follower_id <> following_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+
+-- ---------------------------------------------------------------------------
+-- learner_recommendations — a member's written recommendation FOR a learner, shown on the
+-- learner's profile (Recommendations tab). Unrelated to mentor matching, which stores nothing.
+-- A member may recommend the same learner more than once (each is its own row); the application
+-- checks that the learner is an active learner / learner + mentor account. Also in
+-- database/patches/add-learner-recommendations.sql (+ allow-multiple-learner-recommendations.sql).
+-- ---------------------------------------------------------------------------
+CREATE TABLE learner_recommendations (
+    id             INT UNSIGNED  NOT NULL AUTO_INCREMENT,
+    recommender_id INT UNSIGNED  NOT NULL,
+    learner_id     INT UNSIGNED  NOT NULL,
+    content        VARCHAR(1000) NOT NULL,
+    created_at     DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    PRIMARY KEY (id),
+    KEY idx_learner_recommendations_recommender (recommender_id, learner_id),
+    KEY idx_learner_recommendations_learner (learner_id, created_at),
+
+    CONSTRAINT fk_learner_recommendations_recommender
+        FOREIGN KEY (recommender_id) REFERENCES users (id)
+        ON UPDATE CASCADE ON DELETE CASCADE,
+    CONSTRAINT fk_learner_recommendations_learner
+        FOREIGN KEY (learner_id) REFERENCES users (id)
+        ON UPDATE CASCADE ON DELETE CASCADE,
+
+    CONSTRAINT chk_learner_recommendations_not_self CHECK (recommender_id <> learner_id),
+    CONSTRAINT chk_learner_recommendations_content CHECK (CHAR_LENGTH(TRIM(content)) > 0)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 

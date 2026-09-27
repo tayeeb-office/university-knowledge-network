@@ -40,6 +40,18 @@ try {
             "Late cancellation of {$session['skill_name']} session {$session['reference_code']}"
         );
     }
+    // The other participant: the learner hears about a mentor's cancellation as a session
+    // update; the mentor hears about a learner's (request or session) cancellation with requests.
+    $what = $session['status'] === 'pending' ? 'session request' : 'session';
+    if ($side === 'mentor') {
+        uknNotify($pdo, (int) $session['learner_id'], $userId, 'event_busy',
+            "{$session['mentor_name']} cancelled your {$session['skill_name']} {$what}.",
+            uknSessionLink($sessionId), 'notify_session_updates', false, 'session');
+    } else {
+        uknNotify($pdo, (int) $session['mentor_id'], $userId, 'event_busy',
+            "{$session['learner_name']} cancelled their {$session['skill_name']} {$what} with you.",
+            uknSessionLink($sessionId), 'notify_learner_requests', false, 'session');
+    }
     $pdo->commit();
 } catch (Throwable $e) {
     if (isset($pdo) && $pdo->inTransaction()) {

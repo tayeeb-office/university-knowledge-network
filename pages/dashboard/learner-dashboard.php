@@ -244,7 +244,7 @@ try {
 <div class="mb-4">
   <div class="d-flex align-items-center justify-content-between mb-3">
     <h2 class="ukn-h4 mb-0">Recommended Mentors</h2>
-    <a href="<?= htmlspecialchars(ukn_route_href('recommendations')) ?>" class="ukn-body-sm">View Recommendations</a>
+    <a href="<?= htmlspecialchars(ukn_route_href('find-mentors')) ?>" class="ukn-body-sm">Find Mentors</a>
   </div>
   <?php if ($recommendedMentors): ?>
     <div class="row g-3">

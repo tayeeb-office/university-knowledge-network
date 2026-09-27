@@ -69,7 +69,6 @@ $sidebarContextByPage = [
 // not just the capability — a dual-role user switches to reach the other side).
 $routeAccess = [
     'learner-dashboard' => 'learner',
-    'recommendations'   => 'learner',
     'learning-skills'   => 'learner',
     'learning-goals'    => 'learner',
     'mentor-dashboard'  => 'mentor',
@@ -78,6 +77,7 @@ $routeAccess = [
     'availability'      => 'mentor',
     'ratings'           => 'mentor',
     'my-profile'        => 'login',
+    'recommendations'   => 'login',   // received learner recommendations, same in either mode
     'edit-profile'      => 'login',
     'sessions'          => 'login',
     'session-details'   => 'login',

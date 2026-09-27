@@ -22,6 +22,9 @@ try {
     $pdo->prepare(
         "UPDATE mentoring_sessions SET status = 'accepted', responded_at = NOW() WHERE id = ? AND status = 'pending'"
     )->execute([$sessionId]);
+    uknNotify($pdo, (int) $session['learner_id'], (int) $session['mentor_id'], 'event_available',
+        "Your {$session['skill_name']} session request with {$session['mentor_name']} was accepted.",
+        uknSessionLink($sessionId), 'notify_session_updates', false, 'session');
     $pdo->commit();
 } catch (Throwable $e) {
     if (isset($pdo) && $pdo->inTransaction()) {

@@ -11,7 +11,14 @@
 // Points follow the project's "Point Rules" (admin/settings.php, design handoff):
 //   completed session: learner +25 learning points, mentor +30 mentor points
 //   late cancellation (accepted session, < 6 hours before its start): canceller −10
+//
+// Notifications (type 'session' / 'rating', via uknNotify inside each action's transaction):
+//   request → mentor (notify_learner_requests); accept / reject / complete → learner and
+//   mentor's cancel → learner (notify_session_updates); learner's cancel → mentor
+//   (notify_learner_requests); rating → mentor (notify_rating_received). Each links to the
+//   session's details page, which either participant can open in either mode.
 require_once __DIR__ . '/../config/database.php';
+require_once __DIR__ . '/community.php';
 
 if (!defined('UKN_POINTS_SESSION_LEARNER')) {
     define('UKN_POINTS_SESSION_LEARNER', 25);
@@ -21,6 +28,13 @@ if (!defined('UKN_POINTS_SESSION_LEARNER')) {
     define('UKN_SESSION_DURATIONS', [30, 45, 60]); // options offered by the request form
 }
 
+if (!function_exists('uknSessionLink')) {
+    /** In-app link to a session's details page (the target of every session notification). */
+    function uknSessionLink(int $sessionId): string
+    {
+        return 'index.php?page=session-details&id=' . $sessionId;
+    }
+}
 if (!function_exists('uknLockSession')) {
     /**
      * Loads and row-locks a session the current user takes part in on the given side

@@ -55,6 +55,9 @@ try {
     $skillRow = $pdo->prepare('UPDATE user_skills SET sessions_count = sessions_count + 1 WHERE user_id = ? AND skill_id = ? AND skill_type = ?');
     $skillRow->execute([$mentorId, $skillId, 'teaching']);
     $skillRow->execute([$learnerId, $skillId, 'learning']);
+    uknNotify($pdo, $learnerId, $mentorId, 'task_alt',
+        "Your {$session['skill_name']} session with {$session['mentor_name']} was marked completed. You can rate it now.",
+        uknSessionLink($sessionId), 'notify_session_updates', false, 'session');
     $pdo->commit();
 } catch (Throwable $e) {
     if (isset($pdo) && $pdo->inTransaction()) {

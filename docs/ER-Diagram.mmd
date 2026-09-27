@@ -198,6 +198,13 @@ erDiagram
         INT following_id PK, FK
         DATETIME created_at
     }
+    learner_recommendations {
+        INT id PK
+        INT recommender_id FK
+        INT learner_id FK
+        VARCHAR content
+        DATETIME created_at
+    }
     point_transactions {
         BIGINT id PK
         INT user_id FK
@@ -281,6 +288,8 @@ erDiagram
     users ||--o{ saved_posts : "user_id"
     users ||--o{ follows : "follower_id"
     users ||--o{ follows : "following_id"
+    users ||--o{ learner_recommendations : "recommender_id"
+    users ||--o{ learner_recommendations : "learner_id"
     learning_goals |o--o{ point_transactions : "related_goal_id"
     posts |o--o{ point_transactions : "related_post_id"
     mentoring_sessions |o--o{ point_transactions : "related_session_id"

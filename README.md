@@ -240,7 +240,7 @@ that `POST` to the matching file under `backend/`, which redirects back with a f
 - **Engine / charset:** InnoDB, `utf8mb4` / `utf8mb4_unicode_ci` for every table.
 - **SQL mode:** the application connection enables `STRICT_TRANS_TABLES`, so values that do not
   fit a column raise an error (and roll back) instead of being silently truncated.
-- **Tables (23):**
+- **Tables (24):**
 
 | Area | Tables |
 |---|---|
@@ -248,7 +248,7 @@ that `POST` to the matching file under `backend/`, which redirects back with a f
 | Skills | `skill_categories`, `skills`, `skill_relations`, `user_skills` |
 | Learning & mentoring | `learning_goals`, `mentor_availability`, `mentoring_sessions`, `session_ratings` |
 | Points | `point_transactions` |
-| Community | `posts`, `post_skills`, `comments`, `post_votes`, `saved_posts`, `follows` |
+| Community | `posts`, `post_skills`, `comments`, `post_votes`, `saved_posts`, `follows`, `learner_recommendations` |
 | Notifications & moderation | `notifications`, `reports` |
 | Security | `login_attempts` |
 
@@ -278,6 +278,10 @@ that `POST` to the matching file under `backend/`, which redirects back with a f
   (it also converts any old mentor-only account to Learner & Mentor). Private mobile numbers need
   `mysql -u <db-user> -p ukn_database < database/patches/add-user-private-contacts.sql`; existing
   accounts get no number, and each user adds one in Settings before requesting a session.
+  Learner-profile recommendations need
+  `mysql -u <db-user> -p ukn_database < database/patches/add-learner-recommendations.sql`; a
+  database that already has the table from the earlier one-per-pair version also needs
+  `mysql -u <db-user> -p ukn_database < database/patches/allow-multiple-learner-recommendations.sql`.
 - **Design documentation:** ER diagram, relational schema, 3NF justification, index rationale and
   SQL feature coverage are in [Database Design](#database-design).
 
@@ -285,8 +289,8 @@ that `POST` to the matching file under `backend/`, which redirects back with a f
 
 ## Database Design
 
-This section documents the database as it is defined in `database/schema.sql` — 23 base tables,
-40 foreign keys, 25 `CHECK` constraints and one view — and shows where the application uses each
+This section documents the database as it is defined in `database/schema.sql` — 24 base tables,
+42 foreign keys, 27 `CHECK` constraints and one view — and shows where the application uses each
 SQL feature.
 
 ### ER Diagram
@@ -873,6 +877,26 @@ Expand a table to see its columns and constraints (generated from the database's
 
 </details>
 
+<details>
+<summary><b>24. <code>learner_recommendations</code></b> — 5 columns</summary>
+
+| Column | Type | NOT NULL | Key |
+|---|---|:---:|---|
+| `id` | `int(10) unsigned` | ✓ | PK |
+| `recommender_id` | `int(10) unsigned` | ✓ | FK → `users.id` |
+| `learner_id` | `int(10) unsigned` | ✓ | FK → `users.id` |
+| `content` | `varchar(1000)` | ✓ |  |
+| `created_at` | `datetime` | ✓ |  |
+
+- **PK:** (id)
+- **FK** `recommender_id` → `users(id)` ON DELETE CASCADE; `learner_id` → `users(id)` ON DELETE CASCADE
+- No uniqueness on (recommender_id, learner_id): a member may recommend the same learner several times, each as its own row
+- **CHECK** `chk_learner_recommendations_not_self`: `recommender_id <> learner_id`; `chk_learner_recommendations_content`: content not blank
+- **Indexes:** `idx_learner_recommendations_learner` (learner_id, created_at) — the newest-first list; `idx_learner_recommendations_recommender` (recommender_id, learner_id) — backs the recommender foreign key
+- A member's written recommendation for a learner, shown on the learner's profile (Recommendations tab). Not related to mentor recommendations/matching, which store nothing.
+
+</details>
+
 **View:** `mentor_rating_summary(mentor_id, avg_rating, total_reviews)` — derived from
 `session_ratings`; see [SQL VIEW](#sql-view).
 
@@ -893,6 +917,7 @@ Summary of the relationships:
 | posts ↔ skills | M : N | `post_skills(post_id, skill_id)` |
 | users ↔ posts (votes, saves) | M : N | `post_votes(user_id, post_id)`, `saved_posts(user_id, post_id)` |
 | users ↔ users (follows) | M : N | `follows(follower_id, following_id)` |
+| users → learner_recommendations (recommender; learner) | 1 : N each | `learner_recommendations.recommender_id`, `learner_id` (several per pair allowed) |
 | posts → comments; comments → replies | 1 : N; self 1 : N | `comments.post_id`; `comments.parent_id` |
 | sessions / posts / goals → point_transactions | 1 : N (optional) | `related_session_id`, `related_post_id`, `related_goal_id` (nullable) |
 | users → reports (reporter, reviewer) | 1 : N | `reports.reporter_id`, `reports.reviewed_by` |

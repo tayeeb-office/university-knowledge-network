@@ -19,18 +19,33 @@ $profile = [
     'department' => $currentUser['department'] ?? '',
     'email' => $currentUser['email'] ?? '',
 ];
+// Notification preferences: the signed-in user's user_settings row (schema defaults if it is
+// missing); saved by backend/settings/notifications.php. Each mode shows its own options.
+$notifyPrefs = [
+    'notify_session_updates' => 1, 'notify_session_reminders' => 1, 'notify_community_replies' => 1,
+    'notify_follow_activity' => 0, 'notify_learner_requests' => 1, 'notify_rating_received' => 1,
+];
+try {
+    $prefStmt = getDatabaseConnection()->prepare(
+        'SELECT ' . implode(', ', array_keys($notifyPrefs)) . ' FROM user_settings WHERE user_id = ?'
+    );
+    $prefStmt->execute([UKN_CURRENT_USER_ID]);
+    $notifyPrefs = array_map('intval', $prefStmt->fetch() ?: $notifyPrefs);
+} catch (Throwable $e) {
+    error_log('[UKN settings] could not load notification preferences (' . get_class($e) . ')');
+}
 $notificationOptions = $isMentor
     ? [
-        ['id' => 'notifLearnerRequests', 'label' => 'Learner requests', 'help' => 'A learner requests a session with you', 'checked' => true],
-        ['id' => 'notifSessionReminders', 'label' => 'Session reminders', 'help' => 'Before an upcoming session starts', 'checked' => true],
-        ['id' => 'notifRatingReceived', 'label' => 'Rating received', 'help' => 'A learner rates a completed session', 'checked' => true],
-        ['id' => 'notifCommunityReplies', 'label' => 'Community replies', 'help' => 'Someone comments on your post', 'checked' => false],
+        ['id' => 'notifLearnerRequests', 'name' => 'notify_learner_requests', 'label' => 'Learner requests', 'help' => 'A learner requests or cancels a session with you'],
+        ['id' => 'notifSessionReminders', 'name' => 'notify_session_reminders', 'label' => 'Session reminders', 'help' => 'Before an upcoming session starts'],
+        ['id' => 'notifRatingReceived', 'name' => 'notify_rating_received', 'label' => 'Rating received', 'help' => 'A learner rates a completed session'],
+        ['id' => 'notifCommunityReplies', 'name' => 'notify_community_replies', 'label' => 'Community replies', 'help' => 'Someone comments on your post'],
     ]
     : [
-        ['id' => 'notifSessionUpdates', 'label' => 'Session updates', 'help' => 'A mentor accepts, rejects or reschedules a session', 'checked' => true],
-        ['id' => 'notifSessionReminders', 'label' => 'Session reminders', 'help' => 'Before an upcoming session starts', 'checked' => true],
-        ['id' => 'notifCommunityReplies', 'label' => 'Community replies', 'help' => 'Someone comments on your post', 'checked' => true],
-        ['id' => 'notifFollowActivity', 'label' => 'Follow activity', 'help' => 'Someone starts following you', 'checked' => false],
+        ['id' => 'notifSessionUpdates', 'name' => 'notify_session_updates', 'label' => 'Session updates', 'help' => 'A mentor accepts, rejects, cancels or completes a session'],
+        ['id' => 'notifSessionReminders', 'name' => 'notify_session_reminders', 'label' => 'Session reminders', 'help' => 'Before an upcoming session starts'],
+        ['id' => 'notifCommunityReplies', 'name' => 'notify_community_replies', 'label' => 'Community replies', 'help' => 'Someone comments on your post'],
+        ['id' => 'notifFollowActivity', 'name' => 'notify_follow_activity', 'label' => 'Follow activity', 'help' => 'Someone starts following you'],
     ];
 ?>
 <div class="ukn-page-header">
@@ -126,18 +141,26 @@ $notificationOptions = $isMentor
     </section>
     <section class="card mb-3" id="notifications" data-settings-section aria-labelledby="notificationsHeading">
       <div class="card-header"><h2 id="notificationsHeading" class="ukn-h4 mb-0">Notifications</h2></div>
-      <?php foreach ($notificationOptions as $option): ?>
-        <div class="ukn-settings-row">
-          <div class="ukn-settings-row__text">
-            <div><?= htmlspecialchars($option['label']) ?></div>
-            <div class="ukn-body-sm ukn-text-muted"><?= htmlspecialchars($option['help']) ?></div>
+      <form action="backend/settings/notifications.php" method="post" class="m-0" data-notification-settings>
+        <?= csrfField() ?>
+        <?= uknReturnToField() ?>
+        <?php foreach ($notificationOptions as $option): ?>
+          <div class="ukn-settings-row">
+            <div class="ukn-settings-row__text">
+              <div><?= htmlspecialchars($option['label']) ?></div>
+              <div class="ukn-body-sm ukn-text-muted"><?= htmlspecialchars($option['help']) ?></div>
+            </div>
+            <div class="form-check form-switch flex-shrink-0">
+              <input type="hidden" name="shown[]" value="<?= $option['name'] ?>">
+              <input class="form-check-input" type="checkbox" role="switch" id="<?= $option['id'] ?>" name="<?= $option['name'] ?>" value="1"<?= !empty($notifyPrefs[$option['name']]) ? ' checked' : '' ?>>
+              <label class="ukn-visually-hidden" for="<?= $option['id'] ?>"><?= htmlspecialchars($option['label']) ?></label>
+            </div>
           </div>
-          <div class="form-check form-switch flex-shrink-0">
-            <input class="form-check-input" type="checkbox" role="switch" id="<?= $option['id'] ?>" data-settings-toggle <?= $option['checked'] ? 'checked' : '' ?>>
-            <label class="ukn-visually-hidden" for="<?= $option['id'] ?>"><?= htmlspecialchars($option['label']) ?></label>
-          </div>
+        <?php endforeach; ?>
+        <div class="card-body pt-2">
+          <button type="submit" class="btn btn-primary btn-sm">Save Notification Settings</button>
         </div>
-      <?php endforeach; ?>
+      </form>
     </section>
     <section class="card mb-3" id="privacy" data-settings-section aria-labelledby="privacyHeading">
       <div class="card-header"><h2 id="privacyHeading" class="ukn-h4 mb-0">Privacy &amp; Role</h2></div>

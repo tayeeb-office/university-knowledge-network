@@ -155,23 +155,34 @@ if (!function_exists('uknValidatePostInput')) {
         return [['title' => $title, 'content' => $content, 'skill_ids' => $skillIds], null];
     }
 }
+if (!defined('UKN_NOTIFICATION_SETTINGS')) {
+    // user_settings columns a notification can be gated by (Settings → Notifications).
+    define('UKN_NOTIFICATION_SETTINGS', [
+        'notify_session_updates', 'notify_session_reminders', 'notify_community_replies',
+        'notify_follow_activity', 'notify_learner_requests', 'notify_rating_received',
+    ]);
+}
 if (!function_exists('uknNotify')) {
     /**
-     * Creates a community notification inside the caller's transaction. Never notifies the actor
-     * about their own action, respects the recipient's user_settings preference ($setting) and,
-     * with $once, skips an identical notification that already exists (e.g. re-follows).
-     * Returns true if a notification was created.
+     * Creates a notification (type: session, community, rating or system) inside the caller's
+     * transaction, so it exists only if the action commits. Never notifies the actor about their
+     * own action, respects the recipient's user_settings preference ($setting; null = no
+     * preference exists for this event) and, with $once, skips an identical notification that
+     * already exists (e.g. re-follows). Returns true if a notification was created.
      */
-    function uknNotify(PDO $pdo, int $recipientId, int $actorId, string $icon, string $message, ?string $link, string $setting, bool $once = false): bool
+    function uknNotify(PDO $pdo, int $recipientId, int $actorId, string $icon, string $message, ?string $link, ?string $setting, bool $once = false, string $type = 'community'): bool
     {
-        if ($recipientId === $actorId || !in_array($setting, ['notify_community_replies', 'notify_follow_activity'], true)) {
+        if ($recipientId === $actorId || !in_array($type, ['session', 'community', 'rating', 'system'], true)
+            || ($setting !== null && !in_array($setting, UKN_NOTIFICATION_SETTINGS, true))) {
             return false;
         }
-        $pref = $pdo->prepare("SELECT {$setting} FROM user_settings WHERE user_id = ?");
-        $pref->execute([$recipientId]);
-        $enabled = $pref->fetchColumn();
-        if ($enabled !== false && (int) $enabled !== 1) {
-            return false;
+        if ($setting !== null) {
+            $pref = $pdo->prepare("SELECT {$setting} FROM user_settings WHERE user_id = ?");
+            $pref->execute([$recipientId]);
+            $enabled = $pref->fetchColumn();
+            if ($enabled !== false && (int) $enabled !== 1) {
+                return false;
+            }
         }
         $message = mb_substr($message, 0, 255, 'UTF-8');
         if ($once) {
@@ -182,8 +193,8 @@ if (!function_exists('uknNotify')) {
             }
         }
         $pdo->prepare(
-            "INSERT INTO notifications (user_id, type, icon, message, link_url) VALUES (?, 'community', ?, ?, ?)"
-        )->execute([$recipientId, $icon, $message, $link]);
+            'INSERT INTO notifications (user_id, type, icon, message, link_url) VALUES (?, ?, ?, ?, ?)'
+        )->execute([$recipientId, $type, $icon, $message, $link]);
         return true;
     }
 }

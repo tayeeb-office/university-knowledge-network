@@ -66,6 +66,10 @@ try {
          SET us.avg_rating = (SELECT ROUND(AVG(sr.overall), 1) FROM session_ratings sr WHERE sr.mentor_id = ? AND sr.skill_id = ?)
          WHERE us.user_id = ? AND us.skill_id = ? AND us.skill_type = 'teaching'"
     )->execute([$mentorId, $skillId, $mentorId, $skillId]);
+    $stars = (int) $scores['rating_overall'];
+    uknNotify($pdo, $mentorId, (int) $session['learner_id'], 'star',
+        "{$session['learner_name']} gave you a {$stars}-star rating for {$session['skill_name']}.",
+        uknSessionLink($sessionId), 'notify_rating_received', false, 'rating');
     $pdo->commit();
 } catch (Throwable $e) {
     if (isset($pdo) && $pdo->inTransaction()) {

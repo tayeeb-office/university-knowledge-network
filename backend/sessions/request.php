@@ -83,6 +83,8 @@ try {
     $sessionId = (int) $pdo->lastInsertId();
     // Same reference format as existing sessions (UKN-S-1001 for id 1).
     $pdo->prepare('UPDATE mentoring_sessions SET reference_code = ? WHERE id = ?')->execute(['UKN-S-' . (1000 + $sessionId), $sessionId]);
+    uknNotify($pdo, $mentorId, $learnerId, 'event', getCurrentUser()['full_name'] . " requested a {$skillName} session with you.",
+        uknSessionLink($sessionId), 'notify_learner_requests', false, 'session');
     $pdo->commit();
 } catch (Throwable $e) {
     if (isset($pdo) && $pdo->inTransaction()) {

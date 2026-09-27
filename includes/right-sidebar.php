@@ -130,8 +130,8 @@ if (!function_exists('ukn_sidebar_modules_for_context')) {
                         $modules[] = [
                             'type' => 'ranked-list',
                             'title' => 'Recommended Mentor',
-                            'action' => 'View recommendations',
-                            'actionHref' => ukn_route_href('recommendations'),
+                            'action' => 'Find mentors',
+                            'actionHref' => ukn_route_href('find-mentors'),
                             'items' => [[
                                 'a' => $topMentor['name'],
                                 'c' => (string) ($topMentor['department'] ?? '') . ($primarySkill ? ' · teaches ' . $primarySkill : ''),
@@ -374,34 +374,9 @@ if (!function_exists('ukn_sidebar_modules_for_context')) {
                 }
 
                 case 'recommendations': {
-                    $modules = [];
-
-                    $stmt = $pdo->prepare(
-                        "SELECT s.name FROM user_skills us JOIN skills s ON s.id = us.skill_id
-                         WHERE us.user_id = ? AND us.skill_type = 'learning'
-                         ORDER BY us.sessions_count DESC LIMIT 1"
-                    );
-                    $stmt->execute([UKN_CURRENT_USER_ID]);
-                    $primaryLearningSkill = $stmt->fetchColumn();
-                    if ($primaryLearningSkill) {
-                        $modules[] = [
-                            'type' => 'stat-rows',
-                            'title' => 'Your Preferences',
-                            'items' => [
-                                ['label' => 'Learning skill', 'value' => $primaryLearningSkill, 'accent' => true],
-                            ],
-                        ];
-                    }
-
-                    // No availability-preference field or recommendation-scoring engine exists in
-                    // the schema, so "Preferred availability" / "Top recommended skill" are
-                    // intentionally omitted rather than fabricated (see DATABASE_READ_INTEGRATION_PLAN.md).
-                    $modules[] = [
-                        'type' => 'tag-list',
-                        'title' => 'Matching Factors',
-                        'items' => ['Skill', 'Availability', 'Rating', 'Experience', 'Mentor Points'],
-                    ];
-                    return $modules;
+                    // Received learner recommendations: the page itself is the whole content
+                    // (no mentor-matching preferences or factors any more).
+                    return [];
                 }
 
                 case 'sessions': {

@@ -8,6 +8,8 @@ require_once __DIR__ . '/../../backend/config/database.php';
 require_once __DIR__ . '/../../backend/helpers/format.php';
 require_once __DIR__ . '/../../backend/helpers/community.php';
 require_once __DIR__ . '/../../components/follow-button.php';
+require_once __DIR__ . '/../../backend/helpers/learner-recommendations.php';
+require_once __DIR__ . '/../../components/learner-recommendation-card.php';
 
 $requestedId = isset($_GET['id']) && is_numeric($_GET['id']) ? (int) $_GET['id'] : 0;
 $learner = false;
@@ -91,11 +93,20 @@ try {
             $postRow['href'] = 'index.php?page=post-details&id=' . $postRow['id'];
         }
         $learner['post'] = $postRow === false ? null : uknDecoratePosts([$postRow + ['author_id' => $learnerId]])[0];
+
+        // Recommendations written for this learner (recommender fields joined in one query).
+        // Any logged-in member except the learner may write recommendations (as many as they
+        // like), in either mode.
+        $learner['recommendations'] = uknLearnerRecommendations($pdo, $learnerId);
+        $isOwnProfile = UKN_CURRENT_USER_ID > 0 && $learnerId === UKN_CURRENT_USER_ID;
+        $canRecommend = UKN_CURRENT_USER_ID > 0 && !$isOwnProfile;
     }
 } catch (Throwable $e) {
     error_log('[UKN learner-profile] ' . $e->getMessage());
     $learnerDbError = true;
 }
+$activeTab = ($_GET['tab'] ?? '') === 'recommendations' ? 'recommendations' : 'overview';
+$openRecommendationForm = $activeTab === 'recommendations' && !empty($_GET['write']);
 ?>
 <?php if ($learnerDbError): ?>
   <?php ukn_error_state([
@@ -122,9 +133,14 @@ try {
         <p class="ukn-body-sm mt-2 mb-0"><?= htmlspecialchars($learner['bio']) ?></p>
       </div>
       <?php $isFollowing = uknFollowStateFor((int) $learner['id']);
-      if ($isFollowing !== null): ?>
-      <div class="flex-shrink-0">
-        <?php ukn_follow_form((int) $learner['id'], $isFollowing, 'btn btn-sm ' . ($isFollowing ? 'btn-outline-secondary' : 'btn-primary')); ?>
+      if ($isFollowing !== null || $canRecommend): ?>
+      <div class="d-flex flex-column gap-2 flex-shrink-0">
+        <?php if ($isFollowing !== null): ?>
+          <?php ukn_follow_form((int) $learner['id'], $isFollowing, 'btn btn-sm w-100 ' . ($isFollowing ? 'btn-outline-secondary' : 'btn-primary'), 'd-flex'); ?>
+        <?php endif; ?>
+        <?php if ($canRecommend): ?>
+          <a href="<?= htmlspecialchars(ukn_route_href('learner-profile') . '&id=' . (int) $learner['id'] . '&tab=recommendations&write=1#writeRecommendation') ?>" class="btn btn-outline-primary btn-sm" data-write-recommendation>Write Recommendation</a>
+        <?php endif; ?>
       </div>
       <?php endif; ?>
     </div>
@@ -135,6 +151,16 @@ try {
     <div class="col-6 col-lg-3"><?php ukn_stat_card($stat); ?></div>
   <?php endforeach; ?>
 </div>
+<ul class="nav nav-tabs mb-3" role="tablist">
+  <li class="nav-item" role="presentation">
+    <button class="nav-link<?= $activeTab === 'overview' ? ' active' : '' ?>" id="learnerTabOverview" data-bs-toggle="tab" data-bs-target="#learnerPaneOverview" type="button" role="tab" aria-controls="learnerPaneOverview" aria-selected="<?= $activeTab === 'overview' ? 'true' : 'false' ?>">Overview</button>
+  </li>
+  <li class="nav-item" role="presentation">
+    <button class="nav-link<?= $activeTab === 'recommendations' ? ' active' : '' ?>" id="learnerTabRecommendations" data-bs-toggle="tab" data-bs-target="#learnerPaneRecommendations" type="button" role="tab" aria-controls="learnerPaneRecommendations" aria-selected="<?= $activeTab === 'recommendations' ? 'true' : 'false' ?>">Recommendations <span class="ukn-text-muted" data-recommendation-count><?= count($learner['recommendations']) ?></span></button>
+  </li>
+</ul>
+<div class="tab-content">
+<div class="tab-pane fade<?= $activeTab === 'overview' ? ' show active' : '' ?>" id="learnerPaneOverview" role="tabpanel" aria-labelledby="learnerTabOverview" tabindex="0">
 <div class="card mb-4">
   <div class="card-body">
     <h2 class="ukn-h4">Learning Skills</h2>
@@ -160,4 +186,46 @@ try {
   ]); ?>
 </div>
 <?php endif; ?>
+</div>
+<div class="tab-pane fade<?= $activeTab === 'recommendations' ? ' show active' : '' ?>" id="learnerPaneRecommendations" role="tabpanel" aria-labelledby="learnerTabRecommendations" tabindex="0">
+  <?php if ($canRecommend): ?>
+  <div class="card mb-3">
+    <div class="card-body">
+      <div class="d-flex align-items-center justify-content-between gap-2 flex-wrap">
+        <h2 class="ukn-h4 mb-0">Write a Recommendation</h2>
+        <button type="button" class="btn btn-outline-primary btn-sm" data-bs-toggle="collapse" data-bs-target="#writeRecommendation" aria-expanded="<?= $openRecommendationForm ? 'true' : 'false' ?>" aria-controls="writeRecommendation">Write Recommendation</button>
+      </div>
+      <form action="backend/learner-recommendations/create.php" method="post" class="collapse<?= $openRecommendationForm ? ' show' : '' ?> mt-3" id="writeRecommendation">
+        <?= csrfField() ?>
+        <input type="hidden" name="return_to" value="<?= htmlspecialchars(uknBaseUrl() . '/' . ukn_route_href('learner-profile') . '&id=' . (int) $learner['id'] . '&tab=recommendations') ?>">
+        <input type="hidden" name="learner_id" value="<?= (int) $learner['id'] ?>">
+        <label for="recommendationContent" class="ukn-visually-hidden">Your recommendation for <?= htmlspecialchars($learner['name']) ?></label>
+        <textarea class="form-control" id="recommendationContent" name="content" rows="4" maxlength="<?= UKN_RECOMMENDATION_MAX ?>" required placeholder="Share your experience learning with this student..."></textarea>
+        <div class="d-flex align-items-center justify-content-between gap-2 flex-wrap mt-2">
+          <span class="ukn-body-sm">Shown on <?= htmlspecialchars($learner['name']) ?>'s profile. Up to <?= UKN_RECOMMENDATION_MAX ?> characters.</span>
+          <button type="submit" class="btn btn-primary btn-sm">Submit Recommendation</button>
+        </div>
+      </form>
+    </div>
+  </div>
+  <?php elseif (UKN_CURRENT_USER_ID <= 0): ?>
+  <p class="ukn-body-sm mb-3"><a href="<?= htmlspecialchars(ukn_route_href('login')) ?>">Log in</a> to write a recommendation for <?= htmlspecialchars($learner['name']) ?>.</p>
+  <?php endif; ?>
+  <?php if ($learner['recommendations']): ?>
+    <?php foreach ($learner['recommendations'] as $rec):
+        // Delete only for the recommendation's author, in either mode.
+        ukn_learner_recommendation_card($rec, UKN_CURRENT_USER_ID > 0 && (int) $rec['recommender_id'] === UKN_CURRENT_USER_ID
+            ? ['learnerId' => (int) $learner['id'], 'learnerName' => $learner['name']] : null);
+    endforeach; ?>
+  <?php else: ?>
+    <?php ukn_empty_state([
+        'icon' => 'recommend',
+        'title' => 'No recommendations yet.',
+        'message' => $isOwnProfile
+            ? 'Recommendations other members write for you will appear here.'
+            : 'Recommendations written for ' . $learner['name'] . ' will appear here.',
+    ]); ?>
+  <?php endif; ?>
+</div>
+</div>
 <?php endif; ?>

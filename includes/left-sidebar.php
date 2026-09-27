@@ -42,6 +42,7 @@ if (!function_exists('ukn_nav_groups_for_role')) {
                     ['title' => 'You', 'items' => [
                         $item('notifications', 'Notifications', 'notifications', $badgeCounts['notifications'] ?? null),
                         $item('person', 'Profile', 'my-profile'),
+                        $item('auto_awesome', 'Recommendations', 'recommendations'),
                         $item('settings', 'Settings', 'settings'),
                     ]],
                 ];
