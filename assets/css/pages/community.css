@@ -2,3 +2,20 @@
   font-size: 1.75rem;
   line-height: 1.2;
 }
+
+/* Nested replies (post-details.php): each level indents from its parent, capped at 3 levels on
+   phones and 5 on wider screens so deep threads never overflow; nesting itself is unlimited. */
+.ukn-comment-reply{
+  margin-left: .5rem;
+}
+.ukn-comment-reply--flat-sm{
+  margin-left: 0;
+}
+@media (min-width: 768px){
+  .ukn-comment-reply{
+    margin-left: 1.5rem;
+  }
+  .ukn-comment-reply--flat{
+    margin-left: 0;
+  }
+}

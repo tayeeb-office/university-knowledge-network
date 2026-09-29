@@ -2,9 +2,10 @@
 require_once __DIR__ . '/../helpers/actions.php';
 require_once __DIR__ . '/../helpers/community.php';
 
-// Steps 36 + 40: comment on a visible post, or reply to a top-level comment on it (the page
-// shows two levels). One transaction: the comment, posts.comment_count, and a notification to
-// the post author (comment) or the parent comment's author (reply).
+// Steps 36 + 40: comment on a visible post, or reply to any comment or reply the community can
+// see on it (replies nest without a depth limit). One transaction: the comment,
+// posts.comment_count, and a notification to the post author (comment) or the author of the
+// comment being replied to (reply).
 uknRequirePostMethod();
 requireLogin();
 uknRequireActionCsrf('home');
@@ -36,16 +37,14 @@ try {
     }
     $recipientId = (int) $post['user_id'];
     if ($parentId !== null) {
-        $parent = $pdo->prepare(
-            "SELECT user_id FROM comments WHERE id = ? AND post_id = ? AND parent_id IS NULL AND status = 'visible'"
-        );
-        $parent->execute([$parentId, $postId]);
-        $parentAuthor = $parent->fetchColumn();
-        if ($parentAuthor === false) {
+        // The parent (and its whole ancestor chain) must be visible on this post, so a reply can
+        // never land under a hidden comment or on another post, and the +1 below stays true.
+        $parentAuthor = uknShownCommentAuthor($pdo, $parentId, $postId);
+        if ($parentAuthor === null) {
             $pdo->rollBack();
             uknFailAction('That comment is no longer available.', 'home');
         }
-        $recipientId = (int) $parentAuthor;
+        $recipientId = $parentAuthor;
     }
     $pdo->prepare('INSERT INTO comments (post_id, user_id, parent_id, content) VALUES (?, ?, ?, ?)')
         ->execute([$postId, $userId, $parentId, $content]);

@@ -14,20 +14,55 @@ if (!defined('UKN_POST_TITLE_MAX')) {
 if (!function_exists('uknRecountPostComments')) {
     /**
      * Sets posts.comment_count to the comments the community can see on that post: visible
-     * comments that are top-level or whose parent is visible (a reply under a hidden comment
-     * is not shown). Call inside the writer's transaction. Step 50 moderation and the Step 36
-     * delete both use it, so hidden comments never make the stored count drift.
+     * comments whose whole ancestor chain is visible (anything under a hidden comment, at any
+     * depth, is not shown). Call inside the writer's transaction. Step 50 moderation and the
+     * Step 36 delete both use it, so hidden comments never make the stored count drift.
      */
     function uknRecountPostComments(PDO $pdo, int $postId): void
     {
-        $pdo->prepare(
-            "UPDATE posts SET comment_count = (
-                 SELECT COUNT(*) FROM comments c
-                 LEFT JOIN comments parent ON parent.id = c.parent_id
-                 WHERE c.post_id = ? AND c.status = 'visible'
-                   AND (c.parent_id IS NULL OR parent.status = 'visible'))
-             WHERE id = ?"
-        )->execute([$postId, $postId]);
+        $count = $pdo->prepare(
+            "WITH RECURSIVE shown AS (
+                 SELECT id FROM comments WHERE post_id = ? AND parent_id IS NULL AND status = 'visible'
+                 UNION ALL
+                 SELECT c.id FROM comments c JOIN shown s ON c.parent_id = s.id WHERE c.status = 'visible'
+             )
+             SELECT COUNT(*) FROM shown"
+        );
+        $count->execute([$postId]);
+        $pdo->prepare('UPDATE posts SET comment_count = ? WHERE id = ?')
+            ->execute([(int) $count->fetchColumn(), $postId]);
+    }
+}
+if (!function_exists('uknShownCommentAuthor')) {
+    /**
+     * Author id of $commentId when the community can see it on $postId: the comment and every
+     * ancestor up to its top-level comment are visible and belong to that post. Null otherwise
+     * (missing, hidden, under a hidden comment, or on another post). One recursive query.
+     */
+    function uknShownCommentAuthor(PDO $pdo, int $commentId, int $postId): ?int
+    {
+        $chain = $pdo->prepare(
+            "WITH RECURSIVE chain AS (
+                 SELECT id, parent_id, post_id, user_id, status FROM comments WHERE id = ?
+                 UNION ALL
+                 SELECT c.id, c.parent_id, c.post_id, c.user_id, c.status
+                 FROM comments c JOIN chain ON c.id = chain.parent_id
+             )
+             SELECT id, parent_id, post_id, user_id, status FROM chain"
+        );
+        $chain->execute([$commentId]);
+        $authorId = null;
+        $reachesTop = false;
+        foreach ($chain->fetchAll() as $row) {
+            if ($row['status'] !== 'visible' || (int) $row['post_id'] !== $postId) {
+                return null;
+            }
+            if ((int) $row['id'] === $commentId) {
+                $authorId = (int) $row['user_id'];
+            }
+            $reachesTop = $reachesTop || $row['parent_id'] === null;
+        }
+        return $reachesTop ? $authorId : null;
     }
 }
 if (!function_exists('uknDecoratePosts')) {

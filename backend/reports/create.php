@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/../helpers/actions.php';
 require_once __DIR__ . '/../helpers/reports.php';
+require_once __DIR__ . '/../helpers/community.php';
 
 // Report a visible post or comment for admin review (admin/reports.php). The reporter is the
 // session user; one report per reporter and target (uq_reports_one_per_reporter). One
@@ -35,16 +36,20 @@ try {
     $userId = (int) getCurrentUser()['id'];
     $pdo->beginTransaction();
     // Only content the community can see: a visible post, or a visible comment on a visible
-    // post whose parent (for a reply) is visible too.
+    // post whose ancestors (for a reply, at any depth) are all visible too.
     $target = $pdo->prepare($targetType === 'post'
         ? "SELECT user_id FROM posts WHERE id = ? AND status = 'visible' FOR UPDATE"
-        : "SELECT c.user_id FROM comments c
+        : "SELECT c.user_id, c.post_id FROM comments c
            JOIN posts p ON p.id = c.post_id AND p.status = 'visible'
-           LEFT JOIN comments pc ON pc.id = c.parent_id
-           WHERE c.id = ? AND c.status = 'visible' AND (c.parent_id IS NULL OR pc.status = 'visible')
+           WHERE c.id = ? AND c.status = 'visible'
            FOR UPDATE");
     $target->execute([$targetId]);
-    $authorId = $target->fetchColumn();
+    $targetRow = $target->fetch();
+    $authorId = $targetRow === false ? false : $targetRow['user_id'];
+    if ($authorId !== false && $targetType === 'comment'
+        && uknShownCommentAuthor($pdo, $targetId, (int) $targetRow['post_id']) === null) {
+        $authorId = false;
+    }
     if ($authorId === false) {
         $outcome = ['danger', 'That ' . $targetType . ' is no longer available.'];
     } elseif ((int) $authorId === $userId) {

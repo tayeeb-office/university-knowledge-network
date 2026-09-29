@@ -64,6 +64,78 @@ $commentReportButton = static function (array $item): void {
     >Report</button>
     <?php
 };
+// One comment or reply and, recursively, its replies. Every item gets the same Reply form (its
+// own id as parent_id). Indentation stops after 3 levels on phones and 5 on wider screens; past
+// that, a "replying to" line keeps the thread readable. Nesting itself has no limit.
+$renderComment = null;
+$renderComment = static function (array $comment, int $depth, string $parentAuthor, int $postId) use (
+    &$renderComment, $currentUser, $commentReportButton, $commentOwnerControls, $commentOwnerForms
+): void {
+    $loggedIn = !empty($currentUser['loggedIn']);
+    $id = (int) $comment['id'];
+    ?>
+    <?php if ($depth === 0): ?>
+      <div data-comment class="mb-2">
+    <?php else: ?>
+      <div class="ukn-comment-reply<?= $depth > 3 ? ' ukn-comment-reply--flat-sm' : '' ?><?= $depth > 5 ? ' ukn-comment-reply--flat' : '' ?>" data-reply>
+    <?php endif; ?>
+        <div class="card<?= $depth > 0 ? ' mt-2' : '' ?>" data-comment-card>
+          <div class="card-body">
+            <?php if ($depth > 3): ?>
+              <p class="ukn-body-sm ukn-text-muted mb-1<?= $depth <= 5 ? ' d-md-none' : '' ?>"><span aria-hidden="true">↳</span> replying to <?= htmlspecialchars($parentAuthor) ?></p>
+            <?php endif; ?>
+            <div class="ukn-cluster mb-2">
+              <?= uknAvatarHtml($comment['avatar_path'], (string) $comment['initials'], 'ukn-avatar ukn-avatar-sm') ?>
+              <div>
+                <?php if ($depth === 0): ?>
+                  <a href="<?= htmlspecialchars($comment['authorHref']) ?>" class="fw-bold text-body"><?= htmlspecialchars($comment['author']) ?></a>
+                <?php else: ?>
+                  <strong class="text-body"><?= htmlspecialchars($comment['author']) ?></strong>
+                <?php endif; ?>
+                <span class="ukn-role-chip"><?= htmlspecialchars($comment['role']) ?></span>
+                <div class="ukn-body-sm"><?= htmlspecialchars($comment['time']) ?></div>
+              </div>
+            </div>
+            <p class="ukn-body-sm <?= $depth === 0 || $loggedIn ? 'mb-2' : 'mb-0' ?>"><?= htmlspecialchars($comment['text']) ?></p>
+            <?php if ($depth === 0 || $loggedIn): ?>
+            <div class="d-flex align-items-center gap-3 flex-wrap">
+              <?php if ($loggedIn): ?>
+                <button type="button" class="btn-ghost" data-comment-reply-toggle>Reply</button>
+              <?php endif; ?>
+              <?php $commentReportButton($comment); ?>
+              <?php $commentOwnerControls($comment); ?>
+            </div>
+            <?php endif; ?>
+            <?php $commentOwnerForms($comment); ?>
+            <?php if ($loggedIn): ?>
+            <form data-reply-form action="backend/comments/create.php" method="post" hidden class="mt-3" novalidate>
+              <?= csrfField() ?>
+              <?= uknReturnToField() ?>
+              <input type="hidden" name="post_id" value="<?= $postId ?>">
+              <input type="hidden" name="parent_id" value="<?= $id ?>">
+              <label class="ukn-visually-hidden" for="replyTo-<?= $id ?>">Reply to <?= htmlspecialchars($comment['author']) ?></label>
+              <textarea class="form-control form-control-sm" id="replyTo-<?= $id ?>" name="content" maxlength="<?= UKN_COMMENT_MAX ?>" placeholder="Write a reply..."></textarea>
+              <div class="ukn-field-message is-invalid mt-1" data-reply-error hidden>
+                <span class="ms" aria-hidden="true">error</span>Write a reply before posting.
+              </div>
+              <div class="d-flex gap-2 mt-2">
+                <button type="button" class="btn btn-outline-secondary btn-sm" data-reply-cancel>Cancel</button>
+                <button type="submit" class="btn btn-primary btn-sm">Reply</button>
+              </div>
+            </form>
+            <?php endif; ?>
+          </div>
+        </div>
+        <?php if ($depth === 0 || $comment['replies'] !== []): ?>
+        <div data-replies-list<?= $depth === 0 ? ' class="mt-2"' : '' ?>>
+          <?php foreach ($comment['replies'] as $reply): ?>
+            <?php $renderComment($reply, $depth + 1, (string) $comment['author'], $postId); ?>
+          <?php endforeach; ?>
+        </div>
+        <?php endif; ?>
+      </div>
+    <?php
+};
 
 $requestedId = isset($_GET['id']) && is_numeric($_GET['id']) ? (int) $_GET['id'] : 0;
 $post = false;
@@ -114,37 +186,32 @@ try {
         $commentsStmt->execute([$postId]);
         $rows = $commentsStmt->fetchAll();
 
+        // The tree is built in PHP from that one query: replies nest to any depth. Only rows
+        // reachable from a visible top-level comment through visible parents are shown, so
+        // anything under a hidden comment stays hidden.
         $byParent = [];
         foreach ($rows as $row) {
             $byParent[$row['parent_id'] ?? 0][] = $row;
         }
-        $comments = array_map(static function (array $row) use ($byParent) {
-            $isMentorAuthor = $row['role'] === 'dual';
-            $replies = array_map(static function (array $reply) {
+        $buildComments = null;
+        $buildComments = static function (int $parentId) use (&$buildComments, $byParent): array {
+            return array_map(static function (array $row) use ($buildComments) {
+                $isMentorAuthor = $row['role'] === 'dual';
                 return [
-                    'id' => (int) $reply['id'],
-                    'isOwner' => UKN_CURRENT_USER_ID > 0 && (int) $reply['author_id'] === UKN_CURRENT_USER_ID,
-                    'author' => $reply['author'],
-                    'initials' => $reply['initials'],
-                    'avatar_path' => $reply['avatar_path'],
-                    'role' => ukn_role_label($reply['role']),
-                    'time' => ukn_time_ago($reply['created_at']),
-                    'text' => $reply['text'],
+                    'id' => (int) $row['id'],
+                    'isOwner' => UKN_CURRENT_USER_ID > 0 && (int) $row['author_id'] === UKN_CURRENT_USER_ID,
+                    'author' => $row['author'],
+                    'initials' => $row['initials'],
+                    'avatar_path' => $row['avatar_path'],
+                    'role' => ukn_role_label($row['role']),
+                    'authorHref' => ukn_route_href($isMentorAuthor ? 'mentor-profile' : 'learner-profile') . '&id=' . $row['author_id'],
+                    'time' => ukn_time_ago($row['created_at']),
+                    'text' => $row['text'],
+                    'replies' => $buildComments((int) $row['id']),
                 ];
-            }, $byParent[$row['id']] ?? []);
-            return [
-                'id' => (int) $row['id'],
-                'isOwner' => UKN_CURRENT_USER_ID > 0 && (int) $row['author_id'] === UKN_CURRENT_USER_ID,
-                'author' => $row['author'],
-                'initials' => $row['initials'],
-                'avatar_path' => $row['avatar_path'],
-                'role' => ukn_role_label($row['role']),
-                'authorHref' => ukn_route_href($isMentorAuthor ? 'mentor-profile' : 'learner-profile') . '&id=' . $row['author_id'],
-                'time' => ukn_time_ago($row['created_at']),
-                'text' => $row['text'],
-                'replies' => $replies,
-            ];
-        }, $byParent[0] ?? []);
+            }, $byParent[$parentId] ?? []);
+        };
+        $comments = $buildComments(0);
     }
 } catch (Throwable $e) {
     error_log('[UKN post-details] ' . $e->getMessage());
@@ -198,69 +265,7 @@ try {
   </div>
   <div data-comments-list>
     <?php foreach ($comments as $comment): ?>
-      <div data-comment class="mb-2">
-        <div class="card">
-          <div class="card-body">
-            <div class="ukn-cluster mb-2">
-              <?= uknAvatarHtml($comment['avatar_path'], (string) $comment['initials'], 'ukn-avatar ukn-avatar-sm') ?>
-              <div>
-                <a href="<?= htmlspecialchars($comment['authorHref']) ?>" class="fw-bold text-body"><?= htmlspecialchars($comment['author']) ?></a>
-                <span class="ukn-role-chip"><?= htmlspecialchars($comment['role']) ?></span>
-                <div class="ukn-body-sm"><?= htmlspecialchars($comment['time']) ?></div>
-              </div>
-            </div>
-            <p class="ukn-body-sm mb-2"><?= htmlspecialchars($comment['text']) ?></p>
-            <div class="d-flex align-items-center gap-3 flex-wrap">
-              <?php if (!empty($currentUser['loggedIn'])): ?>
-                <button type="button" class="btn-ghost" data-comment-reply-toggle>Reply</button>
-              <?php endif; ?>
-              <?php $commentReportButton($comment); ?>
-              <?php $commentOwnerControls($comment); ?>
-            </div>
-            <?php $commentOwnerForms($comment); ?>
-            <?php if (!empty($currentUser['loggedIn'])): ?>
-            <form data-reply-form action="backend/comments/create.php" method="post" hidden class="mt-3" novalidate>
-              <?= csrfField() ?>
-              <?= uknReturnToField() ?>
-              <input type="hidden" name="post_id" value="<?= (int) $post['id'] ?>">
-              <input type="hidden" name="parent_id" value="<?= (int) $comment['id'] ?>">
-              <label class="ukn-visually-hidden" for="replyTo-<?= (int) $comment['id'] ?>">Reply to <?= htmlspecialchars($comment['author']) ?></label>
-              <textarea class="form-control form-control-sm" id="replyTo-<?= (int) $comment['id'] ?>" name="content" maxlength="<?= UKN_COMMENT_MAX ?>" placeholder="Write a reply..."></textarea>
-              <div class="ukn-field-message is-invalid mt-1" data-reply-error hidden>
-                <span class="ms" aria-hidden="true">error</span>Write a reply before posting.
-              </div>
-              <div class="d-flex gap-2 mt-2">
-                <button type="button" class="btn btn-outline-secondary btn-sm" data-reply-cancel>Cancel</button>
-                <button type="submit" class="btn btn-primary btn-sm">Reply</button>
-              </div>
-            </form>
-            <?php endif; ?>
-          </div>
-        </div>
-        <div data-replies-list class="mt-2">
-          <?php foreach ($comment['replies'] as $reply): ?>
-            <div class="card mt-2 ms-2 ms-md-4" data-reply>
-              <div class="card-body">
-                <div class="ukn-cluster mb-2">
-                  <?= uknAvatarHtml($reply['avatar_path'], (string) $reply['initials'], 'ukn-avatar ukn-avatar-sm') ?>
-                  <div>
-                    <strong class="text-body"><?= htmlspecialchars($reply['author']) ?></strong>
-                    <span class="ukn-role-chip"><?= htmlspecialchars($reply['role']) ?></span>
-                    <div class="ukn-body-sm"><?= htmlspecialchars($reply['time']) ?></div>
-                  </div>
-                </div>
-                <p class="ukn-body-sm mb-0"><?= htmlspecialchars($reply['text']) ?></p>
-                <?php if (!empty($reply['isOwner'])): ?>
-                  <div class="d-flex align-items-center gap-3 flex-wrap mt-2"><?php $commentOwnerControls($reply); ?></div>
-                  <?php $commentOwnerForms($reply); ?>
-                <?php elseif (!empty($currentUser['loggedIn'])): ?>
-                  <div class="d-flex align-items-center gap-3 flex-wrap mt-2"><?php $commentReportButton($reply); ?></div>
-                <?php endif; ?>
-              </div>
-            </div>
-          <?php endforeach; ?>
-        </div>
-      </div>
+      <?php $renderComment($comment, 0, '', (int) $post['id']); ?>
     <?php endforeach; ?>
   </div>
 </div>

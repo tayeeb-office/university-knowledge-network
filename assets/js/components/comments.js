@@ -4,7 +4,8 @@
   // hides the inline forms, blocks empty submissions and fills the report modal; the server
   // saves and re-renders.
   function toggleInlineForm(button, formSelector) {
-    var holder = button.closest('[data-reply]') || button.closest('[data-comment]');
+    // Each comment/reply card holds only its own forms; its nested replies sit outside the card.
+    var holder = button.closest('[data-comment-card]');
     var form = holder ? holder.querySelector(formSelector) : null;
     if (!form) {
       return;
