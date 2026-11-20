@@ -1,12 +1,4 @@
--- Adds email verification to users (Phase A authentication).
---
--- Additive and idempotent: each column/index is only added if it is missing, no existing
--- row or constraint is changed. Existing users keep email_verified_at = NULL (unverified).
---
---   email_verified_at        NULL until the user clicks their verification link
---   verification_token_hash  SHA-256 hex of the emailed token (the raw token is never stored);
---                            cleared on successful verification so each token is single-use
---   verification_expires_at  token expiry
+
 
 SET @ukn_sql := IF(
     (SELECT COUNT(*) FROM information_schema.COLUMNS

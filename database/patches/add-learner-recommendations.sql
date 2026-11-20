@@ -1,14 +1,3 @@
--- Learner recommendations: a member writes a short recommendation FOR a learner, shown on that
--- learner's public profile (Recommendations tab). Not related to mentor matching
--- (pages/mentors/recommendations.php), which computes suggestions and stores nothing.
---
--- A member may recommend the same learner more than once; each submission is its own row. The
--- recommender is always the logged-in user; who may receive one (an active learner / learner +
--- mentor account) is checked by the application, which also repeats the length and not-self
--- rules. A database created with the earlier one-per-pair UNIQUE key is upgraded by
--- allow-multiple-learner-recommendations.sql.
---
--- Idempotent: creates the table only if it does not exist; no existing row is changed.
 
 CREATE TABLE IF NOT EXISTS learner_recommendations (
     id             INT UNSIGNED  NOT NULL AUTO_INCREMENT,

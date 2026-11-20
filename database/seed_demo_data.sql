@@ -1,17 +1,3 @@
--- Supplemental demo data for University Knowledge Network.
---
--- database/seed.sql only populates departments, skill_categories, skills, users and
--- user_settings. Every other feature table (user_skills, sessions, ratings, posts,
--- points, notifications, reports, skill_relations, ...) is left empty, which means most
--- pages will show correct-but-uninteresting empty states until this file is run.
---
--- Run this AFTER schema.sql and seed.sql, against the same database. It only inserts
--- rows (no schema changes) and references the exact user/department/skill ids that
--- seed.sql creates (users 1-17, skills 1-14, departments 1-7, skill_categories 1-7).
---
--- Safe to re-run on a fresh import (drops its own rows first); do NOT run this against
--- a database that already has real user-generated data, since it deletes rows from the
--- tables it seeds.
 
 SET NAMES utf8mb4;
 SET FOREIGN_KEY_CHECKS = 0;
@@ -34,9 +20,7 @@ SET FOREIGN_KEY_CHECKS = 1;
 
 START TRANSACTION;
 
--- ---------------------------------------------------------------------------
--- skill_relations (related skills)
--- ---------------------------------------------------------------------------
+
 INSERT INTO skill_relations (source_skill_id, target_skill_id, strength, reason) VALUES
 (1, 5,  'Strong',  'Python is commonly used for data analysis workflows.'),
 (1, 7,  'Medium',  'Backend work in Python often touches database design.'),
@@ -52,9 +36,7 @@ INSERT INTO skill_relations (source_skill_id, target_skill_id, strength, reason)
 (8, 14, 'Strong',  'Arduino projects are a common entry point into embedded systems.'),
 (9, 12, 'Related', 'Academic writing and presentation skills both support coursework delivery.');
 
--- ---------------------------------------------------------------------------
--- user_skills (teaching = mentor offerings, learning = learner enrollments)
--- ---------------------------------------------------------------------------
+
 INSERT INTO user_skills (user_id, skill_id, skill_type, proficiency, progress, sessions_count, avg_rating, primary_mentor_id) VALUES
 -- Teaching (mentors)
 (1,  7, 'teaching', 'Intermediate', 0, 27,  4.8, NULL),
@@ -87,9 +69,7 @@ INSERT INTO user_skills (user_id, skill_id, skill_type, proficiency, progress, s
 (14,10, 'learning', 'Beginner',     10, 0,  NULL, NULL),
 (16, 9, 'learning', 'Beginner',     15, 1,  NULL, 8);
 
--- ---------------------------------------------------------------------------
--- mentor_availability (0 = Sunday .. 6 = Saturday, per DAYOFWEEK()-1 convention)
--- ---------------------------------------------------------------------------
+
 INSERT INTO mentor_availability (user_id, day_of_week, start_time, end_time, is_enabled) VALUES
 (2, 1, '18:00:00', '20:00:00', 1),
 (2, 3, '18:00:00', '20:00:00', 1),
@@ -101,9 +81,7 @@ INSERT INTO mentor_availability (user_id, day_of_week, start_time, end_time, is_
 (8, 3, '15:00:00', '17:00:00', 1),
 (15,5, '18:00:00', '19:00:00', 0);
 
--- ---------------------------------------------------------------------------
--- learning_goals
--- ---------------------------------------------------------------------------
+
 INSERT INTO learning_goals (id, user_id, skill_id, title, progress, target_date, status, completed_at) VALUES
 (1, 1,  1, 'Finish Python Basics',                  100, '2026-06-01', 'completed', '2026-06-01 12:00:00'),
 (2, 1,  5, 'Learn Python for Data Analysis',          65, '2026-12-15', 'in-progress', NULL),
@@ -113,9 +91,7 @@ INSERT INTO learning_goals (id, user_id, skill_id, title, progress, target_date,
 (6, 10, 5, 'Learn Data Analysis fundamentals',         58, '2026-11-20', 'in-progress', NULL),
 (7, 11, 9, 'Improve academic essay structure',         45, '2026-10-30', 'in-progress', NULL);
 
--- ---------------------------------------------------------------------------
--- mentoring_sessions
--- ---------------------------------------------------------------------------
+
 INSERT INTO mentoring_sessions
     (id, reference_code, learner_id, mentor_id, skill_id, scheduled_date, scheduled_time,
      duration_minutes, status, request_message, cancel_reason, requested_at, responded_at, completed_at) VALUES
@@ -135,9 +111,7 @@ INSERT INTO mentoring_sessions
 (14, 'UKN-S-1014', 12, 15,8, '2026-06-01', '18:00:00', 60, 'completed', NULL, NULL, '2026-05-27 09:00:00', '2026-05-27 10:00:00', '2026-06-01 19:00:00'),
 (15, 'UKN-S-1015', 9,  1, 7, '2026-06-15', '18:00:00', 60, 'completed', NULL, NULL, '2026-06-10 09:00:00', '2026-06-10 10:00:00', '2026-06-15 19:00:00');
 
--- ---------------------------------------------------------------------------
--- session_ratings (only some completed sessions are rated, to exercise both states)
--- ---------------------------------------------------------------------------
+
 INSERT INTO session_ratings (session_id, reviewer_id, mentor_id, skill_id, overall, teaching, communication, helpfulness, review, created_at) VALUES
 (4,  1, 7, 2, 5, 5, 5, 4, 'Farhan explained joins really clearly with real examples.', '2026-08-15 17:20:00'),
 (5,  3, 6, 6, 5, 5, 4, 5, 'Sara gave specific feedback on my pacing that actually helped.', '2026-08-01 11:00:00'),
@@ -146,9 +120,7 @@ INSERT INTO session_ratings (session_id, reviewer_id, mentor_id, skill_id, overa
 (13, 3, 8, 9, 4, 4, 5, 4, 'Helped me restructure my essay introduction.', '2026-06-10 16:10:00'),
 (15, 9, 1, 7, 5, 5, 4, 5, 'Nabila made database design approachable, great with beginners despite being a peer.', '2026-06-15 19:15:00');
 
--- ---------------------------------------------------------------------------
--- posts + post_skills
--- ---------------------------------------------------------------------------
+
 INSERT INTO posts (id, user_id, title, content, vote_score, comment_count, report_count, status, created_at) VALUES
 (1,  9,  'Need Help Understanding Database Normalization',
      'I keep mixing up 2NF and 3NF when I try to apply them to my own schema. Does anyone have a simple way of checking whether a table is actually normalized, beyond just repeating the textbook definitions?',
@@ -193,17 +165,13 @@ INSERT INTO post_skills (post_id, skill_id) VALUES
 (9, 8),
 (10, 2), (10, 7);
 
--- ---------------------------------------------------------------------------
--- comments (post 1 has a top-level comment + one reply; post 2 has one comment)
--- ---------------------------------------------------------------------------
+
 INSERT INTO comments (id, post_id, user_id, parent_id, content, report_count, status, created_at) VALUES
 (1, 1, 2, NULL, 'Normalization really clicks once you practice with a real messy dataset — happy to look at your schema if you post it.', 1, 'visible', '2026-09-20 10:05:00'),
 (2, 1, 9, 1,    'Thanks, I''ll share my ERD tomorrow!', 0, 'visible', '2026-09-20 10:40:00'),
 (3, 2, 3, NULL, 'This matches my experience — pandas before matplotlib.', 0, 'visible', '2026-09-19 15:00:00');
 
--- ---------------------------------------------------------------------------
--- post_votes / saved_posts / follows
--- ---------------------------------------------------------------------------
+
 INSERT INTO post_votes (user_id, post_id, value) VALUES
 (1, 1, 1), (5, 1, 1), (9, 2, 1), (10, 2, 1), (1, 5, 1), (2, 5, 1);
 
@@ -213,9 +181,7 @@ INSERT INTO saved_posts (user_id, post_id) VALUES
 INSERT INTO follows (follower_id, following_id) VALUES
 (1, 2), (9, 2), (10, 2), (1, 5);
 
--- ---------------------------------------------------------------------------
--- point_transactions
--- ---------------------------------------------------------------------------
+
 INSERT INTO point_transactions
     (user_id, amount, point_type, category, reason, related_session_id, related_post_id, related_goal_id, created_at) VALUES
 (1,  20, 'learning', 'session', 'Completed Data Analysis session with Rahim Ahmed', 8,  NULL, NULL, '2026-07-01 20:15:00'),
@@ -240,9 +206,7 @@ INSERT INTO point_transactions
 (11, 10, 'learning', 'session', 'Completed Academic Writing session with Nusrat Jahan', 7, NULL, NULL, '2026-07-20 16:15:00'),
 (15, -20, 'mentor',  'penalty', 'Point deduction for policy violation', NULL, NULL, NULL, '2026-09-12 10:00:00');
 
--- ---------------------------------------------------------------------------
--- notifications
--- ---------------------------------------------------------------------------
+
 INSERT INTO notifications (user_id, type, icon, message, link_url, is_read, created_at) VALUES
 (1,  'session',   'event_available', 'Your React session request with Ayesha Rahman is awaiting a response.', 'index.php?page=session-details&id=11', 0, '2026-09-21 08:05:00'),
 (9,  'community',  'chat_bubble',    'Rahim Ahmed commented on your post "Need Help Understanding Database Normalization."', 'index.php?page=post-details&id=1', 0, '2026-09-20 10:05:00'),
@@ -253,9 +217,7 @@ INSERT INTO notifications (user_id, type, icon, message, link_url, is_read, crea
 (9,  'session',    'event_busy',     'Your Python session request with Rahim Ahmed was declined.', 'index.php?page=session-details&id=9', 1, '2026-09-03 13:00:00'),
 (17, 'system',     'info',           'Welcome to University Knowledge Network.', NULL, 1, '2025-01-05 09:00:00');
 
--- ---------------------------------------------------------------------------
--- reports
--- ---------------------------------------------------------------------------
+
 INSERT INTO reports (reference_code, reporter_id, target_type, target_id, reason, description, status, reviewed_by, reviewed_at, created_at) VALUES
 ('UKN-R-0001', 9,  'post',    3,  'off-topic',           'This looks unrelated to the skill tag it was posted under.', 'pending',   NULL, NULL,                 '2026-09-20 12:00:00'),
 ('UKN-R-0002', 11, 'comment', 1,  'spam',                'Possible unrelated promotional reply.',                    'resolved',  17,   '2026-09-20 15:00:00', '2026-09-20 12:30:00'),
@@ -264,9 +226,6 @@ INSERT INTO reports (reference_code, reporter_id, target_type, target_id, reason
 
 COMMIT;
 
--- ---------------------------------------------------------------------------
--- Verification summary
--- ---------------------------------------------------------------------------
 SELECT 'skill_relations' AS table_name, COUNT(*) AS rows_seeded FROM skill_relations
 UNION ALL SELECT 'user_skills',         COUNT(*) FROM user_skills
 UNION ALL SELECT 'mentor_availability', COUNT(*) FROM mentor_availability

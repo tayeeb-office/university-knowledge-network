@@ -1,12 +1,3 @@
--- Private contact details (mobile number), kept out of the users table.
---
--- One optional row per user. Registration writes it in the same transaction as the account;
--- existing accounts have no row until the owner adds a number in Settings. The number is only
--- shown to its owner (Settings) and to the mentor of that learner's pending/accepted session
--- (Session Details). It is stored as +8801XXXXXXXXX (Bangladesh mobile, E.164); the CHECK
--- repeats the application's validation. Not unique: family/shared numbers are allowed.
---
--- Idempotent: creates the table only if it does not exist; no existing row is changed.
 
 CREATE TABLE IF NOT EXISTS user_private_contacts (
     user_id       INT UNSIGNED NOT NULL,

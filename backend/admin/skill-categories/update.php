@@ -1,7 +1,6 @@
 <?php
 require_once __DIR__ . '/../../helpers/admin-taxonomy.php';
 
-// Step 46: admin edits a category's name, description and status. Its skills are untouched.
 uknAdminBeginAction('skill-categories.php');
 $categoryId = uknPostId('category_id');
 if ($categoryId === null) {

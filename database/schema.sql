@@ -103,8 +103,6 @@ CREATE TABLE users (
         CHECK (avg_rating IS NULL OR (avg_rating >= 1.0 AND avg_rating <= 5.0)),
     CONSTRAINT chk_users_suspend_reason
         CHECK (status <> 'suspended' OR suspend_reason IS NOT NULL),
-    -- Explicit so a non-strict session cannot store the ENUM's empty error value ('' / index 0)
-    -- for an invalid role such as 'mentor'; the application connection is strict anyway.
     CONSTRAINT chk_users_role
         CHECK (role IN ('learner', 'dual'))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -132,12 +130,6 @@ CREATE TABLE user_settings (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 
--- ---------------------------------------------------------------------------
--- user_private_contacts — private mobile number, one optional row per user, kept out of
--- `users` so no general user query can return it. Shown only to its owner (Settings) and to
--- the mentor of that learner's pending/accepted session. Stored as +8801XXXXXXXXX; not
--- unique (shared numbers exist). Also in database/patches/add-user-private-contacts.sql.
--- ---------------------------------------------------------------------------
 CREATE TABLE user_private_contacts (
     user_id       INT UNSIGNED NOT NULL,
     mobile_number VARCHAR(20)  NOT NULL COMMENT 'private; +8801XXXXXXXXX',
@@ -534,13 +526,6 @@ CREATE TABLE follows (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 
--- ---------------------------------------------------------------------------
--- learner_recommendations — a member's written recommendation FOR a learner, shown on the
--- learner's profile (Recommendations tab). Unrelated to mentor matching, which stores nothing.
--- A member may recommend the same learner more than once (each is its own row); the application
--- checks that the learner is an active learner / learner + mentor account. Also in
--- database/patches/add-learner-recommendations.sql (+ allow-multiple-learner-recommendations.sql).
--- ---------------------------------------------------------------------------
 CREATE TABLE learner_recommendations (
     id             INT UNSIGNED  NOT NULL AUTO_INCREMENT,
     recommender_id INT UNSIGNED  NOT NULL,
@@ -655,14 +640,6 @@ CREATE TABLE reports (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 
--- ---------------------------------------------------------------------------
--- mentor_applications — a learner-only account (users.role = 'learner') asks to become a
--- mentor; an admin approves (users.role becomes 'dual' = learner + mentor) or rejects it.
--- Every application is kept as history, so a rejected learner can apply again (a new row).
--- pending_user_id is user_id only while the application is pending, so its UNIQUE key allows
--- at most one pending application per user (MariaDB 10.4 has no partial unique index).
--- Also in database/patches/simplify-user-roles-and-add-mentor-applications.sql.
--- ---------------------------------------------------------------------------
 CREATE TABLE mentor_applications (
     id                  INT UNSIGNED NOT NULL AUTO_INCREMENT,
     user_id             INT UNSIGNED NOT NULL,
@@ -692,12 +669,6 @@ CREATE TABLE mentor_applications (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 
-
--- ---------------------------------------------------------------------------
--- login_attempts (Phase J, J1) — login throttling, shared across sessions.
--- One row per throttle key: SHA-256 of "scope|value" (email, email+IP, IP), so no
--- raw email or IP is stored. Also in database/patches/add-login-throttling.sql.
--- ---------------------------------------------------------------------------
 CREATE TABLE login_attempts (
     throttle_key       CHAR(64)     NOT NULL,
     attempts           INT UNSIGNED NOT NULL DEFAULT 0,
@@ -708,12 +679,7 @@ CREATE TABLE login_attempts (
     KEY idx_login_attempts_window (window_started_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- ---------------------------------------------------------------------------
--- mentor_rating_summary (Phase K) — reusable VIEW over session_ratings.
--- One row per rated mentor: average overall rating (1 decimal, as displayed) and the
--- number of reviews. Used by the Leaderboard (Top Mentors) and Search (mentor results).
--- Also in database/patches/add-mentor-rating-summary-view.sql.
--- ---------------------------------------------------------------------------
+
 CREATE SQL SECURITY INVOKER VIEW mentor_rating_summary AS
 SELECT sr.mentor_id,
        ROUND(AVG(sr.overall), 1) AS avg_rating,

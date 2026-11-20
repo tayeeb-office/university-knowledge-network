@@ -1,11 +1,3 @@
--- Phase J (J1): login throttling state, shared by all PHP sessions and requests.
---
--- Why a new table: throttling must also count attempts against emails that have no account
--- (otherwise the limiter itself would reveal which emails exist), so it cannot live on
--- `users`; and per-account counters on `users` would turn lockout into a denial-of-service
--- tool. Each row is one throttle key: SHA-256 of "scope|value" (email, email+IP or IP), so no
--- raw email address or IP is stored. No foreign keys; rows expire with their window.
--- Additive and idempotent: safe to run again, touches no existing table or row.
 
 CREATE TABLE IF NOT EXISTS login_attempts (
     throttle_key       CHAR(64)     NOT NULL,

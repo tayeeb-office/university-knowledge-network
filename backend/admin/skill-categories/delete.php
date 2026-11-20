@@ -1,10 +1,6 @@
 <?php
 require_once __DIR__ . '/../../helpers/admin-taxonomy.php';
 
-// Step 46: permanent delete of an empty category only. skills.category_id is ON DELETE
-// RESTRICT; a category that still has skills must be deactivated, never emptied by deleting
-// its skills. The category row is locked for the count and the delete (a concurrent skill
-// insert/move into it waits on that lock for its foreign-key check).
 uknAdminBeginAction('skill-categories.php');
 $categoryId = uknPostId('category_id');
 if ($categoryId === null) {

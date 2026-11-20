@@ -2,8 +2,7 @@
 
 function getDatabaseConnection()
 {
-    // One connection per request: index.php, the page, the sidebars and the current-user
-    // lookup all call this, so reuse the first successful connection.
+    
     static $pdo = null;
     if ($pdo instanceof PDO) {
         return $pdo;
@@ -16,9 +15,6 @@ function getDatabaseConnection()
 
     try {
 
-        // Step 55: strict mode for this app's connection, so a value that does not fit its column
-        // (too long, not valid for the character set, wrong type) raises an error and the
-        // surrounding transaction rolls back, instead of being silently truncated or converted.
         $pdo = new PDO(
             "mysql:host=$host;dbname=$dbname;charset=utf8mb4",
             $username,

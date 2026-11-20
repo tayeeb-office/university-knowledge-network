@@ -1,7 +1,6 @@
 <?php
 require_once __DIR__ . '/../../helpers/admin-taxonomy.php';
 
-// Step 47: admin creates a skill in an existing, active category.
 uknAdminBeginAction('skills.php');
 [$data, $error] = uknAdminSkillInput();
 if ($error !== null) {

@@ -1,5 +1,3 @@
--- Adds the optional description the Learning Goals form already collects (Phase C, Step 26).
--- Additive and idempotent; existing goals keep description = NULL.
 
 SET @ukn_sql := IF(
     (SELECT COUNT(*) FROM information_schema.COLUMNS

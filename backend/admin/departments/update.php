@@ -1,7 +1,6 @@
 <?php
 require_once __DIR__ . '/../../helpers/admin-taxonomy.php';
 
-// Step 45: admin edits a department's name, code and status. Users keep their department_id.
 uknAdminBeginAction('departments.php');
 $departmentId = uknPostId('department_id');
 if ($departmentId === null) {

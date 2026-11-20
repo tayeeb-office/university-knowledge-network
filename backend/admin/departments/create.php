@@ -1,7 +1,6 @@
 <?php
 require_once __DIR__ . '/../../helpers/admin-taxonomy.php';
 
-// Step 45: admin creates a department.
 uknAdminBeginAction('departments.php');
 [$data, $error] = uknAdminDepartmentInput();
 if ($error !== null) {

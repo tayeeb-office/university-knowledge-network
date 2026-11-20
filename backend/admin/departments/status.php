@@ -1,8 +1,6 @@
 <?php
 require_once __DIR__ . '/../../helpers/admin-taxonomy.php';
 
-// Step 45: activate / deactivate. An inactive department is hidden from registration and
-// profile editing; members keep it on their profile (nothing about users changes).
 uknAdminBeginAction('departments.php');
 $departmentId = uknPostId('department_id');
 $status = uknAdminEnum('status', ['active', 'inactive']);

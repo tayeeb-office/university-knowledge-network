@@ -1,11 +1,6 @@
 <?php
 require_once __DIR__ . '/../../helpers/admin-taxonomy.php';
 
-// Step 45: permanent delete, only for a department nobody belongs to. users.department_id is
-// ON DELETE SET NULL, so deleting a used department would silently strip members of their
-// department — those must be deactivated instead. The department row is locked (FOR UPDATE)
-// for the count and the delete; a concurrent user insert/update pointing at it needs a
-// shared lock on that row for its foreign-key check, so it waits and then fails cleanly.
 uknAdminBeginAction('departments.php');
 $departmentId = uknPostId('department_id');
 if ($departmentId === null) {

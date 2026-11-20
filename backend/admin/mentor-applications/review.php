@@ -2,12 +2,6 @@
 require_once __DIR__ . '/../../helpers/admin-moderation.php';
 require_once __DIR__ . '/../../helpers/mentor-applications.php';
 
-// Approve or reject a pending mentor application (admins only; POST + CSRF). One transaction
-// locks the application row, so two admins cannot both decide it: the second one finds it
-// already reviewed. Approval re-checks the applicant (still active, verified and learner-only)
-// and changes only users.role 'learner' → 'dual' (learner + mentor); is_admin, the password,
-// verification state and all learner data are never touched. Rejection changes only the
-// application row. Nobody can review their own application.
 $adminId = uknAdminBeginAction('mentor-applications.php');
 $applicationId = uknPostId('application_id');
 $decision = uknAdminEnum('decision', ['approved', 'rejected']);

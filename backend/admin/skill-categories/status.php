@@ -1,8 +1,6 @@
 <?php
 require_once __DIR__ . '/../../helpers/admin-taxonomy.php';
 
-// Step 46: activate / deactivate. An inactive category is hidden from category filters and
-// cannot receive new skills; skills already in it keep their category and status.
 uknAdminBeginAction('skill-categories.php');
 $categoryId = uknPostId('category_id');
 $status = uknAdminEnum('status', ['active', 'inactive']);

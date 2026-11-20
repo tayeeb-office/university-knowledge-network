@@ -1,14 +1,3 @@
--- Adds password reset ("Forgot Password?") to users.
---
--- Additive and idempotent: each column/index is only added if it is missing, no existing
--- row or constraint is changed. Existing users get NULL in both columns (no reset pending).
---
---   password_reset_token_hash  SHA-256 hex of the emailed reset token (the raw token is never
---                              stored); cleared when the password is reset, so each token is
---                              single-use. A new request replaces the previous token.
---   password_reset_expires_at  token expiry (60 minutes after the request)
---
--- Separate from the email-verification token columns: the two tokens never share values.
 
 SET @ukn_sql := IF(
     (SELECT COUNT(*) FROM information_schema.COLUMNS

@@ -1,14 +1,6 @@
 <?php
 require_once __DIR__ . '/../../helpers/admin-moderation.php';
 
-// Step 51: resolve or dismiss a pending report (status, reviewed_by = the acting admin from
-// the session, reviewed_at). Only pending reports can be reviewed, and only this report
-// changes — other reports on the same target stay pending. When resolving, the admin may
-// also moderate the target in the same transaction: hide the post / comment, or suspend the
-// user, using the Step 48–50 rules. If that action cannot be applied (target gone, own
-// account, last admin), nothing is saved. A target that is already hidden/suspended counts
-// as moderated. The report row keeps target_type/target_id, so it stays traceable even after
-// the content is deleted.
 $adminId = uknAdminBeginAction('reports.php');
 $reportId = uknPostId('report_id');
 $decision = uknAdminEnum('decision', ['resolved', 'dismissed']);
