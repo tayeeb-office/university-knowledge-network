@@ -8,8 +8,8 @@ require_once __DIR__ . '/../components/follow-button.php';
 if (!function_exists('ukn_sidebar_modules_for_context')) {
     /**
      * Builds the right-sidebar's per-context module data from the real database.
-     * Each case runs its own small, targeted queries (see DATABASE_READ_INTEGRATION_PLAN.md
-     * conventions already used across pages/*.php) rather than one large combined query.
+     * Each case runs its own small, targeted queries (the conventions already used across
+     * pages/*.php) rather than one large combined query.
      * Any DB failure, or a module with no real data to show, simply omits that module —
      * ukn_render_sidebar_module()'s rendering logic is unchanged, so an empty $items array
      * (or an empty overall return) renders nothing instead of a fabricated value.
@@ -245,7 +245,7 @@ if (!function_exists('ukn_sidebar_modules_for_context')) {
 
                     // "Trending" = skills with the most mentoring-session requests in the last
                     // 30 days — a real, non-fabricated recency signal (no growth-% metric exists
-                    // in the schema, see DATABASE_READ_INTEGRATION_PLAN.md).
+                    // in the schema).
                     $stmt = $pdo->prepare(
                         "SELECT sk.name, COUNT(*) AS c FROM mentoring_sessions ms
                          JOIN skills sk ON sk.id = ms.skill_id

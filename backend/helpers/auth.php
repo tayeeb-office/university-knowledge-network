@@ -8,7 +8,7 @@ if (!function_exists('getCurrentUser')) {
      *
      * The session only holds the user id; the row is re-read from the database once per
      * request (cached), so name/role/status changes apply immediately. A session whose user
-     * was deleted, deactivated, suspended or is unverified is logged out.
+     * was deleted, deactivated or suspended is logged out.
      */
     function getCurrentUser(): ?array
     {
@@ -30,7 +30,7 @@ if (!function_exists('getCurrentUser')) {
             error_log('[UKN auth] ' . $e->getMessage());
             return null;
         }
-        if ($row === null || $row['status'] !== 'active' || $row['email_verified_at'] === null) {
+        if ($row === null || $row['status'] !== 'active') {
             clearAuthSession();
             return null;
         }
@@ -88,7 +88,7 @@ if (!function_exists('uknBaseUrl')) {
 if (!function_exists('uknAppUrl')) {
     /**
      * Absolute application base URL (no trailing slash) for links used outside the page:
-     * emailed verification links and shared post links. UKN_APP_URL is the canonical value;
+     * shared post links. UKN_APP_URL is the canonical value;
      * the request-derived fallback is for local development only.
      */
     function uknAppUrl(): string

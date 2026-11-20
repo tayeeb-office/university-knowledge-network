@@ -200,7 +200,7 @@ try {
 
     // Sessions completed per month, last 6 calendar months. Depends on the seed data's
     // fictional 2026 dates vs. the real system clock, same caveat as My Profile/Points'
-    // monthly trend (see DATABASE_READ_INTEGRATION_PLAN.md §2.7) — sparse/zero months are
+    // monthly trend — sparse/zero months are
     // the correct, expected result here, not a bug.
     $monthlyStmt = $pdo->prepare(
         "SELECT DATE_FORMAT(completed_at, '%Y-%m') AS ym, COUNT(*) AS c

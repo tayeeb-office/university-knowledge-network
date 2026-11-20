@@ -6,7 +6,7 @@ require_once __DIR__ . '/../../backend/config/database.php';
 
 
 // Display order Monday -> Sunday; day_of_week follows the 0 = Sunday .. 6 = Saturday
-// convention used throughout this project (see DATABASE_READ_INTEGRATION_PLAN.md §2.3).
+// convention used throughout this project.
 $dayDefs = [
     ['day' => 'Monday', 'key' => 'mon', 'dow' => 1],
     ['day' => 'Tuesday', 'key' => 'tue', 'dow' => 2],

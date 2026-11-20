@@ -96,7 +96,7 @@ try {
 
     // Top-rated available mentors (excluding this user), same defensible stand-in used by
     // pages/mentors/recommendations.php — no scoring/match engine exists in the schema
-    // (see DATABASE_READ_INTEGRATION_PLAN.md §2.4), so 'match'/'matchLabel' stay null.
+    // here, so 'match'/'matchLabel' stay null.
     $mentorStmt = $pdo->prepare(
         "SELECT DISTINCT u.id, u.full_name AS name, u.initials, u.avatar_path, u.avg_rating AS rating,
                 u.mentor_points AS points, u.sessions_as_mentor AS sessions, d.name AS department
@@ -144,7 +144,7 @@ try {
 
     // Sessions completed per month, last 6 calendar months. Depends on the seed data's
     // fictional 2026 dates vs. the real system clock, same caveat as My Profile/Points'
-    // monthly trend (see DATABASE_READ_INTEGRATION_PLAN.md §2.7) — sparse/zero months are
+    // monthly trend — sparse/zero months are
     // the correct, expected result here, not a bug.
     $monthlyStmt = $pdo->prepare(
         "SELECT DATE_FORMAT(completed_at, '%Y-%m') AS ym, COUNT(*) AS c

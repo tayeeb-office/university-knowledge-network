@@ -106,8 +106,7 @@ if ($requestedId !== null) {
                 ];
             }, $sessionsStmt->fetchAll());
 
-            // No activity/audit-log table exists in the schema (see
-            // DATABASE_READ_INTEGRATION_PLAN.md §2.2 / batch 7). Reusing the real points
+            // No activity/audit-log table exists in the schema. Reusing the real points
             // ledger's human-readable `reason` text as a defensible activity feed, same
             // approach already used on my-profile.php.
             $activityIcons = [

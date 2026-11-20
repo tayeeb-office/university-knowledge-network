@@ -28,11 +28,11 @@ try {
         $counts[$row['status']] = (int) $row['c'];
     }
     // One query for the whole list (no per-row lookups): applicant, department, skill counts
-    // and the reviewer's name. Never selects password, token or verification hashes.
+    // and the reviewer's name. Never selects the password hash.
     $stmt = $pdo->prepare(
         "SELECT a.id, a.user_id, a.status, a.application_message, a.requested_at, a.reviewed_at, a.admin_note,
                 u.full_name, u.initials, u.avatar_path, u.role, u.is_admin, u.status AS account_status,
-                u.email_verified_at IS NOT NULL AS verified, u.year_of_study, u.learning_points,
+                u.year_of_study, u.learning_points,
                 u.sessions_as_learner, d.name AS department,
                 (SELECT COUNT(*) FROM user_skills us WHERE us.user_id = u.id AND us.skill_type = 'learning') AS learning_skills,
                 (SELECT COUNT(*) FROM user_skills us WHERE us.user_id = u.id AND us.skill_type = 'teaching') AS teaching_skills,
@@ -84,7 +84,7 @@ require __DIR__ . '/includes/header.php';
 <?php else: ?>
   <?php foreach ($applications as $app):
       $isOwn = (int) $app['user_id'] === $reviewerId;
-      $accountOk = $app['account_status'] === 'active' && (int) $app['verified'] === 1 && $app['role'] === 'learner';
+      $accountOk = $app['account_status'] === 'active' && $app['role'] === 'learner';
   ?>
     <div class="card mb-3" data-mentor-application="<?= (int) $app['id'] ?>" data-application-status="<?= htmlspecialchars($app['status']) ?>">
       <div class="card-body">
@@ -97,7 +97,6 @@ require __DIR__ . '/includes/header.php';
               <?php if (!empty($app['is_admin'])): ?><span class="ukn-status ukn-status-accent">Admin</span><?php endif; ?>
               <span class="ukn-status <?= $statusClass[$app['status']] ?>"><?= htmlspecialchars(ucfirst($app['status'])) ?></span>
               <?php if ($app['account_status'] !== 'active'): ?><span class="ukn-status ukn-status-danger">Account <?= htmlspecialchars($app['account_status']) ?></span><?php endif; ?>
-              <?php if ((int) $app['verified'] !== 1): ?><span class="ukn-status ukn-status-danger">Email not verified</span><?php endif; ?>
             </div>
             <div class="ukn-body-sm ukn-text-muted mt-1">
               <?= htmlspecialchars(implode(' · ', array_filter([(string) $app['department'], (string) $app['year_of_study']]))) ?>
@@ -129,7 +128,7 @@ require __DIR__ . '/includes/header.php';
                   <input type="text" class="form-control form-control-sm" id="appNote<?= (int) $app['id'] ?>" name="admin_note" maxlength="<?= UKN_MENTOR_APPLICATION_NOTE_MAX ?>">
                 </div>
                 <button type="submit" name="decision" value="rejected" class="btn btn-outline-secondary btn-sm">Reject</button>
-                <button type="submit" name="decision" value="approved" class="btn btn-primary btn-sm"<?= $accountOk ? '' : ' disabled title="Only active, verified learner accounts can be approved."' ?>>Approve</button>
+                <button type="submit" name="decision" value="approved" class="btn btn-primary btn-sm"<?= $accountOk ? '' : ' disabled title="Only active learner accounts can be approved."' ?>>Approve</button>
               </form>
             <?php endif; ?>
           </div>

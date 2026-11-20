@@ -34,7 +34,7 @@ if (!function_exists('uknMentorApplicationBlocker')) {
         if (($user['role'] ?? '') === 'dual') {
             return 'already-mentor';
         }
-        if (($user['role'] ?? '') !== 'learner' || ($user['status'] ?? '') !== 'active' || empty($user['email_verified_at'])) {
+        if (($user['role'] ?? '') !== 'learner' || ($user['status'] ?? '') !== 'active') {
             return 'ineligible';
         }
         if ($latest !== null && $latest['status'] === 'pending') {

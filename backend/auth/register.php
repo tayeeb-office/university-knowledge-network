@@ -5,7 +5,6 @@ require_once __DIR__ . '/../helpers/csrf.php';
 require_once __DIR__ . '/../helpers/validation.php';
 require_once __DIR__ . '/../helpers/auth.php';
 require_once __DIR__ . '/../models/User.php';
-require_once __DIR__ . '/../helpers/verification.php';
 require_once __DIR__ . '/../helpers/private-contacts.php';
 if (!function_exists('uknRegisterFail')) {
     function uknRegisterFail(array $errors, array $old = []): void
@@ -109,7 +108,6 @@ try {
         $userModel->createUserSettings($userId);
         // Same transaction: an account is never created without its mobile number.
         uknSaveOwnMobile($pdo, $userId, $mobile);
-        $verificationToken = uknIssueVerificationToken($userModel, $userId);
         $pdo->commit();
     } catch (Throwable $e) {
         if ($pdo->inTransaction()) {
@@ -150,11 +148,18 @@ try {
 
 unset($_SESSION['register_errors'], $_SESSION['register_old']);
 
-// The account exists either way; if the email could not be sent the user can request a new
-// link from the login page.
-if (uknSendVerificationEmail($input['email'], $input['full_name'], $verificationToken)) {
-    $_SESSION['flash_success'] = 'Your account has been created. We sent a verification link to your email — verify your address, then log in.';
-} else {
-    $_SESSION['flash_success'] = 'Your account has been created, but we could not send the verification email. Use "Resend verification email" below to try again.';
+// Sign the new user in straight away (first login happens right after registration).
+// If the new row cannot be read back, fall back to the login page; the account exists.
+try {
+    $newUser = $userModel->findByEmail($input['email']);
+    if ($newUser !== null && $newUser['status'] === 'active') {
+        $userModel->updateLastActive((int) $newUser['id']);
+        setAuthSession($newUser);
+        $_SESSION['flash_toast'] = ['type' => 'success', 'message' => 'Welcome to University Knowledge Network! Your account has been created.'];
+        uknRedirectToRoute('learner-dashboard');
+    }
+} catch (Throwable $e) {
+    error_log('[UKN register auto-login] ' . $e->getMessage());
 }
+$_SESSION['flash_success'] = 'Your account has been created. Please log in.';
 uknRedirectToRoute('login');

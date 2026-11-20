@@ -33,7 +33,7 @@ $outcome = uknAdminRunTx(static function (PDO $pdo) use ($applicationId, $decisi
     if ($applicantId === $adminId) {
         return ['result' => 'refused', 'message' => 'You cannot review your own application.'];
     }
-    $userStmt = $pdo->prepare('SELECT full_name, role, status, email_verified_at FROM users WHERE id = ? FOR UPDATE');
+    $userStmt = $pdo->prepare('SELECT full_name, role, status FROM users WHERE id = ? FOR UPDATE');
     $userStmt->execute([$applicantId]);
     $applicant = $userStmt->fetch();
     if ($applicant === false) {
@@ -42,9 +42,6 @@ $outcome = uknAdminRunTx(static function (PDO $pdo) use ($applicationId, $decisi
     if ($decision === 'approved') {
         if ($applicant['status'] !== 'active') {
             return ['result' => 'refused', 'message' => 'The applicant account is not active, so it cannot be approved.'];
-        }
-        if ($applicant['email_verified_at'] === null) {
-            return ['result' => 'refused', 'message' => 'The applicant has not verified their email, so it cannot be approved.'];
         }
         if ($applicant['role'] !== 'learner') {
             return ['result' => 'refused', 'message' => 'The applicant already has mentor access.'];

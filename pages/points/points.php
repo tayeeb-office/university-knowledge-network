@@ -59,7 +59,7 @@ try {
 
     // "vs. last month" growth: compares this month's total earned points to last month's.
     // Depends on the seed data's fictional 2026 dates vs. the real system clock, same
-    // caveat as My Profile's monthly trend (see DATABASE_READ_INTEGRATION_PLAN.md §2.7).
+    // caveat as My Profile's monthly trend.
     $rangeStmt = $pdo->prepare(
         "SELECT COALESCE(SUM(amount), 0) FROM point_transactions
          WHERE user_id = ? AND created_at >= ? AND created_at < ?"

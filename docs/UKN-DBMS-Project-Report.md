@@ -15,7 +15,7 @@
 
 | Item | Finding |
 |---|---|
-| **Technology stack** | PHP 8 (developed on 8.2), server-rendered pages; HTML5, CSS3, Bootstrap 5.3, vanilla JavaScript; Chart.js 4 (admin dashboard); PHPMailer 6.12 (SMTP, with a file-log mail transport for development); Apache (XAMPP) with `.htaccess` rules. No build step and no package manager. |
+| **Technology stack** | PHP 8 (developed on 8.2), server-rendered pages; HTML5, CSS3, Bootstrap 5.3, vanilla JavaScript; Chart.js 4 (admin dashboard); Apache (XAMPP) with `.htaccess` rules. No build step and no package manager. |
 | **Architecture** | Front-controller pattern. `index.php?page=<route>` whitelists 36 routes, applies route guards (guest / logged-in / learner / mentor / admin) and renders a page template from `pages/`. State-changing actions are plain HTML forms that `POST` to a script under `backend/` (58 action scripts), which validates, runs a database transaction and redirects with a flash message. Shared logic is in `backend/helpers/`; reusable UI in `components/`, `modals/`, `includes/`. The admin panel is a separate area under `admin/` with its own layout and its own action scripts under `backend/admin/`. |
 | **Database system** | MySQL / MariaDB (developed and tested on MariaDB 10.4), InnoDB, `utf8mb4_unicode_ci`, accessed through PDO with prepared statements and `STRICT_TRANS_TABLES`. |
 | **Main modules** | Authentication and account security · Profiles · Skills (categories, skills, learning/teaching skills) · Mentor application and approval · Mentor availability · Mentor recommendation engine · Learning goals · Mentoring sessions (request → accept → complete → rate) · Points ledger and leaderboard · Community (posts, comments, votes, saves, follows, reports) · Learner recommendations · Notifications · Global search · Admin panel. |
@@ -125,10 +125,9 @@ University learning does not end in the classroom. Students constantly look for 
 **Authentication** (`backend/auth/`, `backend/helpers/auth.php`, `session.php`, `csrf.php`, `login-throttle.php`)
 
 - Registration with server-side validation of name, university e-mail, university ID, department, year, private mobile number, password rules and terms acceptance; duplicate e-mail / university-ID checks; account, settings row and private mobile number are created in one transaction.
-- E-mail verification with a single-use, expiring token (only its SHA-256 hash is stored); unverified accounts cannot log in; a new link can be requested.
+- No e-mail verification: a new account can log in right after registration.
 - Login with `password_hash` / `password_verify`, generic error for unknown e-mail or wrong password, session ID regeneration, `HttpOnly` / `SameSite=Lax` cookies.
 - Login rate limiting stored in the database (`login_attempts`, hashed keys; 5 attempts per account+source, 20 per account, 50 per source in 15 minutes).
-- Forgot-password / reset-password with a 60-minute single-use token; a reset ends all existing sessions.
 - Logout that destroys the server-side session. The current user is re-read from the database on every request, so suspension or role changes take effect immediately.
 
 **Profile management** (`pages/profile/`, `backend/profile/`)
@@ -156,7 +155,7 @@ University learning does not end in the classroom. Students constantly look for 
 ## 7.3 Mentoring System
 
 - **Mentor application** (`pages/profile/mentor-application.php`, `backend/mentor-applications/apply.php`): a learner submits a 1–1000-character message; only one pending application per user is allowed (enforced by a generated column with a `UNIQUE` key); every application is kept as history, so a rejected learner can re-apply.
-- **Approval system** (`admin/mentor-applications.php`, `backend/admin/mentor-applications/review.php`): admins approve or reject with an optional note. In one transaction the application row is locked, validated (not self-review, applicant active and verified, still a learner) and, on approval, `users.role` becomes `dual`. A decision can be made only once, even if two admins act simultaneously.
+- **Approval system** (`admin/mentor-applications.php`, `backend/admin/mentor-applications/review.php`): admins approve or reject with an optional note. In one transaction the application row is locked, validated (not self-review, applicant active, still a learner) and, on approval, `users.role` becomes `dual`. A decision can be made only once, even if two admins act simultaneously.
 - **Availability** (`pages/learning/availability.php`, `backend/availability/save.php`): a mentor edits the whole week at once, up to four slots per day, with time-range and overlap validation; stored in `mentor_availability`.
 - **Find Mentors** (`pages/mentors/find-mentors.php`): directory of active mentors with filters for skill, department, rating and availability.
 - **Recommendations** (`pages/mentors/recommendations.php`, `backend/helpers/recommendations.php`): a mentor-ranking algorithm scores each eligible mentor from 0 to 100 using skill match (40), availability (20), rating (20), experience (10) and mentor points (10); factors with no data for a mentor are left out and the remaining weights are renormalised. The page explains each score.
@@ -243,7 +242,7 @@ There are 42 foreign keys. The chosen actions follow the meaning of each relatio
 
 ## 8.6 Constraints
 
-- **`UNIQUE`:** e-mail, university ID, verification and reset token hashes, department name/code, skill name/slug, category name, session reference code, one rating per session, one report per (reporter, target), one skill per (user, skill, type), one availability slot per (user, day, start).
+- **`UNIQUE`:** e-mail, university ID, department name/code, skill name/slug, category name, session reference code, one rating per session, one report per (reporter, target), one skill per (user, skill, type), one availability slot per (user, day, start).
 - **`CHECK` (27):** rating ranges 1–5 (including optional sub-ratings), `progress BETWEEN 0 AND 100`, goal `completed ⇒ progress = 100`, session duration 15–240 minutes, `learner_id <> mentor_id`, `follower_id <> following_id`, `source_skill_id <> target_skill_id`, `reviewer_id <> mentor_id`, `recommender_id <> learner_id`, vote value in (−1, 1), availability `end_time > start_time` and `day_of_week` 0–6, suspension requires a reason, cancellation requires a reason, reviewed reports/applications require `reviewed_at`, mobile number regular expression `^[+]8801[3-9][0-9]{8}$`, role in (`learner`,`dual`), point `amount <> 0`.
 - **`ENUM` domains:** user role/status, session status, point type/category, notification type, report target/reason/status, skill proficiency/type, visibility values.
 - **Generated column:** `mentor_applications.pending_user_id = IF(status='pending', user_id, NULL)` with a `UNIQUE` key gives a "partial unique index" (at most one pending application per user) on MariaDB 10.4.
@@ -354,7 +353,7 @@ FROM users u
 JOIN user_skills us ON us.user_id = u.id AND us.skill_type = 'teaching'
 LEFT JOIN departments d ON d.id = u.department_id
 WHERE u.role = 'dual' AND u.status = 'active'
-  AND u.email_verified_at IS NOT NULL AND u.id <> ?
+  AND u.id <> ?
   AND us.skill_id IN (?, ?, …);
 
 -- (c) per-mentor facts, one grouped query each
@@ -520,7 +519,7 @@ COMMIT;
 ```sql
 START TRANSACTION;
 SELECT id, user_id, status FROM mentor_applications WHERE id = ? FOR UPDATE;
-SELECT full_name, role, status, email_verified_at FROM users WHERE id = ? FOR UPDATE;
+SELECT full_name, role, status FROM users WHERE id = ? FOR UPDATE;
 UPDATE users SET role = 'dual' WHERE id = ? AND role = 'learner';
 UPDATE mentor_applications
 SET status = 'approved', reviewed_by = ?, reviewed_at = NOW(), admin_note = ?
@@ -651,7 +650,7 @@ Optional extra screenshots: Find Mentors (`find-mentors`), Mentor Recommendation
 
 # 15. Conclusion
 
-The University Knowledge Network delivers a working, end-to-end peer-learning platform: students can register and verify their accounts, describe what they know and what they want to learn, apply to become mentors, be approved by an administrator, publish their availability, be matched through a transparent scoring algorithm, run mentoring sessions through a controlled life cycle, rate each other, earn points, appear on a leaderboard, and share knowledge through a moderated community feed.
+The University Knowledge Network delivers a working, end-to-end peer-learning platform: students can register, describe what they know and what they want to learn, apply to become mentors, be approved by an administrator, publish their availability, be matched through a transparent scoring algorithm, run mentoring sessions through a controlled life cycle, rate each other, earn points, appear on a leaderboard, and share knowledge through a moderated community feed.
 
 On the database side, the project implements a normalised schema of 24 InnoDB tables and one view, with 42 foreign keys, 27 `CHECK` constraints, unique keys, a generated column, a `FULLTEXT` index and purpose-built composite indexes. Business rules are enforced in the database itself, multi-step operations run in ACID transactions with row locking, and the main screens are driven by joins, aggregates, sub-queries, unions and a reusable view. Documented, controlled denormalisation gives fast displays without sacrificing a single source of truth.
 

@@ -45,7 +45,7 @@ $formatDate = static fn (?string $ts): string => $ts ? date('M j, Y', strtotime(
 <?php elseif ($applicationBlocker === 'ineligible'): ?>
   <?php ukn_error_state([
       'title' => 'Your account cannot apply to become a mentor.',
-      'message' => 'Only active, verified learner accounts can apply.',
+      'message' => 'Only active learner accounts can apply.',
   ]); ?>
 <?php else: ?>
   <div class="row g-3 align-items-start">

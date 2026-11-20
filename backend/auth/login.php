@@ -7,13 +7,10 @@ require_once __DIR__ . '/../helpers/auth.php';
 require_once __DIR__ . '/../models/User.php';
 require_once __DIR__ . '/../helpers/login-throttle.php';
 if (!function_exists('uknLoginFail')) {
-    function uknLoginFail(string $message, string $email = '', bool $unverified = false): void
+    function uknLoginFail(string $message, string $email = ''): void
     {
         $_SESSION['login_error'] = $message;
         $_SESSION['login_old_email'] = $email;
-        if ($unverified) {
-            $_SESSION['login_unverified'] = true;
-        }
         uknRedirectToRoute('login');
     }
 }
@@ -73,9 +70,6 @@ try {
     // Password proven: this is not a guessing attempt, so its throttle state is cleared.
     uknLoginThrottleSucceeded(getDatabaseConnection(), $email, $clientIp);
     // Only reveal account state once the password is proven correct.
-    if ($user['email_verified_at'] === null) {
-        uknLoginFail('Please verify your email address before logging in. Check your inbox for the verification link.', $email, true);
-    }
     if ($user['status'] !== 'active') {
         uknLoginFail('This account is not active. Please contact the network administrators.', $email);
     }
@@ -91,7 +85,7 @@ try {
 }
 
 $redirectPath = uknTakeFlash('redirect_after_login');
-unset($_SESSION['login_error'], $_SESSION['login_old_email'], $_SESSION['login_unverified']);
+unset($_SESSION['login_error'], $_SESSION['login_old_email']);
 setAuthSession($user);
 
 if (uknIsSafeRedirectPath($redirectPath)) {

@@ -92,7 +92,7 @@
     }
     var kind = form.getAttribute('data-auth-form');
     var requiredValid = window.UKN && window.UKN.validateForm ? window.UKN.validateForm(form) : true;
-    var passwordsOk = (kind === 'register' || kind === 'reset-password') ? checkPasswordsMatch(form) : true;
+    var passwordsOk = kind === 'register' ? checkPasswordsMatch(form) : true;
     if (!requiredValid || !passwordsOk) {
       event.preventDefault();
     }

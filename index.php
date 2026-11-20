@@ -10,9 +10,6 @@ $routes = [
     'home'              => ['file' => 'pages/home.php', 'title' => 'Home'],
     'login'             => ['file' => 'pages/auth/login.php', 'title' => 'Log In'],
     'register'          => ['file' => 'pages/auth/register.php', 'title' => 'Register'],
-    'verify-email'      => ['file' => 'pages/auth/verify-email.php', 'title' => 'Verify Email'],
-    'forgot-password'   => ['file' => 'pages/auth/forgot-password.php', 'title' => 'Forgot Password'],
-    'reset-password'    => ['file' => 'pages/auth/reset-password.php', 'title' => 'Reset Password'],
     'learner-dashboard' => ['file' => 'pages/dashboard/learner-dashboard.php', 'title' => 'Learner Dashboard'],
     'mentor-dashboard'  => ['file' => 'pages/dashboard/mentor-dashboard.php', 'title' => 'Mentor Dashboard'],
     'my-profile'        => ['file' => 'pages/profile/my-profile.php', 'title' => 'My Profile'],
@@ -167,46 +164,8 @@ if ($authUser !== null) {
 // Id every page's "my …" queries use; 0 for guests (matches no rows).
 define('UKN_CURRENT_USER_ID', $currentUser['id']);
 
-if (in_array($page, ['login', 'register', 'forgot-password', 'reset-password'], true)) {
+if (in_array($page, ['login', 'register'], true)) {
     redirectIfLoggedIn();
-}
-// Password reset link (?page=reset-password&token=…): only checks whether the token can still
-// be used, so the page can show the form or a generic invalid-link message. Opening the link
-// never consumes the token (backend/auth/reset-password.php does, on POST).
-if ($page === 'reset-password') {
-    require_once __DIR__ . '/backend/helpers/password-reset.php';
-    header('Cache-Control: no-store');
-    $resetTokenValid = false;
-    $resetTokenHash = uknHashPasswordResetToken($_GET['token'] ?? null);
-    if ($resetTokenHash !== null) {
-        try {
-            $resetTokenValid = (new User(getDatabaseConnection()))->passwordResetTokenStatus($resetTokenHash) === 'valid';
-        } catch (Throwable $e) {
-            error_log('[UKN reset-password page] ' . $e->getMessage());
-        }
-    }
-    $resetToken = $resetTokenValid ? (string) $_GET['token'] : '';
-    unset($resetTokenHash);
-    if (!$resetTokenValid) {
-        http_response_code(400);
-    }
-}
-// Email verification link (?page=verify-email&token=…). Handled before any output so the
-// response carries a real status code; pages/auth/verify-email.php renders $verificationResult.
-if ($page === 'verify-email') {
-    require_once __DIR__ . '/backend/helpers/verification.php';
-    $verificationResult = 'invalid';
-    $tokenHash = uknHashVerificationToken($_GET['token'] ?? null);
-    if ($tokenHash !== null) {
-        try {
-            $verificationResult = (new User(getDatabaseConnection()))->verifyEmailByTokenHash($tokenHash);
-        } catch (Throwable $e) {
-            error_log('[UKN verify-email] ' . $e->getMessage());
-            $verificationResult = 'error';
-        }
-    }
-    $verificationStatusCodes = ['verified' => 200, 'invalid' => 400, 'expired' => 410, 'error' => 500];
-    http_response_code($verificationStatusCodes[$verificationResult]);
 }
 $activeNav = $page;
 

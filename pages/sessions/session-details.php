@@ -36,7 +36,7 @@ try {
         WHERE (ms.learner_id = ? OR ms.mentor_id = ?) ";
 
     // Access control: only a participant in the session (learner or mentor) may view it,
-    // not just anyone who guesses an id (see DATABASE_READ_INTEGRATION_PLAN.md §2.5).
+    // not just anyone who guesses an id.
     $stmt = $pdo->prepare($selectBase . "AND ms.id = ?");
     $stmt->execute([UKN_CURRENT_USER_ID, UKN_CURRENT_USER_ID, $requestedId]);
     // A missing id, a non-existent id and someone else's session all show "Session not found".

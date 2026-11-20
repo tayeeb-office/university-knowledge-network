@@ -49,12 +49,12 @@ try {
     if ((int) $future->fetchColumn() !== 1) {
         uknFailAction('Choose a date and time in the future.', 'sessions');
     }
-    // The mentor must be an active, verified, mentor-capable user who teaches this skill.
+    // The mentor must be an active, mentor-capable user who teaches this skill.
     $skillId = $skillName !== null ? uknFindActiveSkillIdByName($pdo, $skillName) : null;
     $mentorStmt = $pdo->prepare(
         "SELECT u.full_name FROM users u
          JOIN user_skills us ON us.user_id = u.id AND us.skill_type = 'teaching' AND us.skill_id = ?
-         WHERE u.id = ? AND u.role = 'dual' AND u.status = 'active' AND u.email_verified_at IS NOT NULL"
+         WHERE u.id = ? AND u.role = 'dual' AND u.status = 'active'"
     );
     $mentorStmt->execute([$skillId ?? 0, $mentorId]);
     $mentorName = $mentorStmt->fetchColumn();

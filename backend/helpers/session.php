@@ -71,7 +71,7 @@ if (!function_exists('setAuthSession')) {
         $_SESSION['is_admin']     = !empty($user['is_admin']);
         $_SESSION['logged_in_at'] = time();
         // Binds the session to the current password: getCurrentUser() ends it once the stored
-        // password hash changes (e.g. after a password reset). Only a SHA-256 digest of the hash
+        // password hash changes (e.g. after a password change). Only a SHA-256 digest of the hash
         // is kept, server-side.
         $_SESSION['auth_fp']      = hash('sha256', (string) ($user['password_hash'] ?? ''));
         // New privilege level, new CSRF token (csrfToken() issues a fresh one on next use).

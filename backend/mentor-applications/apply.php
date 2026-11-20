@@ -23,7 +23,7 @@ $blocked = null;
 try {
     $pdo = getDatabaseConnection();
     $pdo->beginTransaction();
-    $stmt = $pdo->prepare('SELECT id, role, status, email_verified_at FROM users WHERE id = ? FOR UPDATE');
+    $stmt = $pdo->prepare('SELECT id, role, status FROM users WHERE id = ? FOR UPDATE');
     $stmt->execute([$userId]);
     $user = $stmt->fetch(PDO::FETCH_ASSOC);
     $blocked = $user === false ? 'ineligible' : uknMentorApplicationBlocker($user, uknLatestMentorApplication($pdo, $userId));

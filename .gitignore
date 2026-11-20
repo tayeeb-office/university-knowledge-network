@@ -1,5 +1,4 @@
 # Local, machine-specific files that must never be committed.
-# (Generated development mail is ignored by storage/mail/.gitignore.)
 
 # OS / editor files
 .DS_Store
@@ -17,7 +16,7 @@ desktop.ini
 *.log
 
 # Runtime user uploads: keep the directories (via .gitkeep) but never the uploaded files.
-# uploads/.htaccess stays tracked; generated mail is already ignored by storage/mail/.gitignore.
+# uploads/.htaccess stays tracked.
 uploads/profiles/*
 !uploads/profiles/.gitkeep
 uploads/posts/*

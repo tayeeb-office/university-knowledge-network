@@ -215,7 +215,7 @@ try {
     // first. No activity-log table exists in the schema, so this combines
     // the same real signals already used elsewhere (registrations, completed
     // sessions, reports, new skill categories, 5-star ratings) instead of a
-    // single per-user proxy — see DATABASE_READ_INTEGRATION_PLAN.md §2.2.
+    // single per-user proxy.
     $activityStmt = $pdo->query(
         "(SELECT 'person_add' AS icon,
                  CONCAT(u.full_name, ' registered as a new ',

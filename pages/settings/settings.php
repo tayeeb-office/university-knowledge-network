@@ -78,7 +78,7 @@ $notificationOptions = $isMentor
       <div class="ukn-settings-row">
         <div class="ukn-settings-row__text">
           <div>University Email</div>
-          <div class="ukn-body-sm ukn-text-muted"><?= htmlspecialchars($profile['email']) ?> &middot; verified</div>
+          <div class="ukn-body-sm ukn-text-muted"><?= htmlspecialchars($profile['email']) ?></div>
         </div>
         <button type="button" class="btn btn-outline-secondary btn-sm flex-shrink-0" data-mock-email-change>Change Email</button>
       </div>

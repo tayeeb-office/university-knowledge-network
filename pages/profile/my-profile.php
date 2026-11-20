@@ -111,8 +111,7 @@ try {
             }, $goalsStmt->fetchAll());
         }
 
-        // No activity/audit-log table exists in the schema (see DATABASE_READ_INTEGRATION_PLAN.md
-        // §2.2). As a defensible simplification, this reuses the real points ledger — its `reason`
+        // No activity/audit-log table exists in the schema. As a defensible simplification, this reuses the real points ledger — its `reason`
         // text is already human-readable — instead of a full activity feed.
         $activityIcons = [
             'session' => 'event_available', 'rating' => 'star', 'goal' => 'flag',

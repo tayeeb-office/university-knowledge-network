@@ -4,7 +4,6 @@ require_once __DIR__ . '/../../components/error-state.php';
 $flashSuccess = uknTakeFlash('flash_success');
 $loginError = uknTakeFlash('login_error');
 $oldEmail = (string) uknTakeFlash('login_old_email', '');
-$showResend = (bool) uknTakeFlash('login_unverified', false);
 ?>
 <div class="ukn-container-narrow">
   <div class="card ukn-auth-card">
@@ -66,20 +65,10 @@ $showResend = (bool) uknTakeFlash('login_unverified', false);
             <input type="checkbox" class="form-check-input" id="loginRememberMe" name="rememberMe">
             <label class="form-check-label" for="loginRememberMe">Remember Me</label>
           </div>
-          <a href="index.php?page=forgot-password">Forgot Password?</a>
         </div>
         <button type="submit" class="btn btn-primary w-100">Login</button>
       </form>
       <p class="ukn-auth-card__footer">Don&rsquo;t have an account? <a href="index.php?page=register">Register</a></p>
-      <details class="ukn-auth-card__footer"<?= $showResend ? ' open' : '' ?>>
-        <summary>Resend verification email</summary>
-        <form action="backend/auth/resend-verification.php" method="post" class="d-flex gap-2 mt-2" novalidate>
-          <?= csrfField() ?>
-          <label for="resendEmail" class="ukn-visually-hidden">University Email</label>
-          <input type="email" class="form-control form-control-sm" id="resendEmail" name="email" placeholder="name@university.edu" autocomplete="email" value="<?= htmlspecialchars($oldEmail) ?>" required>
-          <button type="submit" class="btn btn-outline-secondary btn-sm flex-shrink-0">Send link</button>
-        </form>
-      </details>
     </div>
   </div>
 </div>

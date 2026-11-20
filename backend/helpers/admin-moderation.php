@@ -10,7 +10,7 @@ require_once __DIR__ . '/community.php';
 if (!function_exists('uknAdminSuspendUserTx')) {
     /**
      * users.status = 'suspended' with the required suspend_reason. Refused for the acting
-     * admin's own account and for the last usable admin (active, verified, is_admin); the
+     * admin's own account and for the last usable admin (active, is_admin); the
      * admin rows are locked while that is checked. Posts, sessions, ratings and points stay.
      */
     function uknAdminSuspendUserTx(PDO $pdo, int $adminId, int $userId, string $reason): array
@@ -30,7 +30,7 @@ if (!function_exists('uknAdminSuspendUserTx')) {
         if ((int) $target['is_admin'] === 1) {
             $others = $pdo->prepare(
                 "SELECT COUNT(*) FROM users
-                 WHERE is_admin = 1 AND status = 'active' AND email_verified_at IS NOT NULL AND id <> ?
+                 WHERE is_admin = 1 AND status = 'active' AND id <> ?
                  FOR UPDATE"
             );
             $others->execute([$userId]);
